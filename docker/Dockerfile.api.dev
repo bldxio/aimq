@@ -1,0 +1,15 @@
+FROM python:3.12-slim
+
+WORKDIR /app
+
+# Install uv
+RUN pip install uv
+
+# Copy dependency files
+COPY requirements*.txt ./
+
+# Install dependencies including dev dependencies
+RUN uv pip install --no-cache --system -r requirements-dev.txt
+
+# Run the API using uvicorn with reload flag
+CMD ["python", "-m", "uvicorn", "api.main:api", "--host", "0.0.0.0", "--port", "8000", "--reload"]

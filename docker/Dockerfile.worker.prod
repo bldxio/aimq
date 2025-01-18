@@ -1,0 +1,28 @@
+FROM python:3.12-slim
+
+WORKDIR /app
+
+# Install uv
+RUN pip install uv
+
+# Create a non-root user
+RUN groupadd -r celery && useradd -r -g celery celery
+
+# Copy dependency files
+COPY requirements.txt ./
+
+# Install production dependencies
+RUN uv pip install --no-cache --system -r requirements.txt
+
+# Copy application code
+COPY . .
+
+# Create and set permissions for required directories
+RUN mkdir -p /app/uploads && \
+    chown -R celery:celery /app
+
+# Switch to non-root user
+USER celery
+
+# Run the Celery worker
+CMD python -m celery -A worker.main worker --loglevel=${WORKER_LOG_LEVEL:-info} --concurrency=${WORKER_CONCURRENCY:-2}

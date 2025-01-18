@@ -1,0 +1,111 @@
+site_name: AIMQ Documentation
+site_description: Documentation for AIMQ - A robust message queue processor for Supabase pgmq with AI-powered document processing capabilities
+repo_url: https://github.com/bldxio/aimq
+repo_name: bldxio/aimq
+edit_uri: edit/main/docs/
+
+theme:
+  name: material
+  palette:
+    scheme: slate
+    primary: black
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - navigation.indexes
+    - toc.follow
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+
+plugins:
+  - search
+  - gen-files:
+      scripts:
+        - docs/gen_ref_pages.py
+  - mkdocstrings:
+      default_handler: python
+      handlers:
+        python:
+          paths: [src]
+          options:
+            docstring_style: google
+            show_source: true
+            show_root_heading: true
+            show_category_heading: true
+            show_bases: true
+            merge_init_into_class: true
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.tabbed:
+      alternate_style: true
+  - tables
+  - toc:
+      permalink: true
+
+nav:
+  - Home: index.md
+  - Getting Started:
+      - Installation: getting-started/installation.md
+      - Quick Start: getting-started/quickstart.md
+      - Configuration: getting-started/configuration.md
+  - User Guide:
+      - Overview: user-guide/overview.md
+      - Queue Processing: user-guide/queue-processing.md
+      - Document Processing: user-guide/document-processing.md
+      - OCR: user-guide/ocr.md
+  - API Reference:
+      - Overview: api/overview.md
+      - Tools: api/tools.md
+      - Reference:
+          - aimq: reference/aimq/index.md
+          - Job: reference/aimq/job.md
+          - Queue: reference/aimq/queue.md
+          - Worker: reference/aimq/worker.md
+          - Attachment: reference/aimq/attachment.md
+          - Config: reference/aimq/config.md
+          - Helpers: reference/aimq/helpers.md
+          - Logger: reference/aimq/logger.md
+          - Utils: reference/aimq/utils.md
+          - Clients:
+              - Overview: reference/aimq/clients/index.md
+              - Supabase: reference/aimq/clients/supabase.md
+          - Commands:
+              - Overview: reference/aimq/commands/index.md
+              - Start: reference/aimq/commands/start.md
+          - Providers:
+              - Overview: reference/aimq/providers/index.md
+              - Base: reference/aimq/providers/base.md
+              - Supabase: reference/aimq/providers/supabase.md
+          - Tools:
+              - Overview: reference/aimq/tools/index.md
+              - OCR:
+                  - Overview: reference/aimq/tools/ocr/index.md
+                  - Image OCR: reference/aimq/tools/ocr/image_ocr.md
+                  - Processor: reference/aimq/tools/ocr/processor.md
+              - PDF:
+                  - Overview: reference/aimq/tools/pdf/index.md
+                  - Page Splitter: reference/aimq/tools/pdf/page_splitter.md
+              - Supabase:
+                  - Overview: reference/aimq/tools/supabase/index.md
+                  - Enqueue: reference/aimq/tools/supabase/enqueue.md
+                  - Read File: reference/aimq/tools/supabase/read_file.md
+                  - Read Record: reference/aimq/tools/supabase/read_record.md
+                  - Write File: reference/aimq/tools/supabase/write_file.md
+                  - Write Record: reference/aimq/tools/supabase/write_record.md
+  - Development:
+      - Contributing: development/contributing.md
+      - Testing: development/testing.md
+      - Release Process: development/release-process.md
