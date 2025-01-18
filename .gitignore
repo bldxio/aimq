@@ -68,7 +68,6 @@ venv/
 
 # Jupyter Notebook
 .ipynb_checkpoints
-*.ipynb
 
 # Distribution / packaging
 MANIFEST
