@@ -66,6 +66,7 @@ nav:
       - Configuration: getting-started/configuration.md
   - User Guide:
       - Overview: user-guide/overview.md
+      - CLI Commands: user-guide/cli.md
       - Queue Processing: user-guide/queue-processing.md
       - Document Processing: user-guide/document-processing.md
       - OCR: user-guide/ocr.md

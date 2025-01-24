@@ -80,7 +80,38 @@ def test_process_job(worker):
 
 ### Mocking
 
+#### Basic Mocking
 Use pytest's monkeypatch for mocking:
+
+```python
+def test_supabase_client(monkeypatch):
+    mock_client = MockSupabaseClient()
+    monkeypatch.setattr("aimq.clients.supabase.client", mock_client)
+    # Test code here
+```
+
+#### Queue Provider Mocking
+Implement the base provider interface for testing:
+
+```python
+from aimq.providers.base import QueueProvider
+
+class MockProvider(QueueProvider):
+    def send(self, queue_name: str, data: dict, delay: int = None) -> int:
+        return random.randint(1000, 9999)  # Mock ID generation
+
+    def read(self, queue_name: str, timeout: int, count: int) -> List[Job]:
+        return [Job(msg_id=1, read_ct=0, message={"test": "data"})]
+```
+
+### Coverage Targets
+
+| Component Type         | Coverage Target |
+|------------------------|-----------------|
+| Queue Providers        | 95%             |
+| Job Model              | 100%            |
+| CLI Commands           | 90%             |
+| Worker Core            | 85%             |
 
 ```python
 def test_supabase_client(monkeypatch):
