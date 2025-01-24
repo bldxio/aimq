@@ -3,7 +3,16 @@ AIMQ command line interface.
 """
 import typer
 
-from .start import app as start_command
+from .start import start
+from .send import send
+from .enable import enable
+from .disable import disable
+from .init import init
 
-app = typer.Typer()
-app.add_typer(start_command)
+app = typer.Typer(no_args_is_help=True)
+
+app.command()(start)
+app.command()(send)
+app.command()(enable)
+app.command()(disable)
+app.command()(init)

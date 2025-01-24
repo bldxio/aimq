@@ -6,6 +6,7 @@ This module provides examples of:
 3. Basic text processing operations
 """
 
+from typing import Dict, Any
 from aimq.worker import Worker
 
 # Create a worker instance to handle task processing
@@ -14,7 +15,7 @@ worker = Worker()
 # Task Definitions
 
 @worker.task()
-def uppercase_text(data: dict) -> dict:
+def uppercase_text(data: Dict[str, Any]) -> Dict[str, str]:
     """Convert input text to uppercase.
     
     Args:
@@ -31,7 +32,7 @@ def uppercase_text(data: dict) -> dict:
     timeout=10,             # Maximum time (in seconds) allowed for task execution
     delete_on_finish=True   # Remove task from queue after successful completion
 )
-def text_statistics(data: dict) -> dict:
+def text_statistics(data: Dict[str, Any]) -> Dict[str, Any]:
     """Calculate basic statistics about the input text.
     
     Args:
