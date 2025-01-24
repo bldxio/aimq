@@ -64,11 +64,40 @@ This document outlines the coding conventions and standards for the AIMQ project
 aimq/
 ├── src/
 │   └── aimq/
-│       ├── tools/         # Processing tools (OCR, etc.)
-├── tests/                 # Test files
-├── docs/                  # Documentation
-└── examples/              # Example code
+│       ├── commands/          # CLI command implementations
+│       │   ├── send.py        # Job sending functionality
+│       │   └── shared/        # Shared CLI components
+│       │       └── paths.py   # Path management utilities
+│       ├── providers/         # Queue provider implementations
+│       │   ├── base.py        # Abstract provider interface
+│       │   └── supabase.py    # Supabase provider implementation
+│       ├── job.py             # Job model definition
+│       ├── queue.py           # Queue management system
+│       ├── worker.py          # Worker thread implementation
+│       ├── logger.py          # Logging infrastructure
+│       ├── helpers.py         # Runnable utilities
+│       └── attachment.py      # File attachment handling
+├── tests/
+│   └── aimq/
+│       └── test_queue.py      # Queue component tests
+├── docs/                      # Documentation
+├── examples/                  # Usage examples
+└── site/                      # Generated documentation assets
 ```
+
+Key components:
+1. **Commands**: CLI interface for interacting with queues
+2. **Providers**: Queue backend implementations (Supabase, etc.)
+3. **Core Models**: Job, Queue, Worker classes for queue operations
+4. **Utilities**: Logging, path management, and runnable helpers
+5. **Attachments**: File handling and processing
+6. **Tests**: Unit and integration tests for core functionality
+
+Missing components (to be documented if present):
+1. `config.py` - Configuration management
+2. `clients/` - API client implementations
+3. Additional test files for other components
+4. Documentation generation assets
 
 ## Testing Standards
 
