@@ -29,22 +29,25 @@ poetry install
 ## Configuration
 
 1. Create a `.env` file in the project root:
+
 ```env
 SUPABASE_URL=your_supabase_url
 SUPABASE_KEY=your_supabase_key
 QUEUE_NAME=your_queue_name
 ```
 
-2. Configure your Supabase project with pgmq following the [official documentation](https://supabase.com/docs/guides/database/extensions/pgmq).
+1. Configure your Supabase project with pgmq following the [official documentation](https://supabase.com/docs/guides/database/extensions/pgmq).
 
 ## Usage
 
 1. Start the processor:
+
 ```bash
 poetry run python -m aimq.processor
 ```
 
 2. Process documents by adding messages to your Supabase queue:
+
 ```python
 from aimq.core import QueueMessage
 

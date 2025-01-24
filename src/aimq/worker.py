@@ -35,7 +35,7 @@ class WorkerThread(threading.Thread):
         self.running = running
         self.idle_wait = idle_wait
 
-    def run(self):
+    def run(self) -> None:
         """Start the worker thread."""
         self.logger.info("Worker thread started")
         
@@ -94,7 +94,7 @@ class Worker(BaseModel):
         timeout: int = 300,
         delete_on_finish: bool = False,
         tags: List[str] | None = None
-    ):
+    ) -> None:
         """Register a task with a queue name and runnable instance.
         
         Args:
@@ -126,7 +126,7 @@ class Worker(BaseModel):
         timeout: int = 300,
         tags: List[str] | None = None,
         delete_on_finish: bool = False,
-    ):
+    ) -> Callable:
         """Decorator to register a function that returns a Runnable with a queue.
         
         Args:
@@ -149,7 +149,7 @@ class Worker(BaseModel):
             return wrapper
         return decorator
     
-    def send(self, queue: str, data: dict[str, Any], delay: int | None = None):
+    def send(self, queue: str, data: dict[str, Any], delay: int | None = None) -> int:
         """Send data to a queue.
 
         Args:
@@ -159,7 +159,7 @@ class Worker(BaseModel):
         """
         return self.queues[queue].send(data, delay)
 
-    def work(self, queue: str):
+    def work(self, queue: str) -> Any:
         """Process a job from a queue.
 
         Args:
@@ -167,7 +167,7 @@ class Worker(BaseModel):
         """
         return self.queues[queue].work()
 
-    def start(self, block: bool = True):
+    def start(self, block: bool = True) -> None:
         """Start processing tasks in an endless loop.
         
         Args:
@@ -183,7 +183,7 @@ class Worker(BaseModel):
         if block:
             self.log(block=block)
 
-    def stop(self):
+    def stop(self) -> None:
         """Stop processing tasks and clear job history."""
         if self.is_running.is_set():
             self.is_running.clear()
@@ -192,7 +192,7 @@ class Worker(BaseModel):
                 self.thread = None
             self.logger.info("Worker stopped")
 
-    def log(self, block: bool = True):
+    def log(self, block: bool = True) -> None:
         """Print log events from the logger.
         
         Args:
@@ -219,7 +219,7 @@ class Worker(BaseModel):
         if not hasattr(module, "worker"):
             raise AttributeError(f"Module {worker_path} does not export a 'worker' attribute")
 
-        worker = module.worker
+        worker: Worker = module.worker
         worker.logger.info(f"Tasks loaded from file {worker_path}")
 
         return worker
