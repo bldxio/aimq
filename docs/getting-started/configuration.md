@@ -4,6 +4,7 @@ AIMQ can be configured through environment variables and requires proper Supabas
 
 ## Supabase Queue Setup
 
+### Queue Configuration
 1. Enable Queue Integration:
    - Go to your Supabase project dashboard
    - Navigate to Database → Extensions
@@ -18,6 +19,22 @@ AIMQ can be configured through environment variables and requires proper Supabas
    - Configure queue settings as needed
 
 For more details, see the [Supabase Queue Documentation](https://supabase.com/docs/guides/queues/quickstart).
+
+## Job Lifecycle
+
+AIMQ jobs follow this lifecycle:
+```python
+class Job(BaseModel):
+    id: int = Field(alias='msg_id')          # Unique message ID
+    attempt: int = Field(alias='read_ct')    # Number of processing attempts
+    data: dict[str, Any] = Field(alias='message')  # Payload data
+    status: str = 'pending'                  # Current status
+    queue: Optional[str] = None              # Associated queue
+```
+
+Job status transitions:
+1. `pending` → `processing` (when popped)
+2. `processing` → `completed`/`failed`/`retrying`
 
 ## Environment Variables
 
