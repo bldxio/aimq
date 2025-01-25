@@ -1,162 +1,138 @@
-# Quick Start Guide
+# AIMQ Quick Start
 
-This guide will help you get started with AIMQ (AI Message Queue) quickly.
+## Installation
 
-## Prerequisites
-
-1. A Supabase project with Queue integration enabled
-2. "Expose Queues via PostgREST" setting turned on
-3. At least one queue created in your Supabase project
-
-## Environment Setup
-
-Configure your environment variables:
-
-```env
-SUPABASE_URL=your-project-url
-SUPABASE_KEY=your-service-role-key
-WORKER_NAME=my-worker  # Optional, defaults to 'peon'
-```
-
-## Using Workers (Recommended)
-
-The Worker class provides a convenient way to define and manage queue processors using decorators.
-
-1. Create a `tasks.py` file to define your queue processors:
-
-```python
-"""
-Example tasks.py file demonstrating queue processors using AIMQ.
-"""
-from aimq import Worker
-from langchain.prompts import ChatPromptTemplate
-from langchain.chat_models import ChatOpenAI
-
-# Initialize the worker
-worker = Worker()
-
-# Define a simple task
-@worker.task(queue="hello_world")
-def hello_world(data):
-    """Simple task that returns a greeting message."""
-    return {"message": f"Hello {data.get('name', 'World')}!"}
-
-# Define a LangChain-powered task
-@worker.task(queue="ai_processor", timeout=300)
-def process_with_ai(data):
-    """Process text using LangChain."""
-    # Create a LangChain runnable
-    prompt = ChatPromptTemplate.from_template("Summarize this text: {text}")
-    model = ChatOpenAI()
-    chain = prompt | model
-    
-    # Process the input
-    return chain.with_config({"text": data.get("text", "")})
-
-if __name__ == "__main__":
-    # This allows the file to be run directly with: python tasks.py
-    worker.start()
-```
-
-2. Run your worker:
-
-Option 1: Using the `aimq start` command:
 ```bash
-# Run tasks.py with default settings
-aimq start tasks.py
+# Install with poetry
+poetry add aimq
 
-# Run with debug logging
-aimq start tasks.py --debug
-
-# Run with specific log level
-aimq start tasks.py --log-level debug
+# Or install globally
+pipx install aimq
 ```
 
-Option 2: Running the file directly:
+## CLI Setup
+
+1. Create `.env` file:
+
 ```bash
-# Run tasks.py directly
-python tasks.py
+cp .env.example .env
+# Edit with your Supabase credentials
 ```
 
-3. Send jobs to your queues:
+1. Basic commands:
+
+```bash
+# Start worker process
+aimq worker --file worker.py
+
+# Send job to queue
+aimq send my_queue '{"key": "value"}'
+
+# Monitor queues
+aimq queues list
+```
+
+## Supabase Setup
+
+1. Enable pgmq in Supabase:
+
+```sql
+-- Run in SQL Editor
+create extension if not exists pgmq;
+select pgmq_create('my_queue');
+```
+
+1. Required permissions:
+
+```sql
+grant usage on schema pgmq to postgres;
+grant all privileges on all tables in schema pgmq to postgres;
+```
+
+## Defining Tasks
+
+### Basic Task Structure
 
 ```python
+# worker.py
 from aimq import Worker
-
-# Create a worker instance (make sure tasks are defined first)
-worker = Worker()
-
-# Send a job to the hello_world queue
-worker.send("hello_world", {"name": "Alice"})
-
-# Send a job to the ai_processor queue
-worker.send("ai_processor", {
-    "text": "LangChain is a framework for developing applications powered by language models."
-})
-```
-
-## Using Queues Directly
-
-You can also use the Queue class directly if you want more control or don't need the Worker abstraction.
-
-```python
-from aimq.queue import Queue
-from langchain.prompts import ChatPromptTemplate
-from langchain.chat_models import ChatOpenAI
 from langchain_core.runnables import RunnableLambda
 
-# Create a processor function
-def process_text(data):
-    prompt = ChatPromptTemplate.from_template("Summarize this text: {text}")
-    model = ChatOpenAI()
-    chain = prompt | model
-    result = chain.invoke({"text": data.get("text", "")})
-    return {"summary": result.content}
+worker = Worker()
 
-# Create a queue with a runnable
-queue = Queue(
-    runnable=RunnableLambda(process_text, name="text_processor"),
-    timeout=300,
-    delete_on_finish=True,
-    tags=["ai", "text"]
-)
-
-# Send a job to the queue
-job_id = queue.send({
-    "text": "LangChain is a framework for developing applications powered by language models."
-})
-
-# Process a single job
-result = queue.work()
+@worker.task(queue="doc_processing")
+def process_docs(data: dict) -> dict:
+    '''Process document with AI chain'''
+    return {"status": "processed", **data}
 ```
 
-## Advanced Features
-
-### Delayed Jobs
+### Using Helpers
 
 ```python
-# Using Worker
-worker.send("hello_world", {"name": "Bob"}, delay=60)
+from aimq.helpers import (
+    echo,
+    select,
+    assign,
+    orig,
+    const
+)
 
-# Using Queue directly
-queue.send({"text": "Process this later"}, delay=60)
+chain = (
+    select(["document", "metadata"])
+    | assign({
+        "text": RunnableLambda(extract_text),
+        "summary": summarizer_chain,
+        "source": orig("queue")
+    })
+    | echo
+)
 ```
 
-### Task Configuration
+## Key Tools
+
+### CLI Tools
+
+```bash
+aimq worker --help  # Show worker options
+aimq send <queue> <json>  # Send single job
+aimq send-batch <queue> <file.json>  # Send batch jobs
+aimq queues list  # List available queues
+```
+
+### Helper Functions
+
+| Helper     | Description                          |
+|------------|--------------------------------------|
+| `echo`     | Print & pass through data            |
+| `select`   | Choose specific data fields          |
+| `assign`   | Create new data fields               |
+| `orig`     | Access original job metadata         |
+| `const`    | Create constant values in chains     |
+
+## Example Workflow
+
+1. Create PDF processing chain:
 
 ```python
-@worker.task(
-    queue="important_task",
-    timeout=600,  # 10 minute timeout
-    delete_on_finish=True,  # Delete instead of archive completed jobs
-    tags=["production", "high-priority"]  # Add metadata tags
-)
-def process_important_task(data):
-    # Process important task
-    return {"status": "completed"}
+# worker.py
+from aimq import Worker, helpers as h
+
+worker = Worker()
+
+@worker.task(queue="pdf_queue")
+def pdf_chain(data: dict) -> dict:
+    return (
+        h.select("pdf_path")
+        | h.assign({
+            "text": PDFTextExtractor(),
+            "pages": h.const(1)
+        })
+        | h.echo
+    )
 ```
 
-## Next Steps
+1. Process jobs:
 
-- Learn more about [configuration options](configuration.md)
-- Explore the [API Reference](../api/overview.md)
+```bash
+aimq worker --file worker.py
+aimq send pdf_queue '{"pdf_path": "doc.pdf"}'
