@@ -15,8 +15,9 @@ class Config(BaseSettings):
     }
     
     # Supabase Configuration
-    supabase_url: str = Field(default='', alias='SUPABASE_URL')
-    supabase_key: str = Field(default='', alias='SUPABASE_KEY')
+    # Defaults to local Supabase instance
+    supabase_url: str = Field(default='http://127.0.0.1:54321', alias='SUPABASE_URL')
+    supabase_key: str = Field(default='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU', alias='SUPABASE_KEY')
 
     # Worker Configuration
     worker_name: str = Field(default='peon', alias='WORKER_NAME')
@@ -24,6 +25,7 @@ class Config(BaseSettings):
     worker_idle_wait: float = Field(default=10.0, alias='WORKER_IDLE_WAIT')
     
     # LangChain Configuration
+    # Used for debugging and tracing using langsmith
     langchain_tracing_v2: bool = Field(default=False, alias='LANGCHAIN_TRACING_V2')
     langchain_endpoint: str = Field(default='https://api.smith.langchain.com', alias='LANGCHAIN_ENDPOINT')
     langchain_api_key: str = Field(default='', alias='LANGCHAIN_API_KEY')

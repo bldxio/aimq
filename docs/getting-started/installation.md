@@ -1,5 +1,15 @@
 # Installation
 
+AIMQ can be installed and used in several ways depending on your needs:
+
+## Command Line Tool (Recommended)
+
+The easiest way to use AIMQ as a command line tool is to install it with `pipx`:
+
+```bash
+pipx install aimq
+```
+
 AIMQ can be installed using pip or poetry. We recommend using poetry for development.
 
 ## Using Poetry (Recommended)

@@ -60,70 +60,35 @@ markdown_extensions:
 
 nav:
   - Home: index.md
+
   - Getting Started:
       - Installation: getting-started/installation.md
       - Quick Start: getting-started/quickstart.md
       - Configuration: getting-started/configuration.md
+
   - User Guide:
       - Overview: user-guide/overview.md
       - CLI Commands: user-guide/cli.md
-      - Queue Processing: user-guide/queue-processing.md
-      - Document Processing: user-guide/document-processing.md
-      - OCR: user-guide/ocr.md
-      - Writing Tasks: user-guide/writing-tasks.md
-      - Helpers: user-guide/helpers.md
-      - Worker Configuration: user-guide/worker-configuration.md
-  - API Reference:
-      - Overview: api/overview.md
-      - Tools: api/tools.md
-      - Reference:
-          - aimq: reference/aimq/index.md
-          - Job: reference/aimq/job.md
-          - Queue: reference/aimq/queue.md
-          - Worker: reference/aimq/worker.md
-          - Attachment: reference/aimq/attachment.md
-          - Config: reference/aimq/config.md
-          - Helpers: reference/aimq/helpers.md
-          - Logger: reference/aimq/logger.md
-          - Utils: reference/aimq/utils.md
-          - Clients:
-              - Overview: reference/aimq/clients/index.md
-              - Supabase: reference/aimq/clients/supabase.md
-          - Commands:
-              - Overview: reference/aimq/commands/index.md
-              - Start: reference/aimq/commands/start.md
-              - Enable: reference/aimq/commands/enable.md
-              - Disable: reference/aimq/commands/disable.md
-              - Init: reference/aimq/commands/init.md
-              - Send: reference/aimq/commands/send.md
-              - Shared:
-                  - Overview: reference/aimq/commands/shared/index.md
-                  - Config: reference/aimq/commands/shared/config.md
-                  - Migration: reference/aimq/commands/shared/migration.md
-                  - Paths: reference/aimq/commands/shared/paths.md
-                  - Templates:
-                      - Tasks: reference/aimq/commands/shared/templates/tasks.md
-          - Providers:
-              - Overview: reference/aimq/providers/index.md
-              - Base: reference/aimq/providers/base.md
-              - Supabase: reference/aimq/providers/supabase.md
-          - Tools:
-              - Overview: reference/aimq/tools/index.md
-              - OCR:
-                  - Overview: reference/aimq/tools/ocr/index.md
-                  - Image OCR: reference/aimq/tools/ocr/image_ocr.md
-                  - Processor: reference/aimq/tools/ocr/processor.md
-              - PDF:
-                  - Overview: reference/aimq/tools/pdf/index.md
-                  - Page Splitter: reference/aimq/tools/pdf/page_splitter.md
-              - Supabase:
-                  - Overview: reference/aimq/tools/supabase/index.md
-                  - Enqueue: reference/aimq/tools/supabase/enqueue.md
-                  - Read File: reference/aimq/tools/supabase/read_file.md
-                  - Read Record: reference/aimq/tools/supabase/read_record.md
-                  - Write File: reference/aimq/tools/supabase/write_file.md
-                  - Write Record: reference/aimq/tools/supabase/write_record.md
-  - Development:
-      - Contributing: development/contributing.md
-      - Testing: development/testing.md
-      - Release Process: development/release-process.md
+      - Supabase Setup: user-guide/supabase-setup.md
+      - Defining Tasks:
+          - Worker: user-guide/defining-tasks/worker.md
+          - Helpers: user-guide/defining-tasks/helpers.md
+          - Tools: user-guide/defining-tasks/tools.md
+          - Langchain: user-guide/defining-tasks/langchain.md
+      - Running Tasks:
+          - Locally: user-guide/running-tasks/local.md
+          - Docker: user-guide/running-tasks/docker.md
+      - Examples:
+          - Basic: user-guide/examples/basic.md
+
+  - Tools:
+      - tools/index.md
+      - Supabase: tools/supabase.md
+      - OCR: tools/ocr.md
+      - PDF: tools/pdf.md
+      - AI: tools/ai.md
+
+  - Community:
+      - Contributing: community/contributing.md
+      - Testing: community/testing.md
+      - Release Process: community/release-process.md
