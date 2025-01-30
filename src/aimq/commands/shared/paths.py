@@ -1,15 +1,28 @@
-import os
-from pathlib import Path
+"""Path management for Supabase AIMQ project structure.
+
+This module provides utilities for managing file and directory paths within
+a Supabase AIMQ project, including migrations and configuration files.
+"""
+
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Optional
 
+
 class ProjectPath:
+    """Manages project-specific paths for Supabase AIMQ integration.
+
+    This class provides a centralized way to handle paths for various
+    project components including Supabase directory, migrations, and
+    configuration files.
+    """
+
     def __init__(self, root: Optional[Path] = None):
-        """
-        Initialize ProjectPath with a root directory.
-        
+        """Initialize ProjectPath with a root directory.
+
         Args:
-            root (Optional[Path]): Root directory path. Defaults to current working directory.
+            root (Optional[Path]): Root directory path. If None, uses current
+                working directory.
         """
         self.root = root or Path.cwd()
 
@@ -61,11 +74,15 @@ class ProjectPath:
 
     @staticmethod
     def get_current_timestamp() -> str:
-        """
-        Get the current UTC timestamp as a string.
+        """Get the current UTC timestamp as a string.
+
         Format: YYYYMMDDHHMMSS (equivalent to Go's 20060102150405)
+
+        Returns:
+            str: Formatted timestamp string.
         """
         return datetime.now(timezone.utc).strftime("%Y%m%d%H%M%S")
+
 
 # Create a default instance for backward compatibility
 default_paths = ProjectPath()

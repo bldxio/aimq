@@ -1,0 +1,26 @@
+{
+  "default": true,
+  "MD013": {
+    "line_length": 88,
+    "code_blocks": false,
+    "tables": false,
+    "headings": false,
+    "strict": false,
+    "stern": false
+  },
+  "MD022": {
+    "lines_above": 1,
+    "lines_below": 1
+  },
+  "MD024": {
+    "siblings_only": true
+  },
+  "MD029": false,
+  "MD031": true,
+  "MD032": true,
+  "MD040": true,
+  "MD041": true,
+  "MD046": {
+    "style": "fenced"
+  }
+}

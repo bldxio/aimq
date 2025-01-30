@@ -1,17 +1,41 @@
-import pytest
+# type: ignore  # mypy is configured to ignore test files in pyproject.toml
+"""Tests for the Supabase record read tool.
+
+This module contains test cases for the ReadRecord tool, which is responsible for
+reading records from Supabase tables. Tests cover initialization, record reading
+with various parameters, and error handling.
+"""
+
 from unittest.mock import Mock, patch
+
+import pytest
+
 from aimq.tools.supabase.read_record import ReadRecord, ReadRecordInput
+
 
 @pytest.fixture
 def read_record_tool():
+    """Create a ReadRecord tool instance for testing."""
     return ReadRecord()
+
 
 @pytest.fixture
 def mock_supabase():
-    with patch('aimq.tools.supabase.read_record.supabase') as mock:
+    """Create a mock Supabase client for testing.
+
+    Returns a mock instance that can be used to verify database interactions.
+    """
+    with patch("aimq.tools.supabase.read_record.supabase") as mock:
         yield mock
 
+
 class TestReadRecord:
+    """Test suite for the ReadRecord tool.
+
+    Tests the functionality of the ReadRecord tool including initialization,
+    record reading with default and custom parameters, and error handling.
+    """
+
     def test_init(self, read_record_tool):
         """Test initialization of ReadRecord tool."""
         assert read_record_tool.name == "read_record"
@@ -24,7 +48,7 @@ class TestReadRecord:
         """Test reading a record with default parameters."""
         record_id = "test-id"
         expected_data = {"id": record_id, "name": "test"}
-        
+
         mock_result = Mock()
         mock_result.data = [expected_data]
         mock_table = Mock()
@@ -35,14 +59,14 @@ class TestReadRecord:
         mock_schema = Mock()
         mock_schema.table.return_value = mock_table
         mock_supabase.client.schema.return_value = mock_schema
-        
+
         result = read_record_tool._run(id=record_id)
-        
+
         assert result == expected_data
-        mock_supabase.client.schema.assert_called_once_with('public')
-        mock_schema.table.assert_called_once_with('records')
-        mock_table.select.assert_called_once_with('*')
-        mock_table.eq.assert_called_once_with('id', record_id)
+        mock_supabase.client.schema.assert_called_once_with("public")
+        mock_schema.table.assert_called_once_with("records")
+        mock_table.select.assert_called_once_with("*")
+        mock_table.eq.assert_called_once_with("id", record_id)
         mock_table.limit.assert_called_once_with(1)
         mock_table.execute.assert_called_once()
 
@@ -52,7 +76,7 @@ class TestReadRecord:
         table = "custom_table"
         select = "id,name"
         expected_data = {"id": record_id, "name": "test"}
-        
+
         mock_result = Mock()
         mock_result.data = [expected_data]
         mock_table = Mock()
@@ -63,21 +87,21 @@ class TestReadRecord:
         mock_schema = Mock()
         mock_schema.table.return_value = mock_table
         mock_supabase.client.schema.return_value = mock_schema
-        
+
         result = read_record_tool._run(id=record_id, table=table, select=select)
-        
+
         assert result == expected_data
-        mock_supabase.client.schema.assert_called_once_with('public')
+        mock_supabase.client.schema.assert_called_once_with("public")
         mock_schema.table.assert_called_once_with(table)
         mock_table.select.assert_called_once_with(select)
-        mock_table.eq.assert_called_once_with('id', record_id)
+        mock_table.eq.assert_called_once_with("id", record_id)
         mock_table.limit.assert_called_once_with(1)
         mock_table.execute.assert_called_once()
 
     def test_record_not_found(self, read_record_tool, mock_supabase):
         """Test behavior when record is not found."""
         record_id = "non-existent-id"
-        
+
         mock_result = Mock()
         mock_result.data = []
         mock_table = Mock()
@@ -88,6 +112,8 @@ class TestReadRecord:
         mock_schema = Mock()
         mock_schema.table.return_value = mock_table
         mock_supabase.client.schema.return_value = mock_schema
-        
-        with pytest.raises(ValueError, match=f"No record found with ID {record_id} in table records"):
+
+        with pytest.raises(
+            ValueError, match="No record found with ID non-existent-id in table records"
+        ):
             read_record_tool._run(id=record_id)

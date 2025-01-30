@@ -1,10 +1,12 @@
 # Contributing to AIMQ
 
-Thank you for your interest in contributing to AIMQ! This document provides guidelines and instructions for contributing to the project.
+Thank you for your interest in contributing to AIMQ! This document provides guidelines
+and instructions for contributing to the project.
 
 ## Branch Strategy
 
 AIMQ follows a strict branching strategy:
+
 - `main`: Production-ready code, only updated through releases
 - `dev`: Development branch where all feature work is integrated
 - Feature branches: Created in your fork for specific features/fixes
@@ -12,24 +14,34 @@ AIMQ follows a strict branching strategy:
 ## Development Setup
 
 1. Fork the repository on GitHub
-2. Clone your fork:
+
+1. Clone your fork:
+
    ```bash
    git clone https://github.com/YOUR_USERNAME/aimq.git
    cd aimq
    ```
-3. Add the original repository as upstream:
+
+1. Add the original repository as upstream:
+
    ```bash
    git remote add upstream https://github.com/ORIGINAL_OWNER/aimq.git
    ```
-4. Install Poetry (package manager):
+
+1. Install Poetry (package manager):
+
    ```bash
    curl -sSL https://install.python-poetry.org | python3 -
    ```
-5. Install dependencies:
+
+1. Install dependencies:
+
    ```bash
    poetry install
    ```
-6. Install pre-commit hooks:
+
+1. Install pre-commit hooks:
+
    ```bash
    poetry run pre-commit install
    ```
@@ -37,6 +49,7 @@ AIMQ follows a strict branching strategy:
 ## Development Workflow
 
 1. Sync your fork with upstream:
+
    ```bash
    git checkout dev
    git fetch upstream
@@ -44,36 +57,42 @@ AIMQ follows a strict branching strategy:
    git push origin dev
    ```
 
-2. Create a new branch for your feature/fix:
+1. Create a new branch for your feature/fix:
+
    ```bash
    git checkout -b feature/your-feature-name
    ```
 
-3. Make your changes following our coding standards (see CONVENTIONS.md):
+1. Make your changes following our coding standards (see CONVENTIONS.md):
+
    - Use type hints for all function parameters and return values
    - Write docstrings for all public functions and classes
    - Follow PEP 8 style guidelines
    - Add tests for new functionality
 
-4. Run tests locally:
+1. Run tests locally:
+
    ```bash
    poetry run pytest
    ```
 
-5. Commit your changes:
+1. Commit your changes:
+
    - Write clear, concise commit messages
    - Reference any relevant issues
 
-6. Push your changes to your fork:
+1. Push your changes to your fork:
+
    ```bash
    git push origin feature/your-feature-name
    ```
 
-7. Create a pull request to the `dev` branch of the main repository
+1. Create a pull request to the `dev` branch of the main repository
 
 ## Code Style
 
 We use several tools to maintain code quality:
+
 - Black for code formatting
 - isort for import sorting
 - Flake8 for style guide enforcement
@@ -99,20 +118,21 @@ These are all configured in the pre-commit hooks.
 ## Pull Request Process
 
 1. Create a pull request from your feature branch to the `dev` branch
-2. Update the README.md with details of changes if needed
-3. Update the CHANGELOG.md with a note describing your changes
-4. Ensure all checks pass (tests, linting, type checking)
-5. Request review from maintainers
-6. Address any review feedback
-7. Once approved, maintainers will merge your PR into `dev`
+1. Update the README.md with details of changes if needed
+1. Update the CHANGELOG.md with a note describing your changes
+1. Ensure all checks pass (tests, linting, type checking)
+1. Request review from maintainers
+1. Address any review feedback
+1. Once approved, maintainers will merge your PR into `dev`
 
 ## Release Process
 
 Releases are handled by repository maintainers only:
+
 1. Create a release branch from `dev`
-2. Update version numbers and CHANGELOG.md
-3. Create a pull request from the release branch to `main`
-4. After approval and merge, tag the release in GitHub
+1. Update version numbers and CHANGELOG.md
+1. Create a pull request from the release branch to `main`
+1. After approval and merge, tag the release in GitHub
 
 ## Questions?
 

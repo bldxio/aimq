@@ -101,13 +101,13 @@ aimq queues list  # List available queues
 
 ### Helper Functions
 
-| Helper     | Description                          |
-|------------|--------------------------------------|
-| `echo`     | Print & pass through data            |
-| `select`   | Choose specific data fields          |
-| `assign`   | Create new data fields               |
-| `orig`     | Access original job metadata         |
-| `const`    | Create constant values in chains     |
+| Helper   | Description                      |
+| -------- | -------------------------------- |
+| `echo`   | Print & pass through data        |
+| `select` | Choose specific data fields      |
+| `assign` | Create new data fields           |
+| `orig`   | Access original job metadata     |
+| `const`  | Create constant values in chains |
 
 ## Example Workflow
 
@@ -136,3 +136,4 @@ def pdf_chain(data: dict) -> dict:
 ```bash
 aimq worker --file worker.py
 aimq send pdf_queue '{"pdf_path": "doc.pdf"}'
+```

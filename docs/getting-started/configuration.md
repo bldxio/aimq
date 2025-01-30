@@ -1,11 +1,14 @@
 # Configuration
 
-AIMQ can be configured through environment variables and requires proper Supabase queue setup.
+AIMQ can be configured through environment variables and requires proper Supabase queue
+setup.
 
 ## Supabase Queue Setup
 
 ### Queue Configuration
+
 1. Enable Queue Integration:
+
    - Go to your Supabase project dashboard
    - Navigate to Database → Extensions
    - Enable the "pg_net" and "pg_cron" extensions if not already enabled
@@ -13,16 +16,19 @@ AIMQ can be configured through environment variables and requires proper Supabas
    - Click "Enable Queue"
    - Make sure to enable "Expose Queues via PostgREST"
 
-2. Create Queues:
+1. Create Queues:
+
    - In the Queues interface, click "Create a new queue"
    - Give your queue a name (this will be referenced in your `@worker.task` decorators)
    - Configure queue settings as needed
 
-For more details, see the [Supabase Queue Documentation](https://supabase.com/docs/guides/queues/quickstart).
+For more details, see the
+[Supabase Queue Documentation](https://supabase.com/docs/guides/queues/quickstart).
 
 ## Job Lifecycle
 
 AIMQ jobs follow this lifecycle:
+
 ```python
 class Job(BaseModel):
     id: int = Field(alias='msg_id')          # Unique message ID
@@ -33,8 +39,9 @@ class Job(BaseModel):
 ```
 
 Job status transitions:
+
 1. `pending` → `processing` (when popped)
-2. `processing` → `completed`/`failed`/`retrying`
+1. `processing` → `completed`/`failed`/`retrying`
 
 ## Environment Variables
 
@@ -76,16 +83,19 @@ WORKER_NAME=my-worker
 Since this project uses Poetry for dependency management, you can:
 
 1. Install dependencies:
+
 ```bash
 poetry install
 ```
 
-2. Run with environment variables:
+1. Run with environment variables:
+
 ```bash
 poetry run python -m aimq.worker
 ```
 
 Or use your `.env` file:
+
 ```bash
 poetry run python -m aimq.worker
 ```
@@ -114,4 +124,5 @@ worker = Worker(
 ## Next Steps
 
 - See the [Quick Start Guide](quickstart.md) for usage examples
-- Learn about [Worker Configuration](../user-guide/worker-configuration.md) for advanced settings
+- Learn about [Worker Configuration](../user-guide/worker-configuration.md) for advanced
+  settings

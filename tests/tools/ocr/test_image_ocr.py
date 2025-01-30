@@ -1,17 +1,21 @@
+# type: ignore  # mypy is configured to ignore test files in pyproject.toml
 """Test the ImageOCR tool."""
-import pytest
-from unittest.mock import Mock, patch, MagicMock
+
 from io import BytesIO
+from unittest.mock import MagicMock, Mock
+
 import numpy as np
+import pytest
 from PIL import Image
 
+from aimq.attachment import Attachment
 from aimq.tools.ocr.image_ocr import ImageOCR
 from aimq.tools.ocr.processor import OCRProcessor
-from aimq.attachment import Attachment
 
 
 class MockOCRProcessor(OCRProcessor):
     """Mock OCR processor for testing."""
+
     def __init__(self):
         """Initialize the mock processor."""
         super().__init__()
@@ -36,7 +40,7 @@ def sample_image():
     # Create a small test image
     img = Image.fromarray(np.zeros((100, 100, 3), dtype=np.uint8))
     img_bytes = BytesIO()
-    img.save(img_bytes, format='PNG')
+    img.save(img_bytes, format="PNG")
     img_bytes.seek(0)
 
     attachment = MagicMock(spec=Attachment)
@@ -59,8 +63,7 @@ def test_image_ocr_run_success(image_ocr, mock_processor, sample_image):
     results = image_ocr._run(sample_image)
 
     mock_processor.process_image.assert_called_once_with(
-        image=sample_image.data,
-        save_debug_image=False
+        image=sample_image.data, save_debug_image=False
     )
     assert results == expected_results
 
@@ -70,15 +73,14 @@ def test_image_ocr_run_with_debug(image_ocr, mock_processor, sample_image):
     expected_results = {
         "text": "sample text",
         "time": 1.0,
-        "debug_image": b"debug image data"
+        "debug_image": b"debug image data",
     }
     mock_processor.process_image.return_value = expected_results
 
     results = image_ocr._run(sample_image, save_debug_image=True)
 
     mock_processor.process_image.assert_called_once_with(
-        image=sample_image.data,
-        save_debug_image=True
+        image=sample_image.data, save_debug_image=True
     )
     assert results == expected_results
 
@@ -101,7 +103,6 @@ async def test_image_ocr_arun(image_ocr, mock_processor, sample_image):
     results = await image_ocr._arun(sample_image)
 
     mock_processor.process_image.assert_called_once_with(
-        image=sample_image.data,
-        save_debug_image=False
+        image=sample_image.data, save_debug_image=False
     )
     assert results == expected_results

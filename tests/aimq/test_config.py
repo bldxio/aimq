@@ -1,23 +1,38 @@
-import pytest
-from pathlib import Path
-from aimq.config import Config
-from pydantic_settings import BaseSettings
+# type: ignore  # mypy is configured to ignore test files in pyproject.toml
+"""Tests for the configuration module.
+
+This module contains test cases for the Config class, which handles
+application configuration and environment variable management.
+"""
+
 import os
+from typing import Generator
+
+import pytest
+
+from aimq.config import Config
 
 
 @pytest.fixture
-def clean_env():
-    """Fixture to provide a clean environment."""
+def clean_env() -> Generator[None, None, None]:
+    """Fixture to provide a clean environment.
+
+    Yields:
+        None: This fixture doesn't yield any value.
+    """
     old_env = dict(os.environ)
     os.environ.clear()
     yield
     os.environ.update(old_env)
 
 
-def test_default_values(clean_env):
-    """Test default configuration values."""
+def test_default_values(clean_env: None) -> None:
+    """Test default configuration values.
 
-    # Create a new config class that doesn't load from environment
+    Args:
+        clean_env: Fixture that provides a clean environment.
+    """
+
     class TestConfig(Config):
         model_config = {
             "case_sensitive": False,
@@ -29,8 +44,13 @@ def test_default_values(clean_env):
     config = TestConfig()
 
     # Supabase Configuration
-    assert config.supabase_url == ""
-    assert config.supabase_key == ""
+    assert config.supabase_url == "http://127.0.0.1:54321"
+    assert config.supabase_key == (
+        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9."
+        "eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIs"
+        "ImV4cCI6MTk4MzgxMjk5Nn0."
+        "EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU"
+    )
 
     # Worker Configuration
     assert config.worker_name == "peon"
@@ -48,10 +68,13 @@ def test_default_values(clean_env):
     assert config.openai_api_key == ""
 
 
-def test_environment_override(clean_env):
-    """Test environment variable overrides."""
+def test_environment_override(clean_env: None) -> None:
+    """Test environment variable overrides.
 
-    # Create a new config class that doesn't load from .env file
+    Args:
+        clean_env: Fixture that provides a clean environment.
+    """
+
     class TestConfig(Config):
         model_config = {
             "case_sensitive": False,
@@ -60,16 +83,18 @@ def test_environment_override(clean_env):
             "extra": "ignore",
         }
 
-    # Set environment variables
-    env = {
-        "WORKER_NAME": "test_worker",
-        "WORKER_LOG_LEVEL": "debug",
-        "WORKER_IDLE_WAIT": 5.0,
-        "SUPABASE_URL": "https://test.supabase.co",
-        "SUPABASE_KEY": "test_key",
-    }
+    # Set environment variables with proper types
+    os.environ.update(
+        {
+            "WORKER_NAME": "test_worker",
+            "WORKER_LOG_LEVEL": "debug",
+            "WORKER_IDLE_WAIT": "5.0",  # Must be string for env var
+            "SUPABASE_URL": "https://test.supabase.co",
+            "SUPABASE_KEY": "test_key",
+        }
+    )
 
-    config = TestConfig(**env)
+    config = TestConfig()
 
     assert config.worker_name == "test_worker"
     assert config.worker_log_level == "debug"
