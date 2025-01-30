@@ -1,6 +1,7 @@
 # Tools Overview
 
-This section provides detailed information about the various tools and integrations available in AIMQ:
+This section provides detailed information about the various tools and integrations
+available in AIMQ:
 
 - [Supabase Integration](supabase.md) - Working with Supabase and PGMQ
 - [OCR Tools](ocr.md) - Optical Character Recognition capabilities

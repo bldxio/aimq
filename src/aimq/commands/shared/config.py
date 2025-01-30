@@ -1,13 +1,25 @@
+"""Configuration management for Supabase integration with PGMQ."""
+
 import shutil
-import tomlkit
-from tomlkit import TOMLDocument, items
 from pathlib import Path
-from typing import Dict, Any
+from typing import TYPE_CHECKING
+
+import tomlkit
+from tomlkit import TOMLDocument
 
 from .paths import ProjectPath
 
+if TYPE_CHECKING:
+    from tomlkit.items import Array, Table
+
 
 class SupabaseConfig:
+    """Manages Supabase configuration for PGMQ integration.
+
+    This class handles loading, saving, and modifying the Supabase configuration
+    file (config.toml) required for PGMQ integration.
+    """
+
     def __init__(self, project_path: ProjectPath):
         """
         Initialize SupabaseConfig with a ProjectPath instance.
@@ -31,13 +43,13 @@ class SupabaseConfig:
         return self._config
 
     def load(self) -> TOMLDocument:
-        """
-        Load the Supabase config from config.toml file.
+        """Load the Supabase config from config.toml file.
+
         Creates config from template if it doesn't exist.
         Ensures api.schemas exists in the config.
 
         Returns:
-            TOMLDocument: Loaded configuration
+            TOMLDocument: Loaded configuration.
         """
         if not self.project_path.supabase_config.exists():
             self._create_from_template()
@@ -49,34 +61,33 @@ class SupabaseConfig:
         if "api" not in self._config:
             self._config.add("api", tomlkit.table())
 
-        api_table: items.Table = self._config["api"]  # type: ignore
+        api_table: Table = self._config["api"]  # type: ignore
         if "schemas" not in api_table:
             api_table.add("schemas", tomlkit.array())
 
         return self._config
 
     def save(self) -> None:
-        """Save the current configuration back to config.toml"""
+        """Save the current configuration back to config.toml."""
         with open(self.project_path.supabase_config, "w") as f:
             tomlkit.dump(self.config, f)
 
     def _create_from_template(self) -> None:
-        """Create a new config.toml from the template"""
+        """Create a new config.toml from the template."""
         template_path = Path(__file__).parent / "templates" / "config.toml"
         self.project_path.supabase.mkdir(parents=True, exist_ok=True)
         shutil.copy2(template_path, self.project_path.supabase_config)
 
     def enable(self) -> None:
-        """Enable PGMQ in Supabase by adding pgmq_public to API schemas"""
-        schemas: items.Array = self.config["api"]["schemas"]  # type: ignore
+        """Enable PGMQ in Supabase by adding pgmq_public to API schemas."""
+        schemas: Array = self.config["api"]["schemas"]  # type: ignore
         if "pgmq_public" not in schemas:
             schemas.append("pgmq_public")
             self.save()
 
     def disable(self) -> None:
-        """Disable PGMQ in Supabase by removing pgmq_public from API schemas"""
-        schemas: items.Array = self.config["api"]["schemas"]  # type: ignore
+        """Disable PGMQ in Supabase by removing pgmq_public from API schemas."""
+        schemas: Array = self.config["api"]["schemas"]  # type: ignore
         if "pgmq_public" in schemas:
             schemas.remove("pgmq_public")
             self.save()
-

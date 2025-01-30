@@ -6,7 +6,7 @@ This guide covers the testing practices and requirements for AIMQ.
 
 Tests are organized to mirror the source code structure:
 
-```
+```markdown
 tests/
 ├── aimq/
 │   ├── test_worker.py
@@ -25,21 +25,25 @@ tests/
 ## Running Tests
 
 Run all tests:
+
 ```bash
 poetry run pytest
 ```
 
 Run with coverage:
+
 ```bash
 poetry run pytest --cov=src
 ```
 
 Run specific test file:
+
 ```bash
 poetry run pytest tests/aimq/test_worker.py
 ```
 
 Run tests matching a pattern:
+
 ```bash
 poetry run pytest -k "test_process"
 ```
@@ -49,11 +53,13 @@ poetry run pytest -k "test_process"
 ### Test Requirements
 
 1. **Coverage Requirements**
+
    - Minimum 80% code coverage for new code
    - Critical components require 90%+ coverage
    - Integration tests required for public APIs
 
-2. **Test Types**
+1. **Test Types**
+
    - Unit Tests: Test individual components in isolation
    - Integration Tests: Test component interactions
    - Functional Tests: Test complete features
@@ -81,6 +87,7 @@ def test_process_job(worker):
 ### Mocking
 
 #### Basic Mocking
+
 Use pytest's monkeypatch for mocking:
 
 ```python
@@ -91,6 +98,7 @@ def test_supabase_client(monkeypatch):
 ```
 
 #### Queue Provider Mocking
+
 Implement the base provider interface for testing:
 
 ```python
@@ -106,12 +114,12 @@ class MockProvider(QueueProvider):
 
 ### Coverage Targets
 
-| Component Type         | Coverage Target |
-|------------------------|-----------------|
-| Queue Providers        | 95%             |
-| Job Model              | 100%            |
-| CLI Commands           | 90%             |
-| Worker Core            | 85%             |
+| Component Type  | Coverage Target |
+| --------------- | --------------- |
+| Queue Providers | 95%             |
+| Job Model       | 100%            |
+| CLI Commands    | 90%             |
+| Worker Core     | 85%             |
 
 ```python
 def test_supabase_client(monkeypatch):
@@ -131,6 +139,6 @@ Our GitHub Actions pipeline runs tests on:
 The pipeline:
 
 1. Runs all tests
-2. Generates coverage report
-3. Checks code style
-4. Builds documentation
+1. Generates coverage report
+1. Checks code style
+1. Builds documentation

@@ -1,28 +1,59 @@
-from datetime import datetime
-from typing import Any, List, Optional
-from pydantic import BaseModel, Field, ConfigDict
+"""Queue module for AIMQ.
+
+This module provides queue management functionality for AIMQ, including job processing,
+batch operations, and queue configuration. It supports different queue providers and
+integrates with LangChain runnables for job processing.
+"""
+
+from typing import Any, List
+
 from langchain_core.runnables import Runnable, RunnableConfig
-from .providers import QueueProvider, SupabaseQueueProvider
+from pydantic import BaseModel, ConfigDict, Field
+
 from .job import Job
 from .logger import Logger
-from aimq import config, job
+from .providers import QueueProvider, SupabaseQueueProvider
+
 
 class QueueNotFoundError(Exception):
     """Raised when attempting to access a queue that does not exist."""
+
     pass
+
 
 class Queue(BaseModel):
     """A queue class that manages workflows with configurable parameters."""
+
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     runnable: Runnable = Field(description="Langchain runnable to process jobs")
-    timeout: int = Field(default=300, description="Maximum time in seconds for a task to complete. If 0, messages will be popped instead of read.")
-    tags: List[str] = Field(default_factory=list, description="List of tags associated with the queue")
-    worker_name: str = Field(default="peon", description="Name of the worker processing this queue")
-    delay: int = Field(default=0, ge=0, description="Delay in seconds between processing tasks")
-    delete_on_finish: bool = Field(default=False, description="Whether to delete (True) or archive (False) jobs after processing")
-    provider: QueueProvider = Field(default_factory=SupabaseQueueProvider, description="Queue provider implementation")
-    logger: Logger = Field(default_factory=Logger, description="Logger instance to use for queue events")
+    timeout: int = Field(
+        default=300,
+        description=(
+            "Maximum time in seconds for a task to complete. "
+            "If 0, messages will be popped instead of read."
+        ),
+    )
+    tags: List[str] = Field(
+        default_factory=list, description="List of tags associated with the queue"
+    )
+    worker_name: str = Field(
+        default="peon", description="Name of the worker processing this queue"
+    )
+    delay: int = Field(
+        default=0, ge=0, description="Delay in seconds between processing tasks"
+    )
+    delete_on_finish: bool = Field(
+        default=False,
+        description="Whether to delete (True) or archive (False) jobs after processing",
+    )
+    provider: QueueProvider = Field(
+        default_factory=SupabaseQueueProvider,
+        description="Queue provider implementation",
+    )
+    logger: Logger = Field(
+        default_factory=Logger, description="Logger instance to use for queue events"
+    )
 
     @property
     def name(self) -> str:
@@ -35,11 +66,11 @@ class Queue(BaseModel):
 
     def send(self, data: dict[str, Any], delay: int | None = None) -> int:
         """Add a message to the queue.
-        
+
         Args:
             data: Data payload to send
             delay: Optional delay in seconds before the message becomes visible
-            
+
         Returns:
             int: The ID of the added message
         """
@@ -47,13 +78,15 @@ class Queue(BaseModel):
         self.logger.info(f"Sent job {job_id} to queue {self.name}", data)
         return job_id
 
-    def send_batch(self, data_list: list[dict[str, Any]], delay: int | None = None) -> List[int]:
+    def send_batch(
+        self, data_list: list[dict[str, Any]], delay: int | None = None
+    ) -> List[int]:
         """Add a batch of messages to the queue.
-        
+
         Args:
             data_list: List of data payloads to send
             delay: Optional delay in seconds before the messages become visible
-            
+
         Returns:
             List[int]: List of IDs of added messages
         """
@@ -63,7 +96,7 @@ class Queue(BaseModel):
 
     def next(self) -> Job | None:
         """Check for new jobs in the queue.
-        
+
         Returns:
             Optional[Job]: Next job if available, None otherwise
         """
@@ -82,21 +115,21 @@ class Queue(BaseModel):
 
     def get_runtime_config(self, job: Job) -> RunnableConfig:
         """Create a runtime configuration for the job.
-        
+
         Args:
             job: The job to create configuration for
-            
+
         Returns:
             RunnableConfig: Configuration for running the job
         """
         return RunnableConfig(
             metadata={
                 "worker": self.worker_name,
-                "queue": self.name, 
-                "job": job.id, 
-            }, 
+                "queue": self.name,
+                "job": job.id,
+            },
             tags=self.tags,
-            configurable=job.data
+            configurable=job.data,
         )
 
     def run(self, job: Job) -> Any:
@@ -106,14 +139,14 @@ class Queue(BaseModel):
 
     def work(self) -> Any:
         """Process jobs in the queue using the configured runnable.
-        
+
         Returns:
             Any: Result from processing each job
         """
         job = self.next()
         if job is None:
             return None
-        
+
         self.logger.info(f"Processing job {job.id} in queue {self.name}", job.data)
         try:
             result = self.run(job)
@@ -126,20 +159,20 @@ class Queue(BaseModel):
 
     def finish(self, job: Job) -> bool:
         """Finish processing a job.
-        
+
         If the job was popped, do nothing.
         Otherwise, either archive or delete based on delete_on_finish setting.
-        
+
         Args:
             job: The job to finish
-            
+
         Returns:
             bool: True if the operation was successful
         """
         if job._popped:
             self.logger.debug(f"Job {job.id} was popped, no cleanup needed")
             return True
-            
+
         try:
             if self.delete_on_finish:
                 self.provider.delete(self.name, job.id)

@@ -45,7 +45,8 @@ These dependencies will be automatically installed when you install AIMQ.
 
 ## Configuration
 
-After installation, you'll need to configure your Supabase credentials. Create a `.env` file in your project root:
+After installation, you'll need to configure your Supabase credentials. Create a `.env`
+file in your project root:
 
 ```bash
 SUPABASE_URL=your-project-url

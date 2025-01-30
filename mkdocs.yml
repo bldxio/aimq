@@ -68,6 +68,7 @@ nav:
 
   - User Guide:
       - Overview: user-guide/overview.md
+      - Architecture: user-guide/architecture.md
       - CLI Commands: user-guide/cli.md
       - Supabase Setup: user-guide/supabase-setup.md
       - Defining Tasks:

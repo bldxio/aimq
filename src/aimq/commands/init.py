@@ -5,28 +5,36 @@ directory structure and configuration files.
 """
 
 from pathlib import Path
-import os
-import typer
 from typing import Optional
+
+import typer
 
 from aimq.commands.shared.config import SupabaseConfig
 from aimq.commands.shared.migration import SupabaseMigrations
 from aimq.commands.shared.paths import ProjectPath
 
+DIRECTORY_ARG = typer.Argument(
+    default=None,
+    help="Directory to initialize AIMQ project in",
+)
 
-def init(directory: Optional[str] = typer.Argument(None, help="Directory to initialize AIMQ project in")) -> None:
+
+def init(
+    directory: Optional[str] = DIRECTORY_ARG,
+) -> None:
     """Initialize a new AIMQ project in the specified directory.
-    
-    Creates the required directory structure and configuration files for a new AIMQ project.
-    If no directory is specified, initializes in the current directory.
-    
+
+    Creates the required directory structure and configuration files for a new AIMQ
+    project. If no directory is specified, initializes in the current directory.
+
     Args:
-        directory: Optional directory path to initialize project in. Defaults to current directory.
-        
+        directory: Directory to initialize project in. Defaults to current directory.
+
     Raises:
         typer.Exit: If project initialization fails, exits with status code 1.
         FileNotFoundError: If template files cannot be found.
-        PermissionError: If directory creation or file operations fail due to permissions.
+        PermissionError: If directory creation or file operations fail due to
+            permissions.
     """
     try:
         # Convert directory to absolute Path
@@ -46,7 +54,7 @@ def init(directory: Optional[str] = typer.Argument(None, help="Directory to init
         config = SupabaseConfig(project_path)
         config.enable()  # Ensure pgmq_public is enabled
 
-        # Create setup migration
+        # Initialize Supabase migrations
         migrations = SupabaseMigrations(project_path)
         migrations.setup_aimq_migration()
 
@@ -58,5 +66,8 @@ def init(directory: Optional[str] = typer.Argument(None, help="Directory to init
 
         typer.echo(f"Successfully initialized AIMQ project in {project_path.root}")
     except Exception as e:
-        typer.echo(f"Failed to initialize AIMQ project: {str(e)}", err=True)
+        typer.echo(
+            "Failed to initialize AIMQ project: " f"{str(e)}",
+            err=True,
+        )
         raise typer.Exit(1)

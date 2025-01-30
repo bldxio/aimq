@@ -1,6 +1,21 @@
+# type: ignore  # mypy is configured to ignore test files in pyproject.toml
+"""Tests for the helper functions module.
+
+This module contains test cases for various helper functions that provide
+utility operations for the AIMQ system, such as echo, select, pick,
+assign, and constant value operations.
+"""
+
 import pytest
-from aimq.helpers import echo, select, const, assign, pick, orig
-from langchain_core.runnables import RunnablePassthrough, RunnableParallel, RunnablePick, RunnableAssign
+from langchain_core.runnables import (
+    RunnableAssign,
+    RunnableParallel,
+    RunnablePassthrough,
+    RunnablePick,
+)
+
+from aimq.helpers import assign, const, echo, orig, pick, select
+
 
 class TestHelpers:
     """Test cases for helper functions."""
@@ -50,7 +65,7 @@ class TestHelpers:
         test_dict = {"key1": "value1", "key2": "value2"}
         runnable = assign(test_dict)
         assert isinstance(runnable, RunnableAssign)
-        
+
         # Test with empty dict
         empty_runnable = assign({})
         assert isinstance(empty_runnable, RunnableAssign)
@@ -61,7 +76,7 @@ class TestHelpers:
         single_runnable = pick("test_key")
         assert isinstance(single_runnable, RunnablePick)
         assert single_runnable.keys == "test_key"
-        
+
         # Test with list of keys
         multi_runnable = pick(["key1", "key2"])
         assert isinstance(multi_runnable, RunnablePick)
@@ -73,7 +88,7 @@ class TestHelpers:
         runnable = orig()
         result = runnable.invoke({}, {"configurable": {"test": "value"}})
         assert result == {"test": "value"}
-        
+
         # Test with key
         runnable = orig("test")
         result = runnable.invoke({}, {"configurable": {"test": "value"}})

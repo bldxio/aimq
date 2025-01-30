@@ -5,15 +5,17 @@ worker tasks in AIMQ. These templates can be used as starting points for creatin
 your own task definitions.
 """
 
-from typing import Dict, Any
+from typing import Any, Dict
+
 from aimq.worker import Worker
 
 # Create a worker instance to handle task processing
 worker = Worker()
 
+
 @worker.task()
 def example(data: Dict[str, Any]) -> Dict[str, str]:
-    """Example task that converts input text to uppercase.
+    """Convert input text to uppercase.
 
     This is a simple example task that demonstrates the basic pattern for
     creating worker tasks in AIMQ. It takes a dictionary with a 'text' key
@@ -31,10 +33,10 @@ def example(data: Dict[str, Any]) -> Dict[str, str]:
         assert result['result'] == 'HELLO'
         ```
     """
-    text = data.get('text', '')
-    return {'result': text.upper()}
+    text = data.get("text", "")
+    return {"result": text.upper()}
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # Start the worker to begin processing tasks from all queues
     worker.start()

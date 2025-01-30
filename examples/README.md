@@ -1,6 +1,7 @@
 # AIMQ Examples
 
-This directory contains examples demonstrating how to use AIMQ with Supabase for document processing.
+This directory contains examples demonstrating how to use AIMQ with Supabase for
+document processing.
 
 ## Prerequisites
 
@@ -11,38 +12,46 @@ This directory contains examples demonstrating how to use AIMQ with Supabase for
 ## Local Development Setup
 
 1. Start the local Supabase instance:
+
    ```bash
    supabase start
    ```
 
-2. Note down the following credentials (they will be displayed after starting):
+1. Note down the following credentials (they will be displayed after starting):
+
    - API URL
    - anon key
    - service_role key
    - DB URL
 
-3. Create a `.env` file in the examples directory:
+1. Create a `.env` file in the examples directory:
+
    ```bash
    SUPABASE_URL=http://127.0.0.1:54321
    SUPABASE_KEY=your-service-role-key
    SUPABASE_USER_ID=00000000-0000-0000-0000-000000000000
    ```
 
-4. Upload a test document:
+1. Upload a test document:
+
    ```bash
    python upload_document.py
    ```
-   This will upload the test PDF from `supabase/seed/test.pdf` using AIMQ's Supabase client.
 
-5. Run the example tasks:
-   
+   This will upload the test PDF from `supabase/seed/test.pdf` using AIMQ's Supabase
+   client.
+
+1. Run the example tasks:
+
    Option 1 - Using AIMQ CLI (Recommended):
+
    ```bash
    # Start the worker to process tasks
    aimq start upload_document.py
    ```
 
    Option 2 - Running the script directly:
+
    ```bash
    # The script will start its own worker
    python upload_document.py
@@ -60,11 +69,13 @@ This directory contains examples demonstrating how to use AIMQ with Supabase for
 ## Available Examples
 
 1. Document Upload (`upload_document.py`):
+
    - Upload a document to Supabase Storage
    - Create document metadata
    - Uses AIMQ's Supabase client
 
-2. Document Processing (`supabase_tasks.py`):
+1. Document Processing (`supabase_tasks.py`):
+
    - Process uploaded documents using AIMQ
    - Store results back in Supabase
    - Handle document queues with PGMQ

@@ -1,45 +1,65 @@
-import pytest
+"""Tests for the Supabase client implementation.
+
+This module contains test cases for the SupabaseClient class, which handles
+interactions with the Supabase backend service. Tests cover initialization,
+error handling, and basic operations.
+"""
+
 import os
 from unittest.mock import patch
+
+import pytest
+
 from aimq.clients.supabase import SupabaseClient, SupabaseError
+
 
 @pytest.fixture
 def supabase_client():
     """Fixture for SupabaseClient with mocked environment variables."""
-    original_url = os.environ.get('SUPABASE_URL')
-    original_key = os.environ.get('SUPABASE_KEY')
-    
-    os.environ['SUPABASE_URL'] = 'http://test.url'
-    os.environ['SUPABASE_KEY'] = 'test-key'
-    
+    original_url = os.environ.get("SUPABASE_URL")
+    original_key = os.environ.get("SUPABASE_KEY")
+
+    os.environ["SUPABASE_URL"] = "http://test.url"
+    os.environ["SUPABASE_KEY"] = "test-key"
+
     # Clear the config cache to ensure it picks up new env vars
     from aimq.config import get_config
+
     get_config.cache_clear()
-    
+
     client = SupabaseClient()
     yield client
-    
+
     # Restore original environment
     if original_url:
-        os.environ['SUPABASE_URL'] = original_url
+        os.environ["SUPABASE_URL"] = original_url
     else:
-        del os.environ['SUPABASE_URL']
-        
+        del os.environ["SUPABASE_URL"]
+
     if original_key:
-        os.environ['SUPABASE_KEY'] = original_key
+        os.environ["SUPABASE_KEY"] = original_key
     else:
-        del os.environ['SUPABASE_KEY']
-    
+        del os.environ["SUPABASE_KEY"]
+
     # Clear the config cache again
     get_config.cache_clear()
 
+
 class TestSupabaseClient:
+    """Test suite for SupabaseClient class.
+
+    Tests the initialization, configuration, and error handling of the SupabaseClient
+    class, ensuring proper interaction with the Supabase backend service.
+    """
+
     def test_client_initialization_with_missing_config(self):
         """Test client initialization fails when config is missing."""
         from aimq.config import config
-        
-        with patch.object(config, 'supabase_url', ''), \
-             patch.object(config, 'supabase_key', ''):
+
+        with (
+            patch.object(config, "supabase_url", ""),
+            patch.object(config, "supabase_key", ""),
+        ):
             client = SupabaseClient()
             with pytest.raises(SupabaseError, match="Supabase client not configured"):
                 _ = client.client

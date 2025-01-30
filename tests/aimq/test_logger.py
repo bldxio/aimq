@@ -1,6 +1,14 @@
+# type: ignore  # mypy is configured to ignore test files in pyproject.toml
+"""Tests for the logger module.
+
+This module contains test cases for the Logger class and its components,
+including log levels, event handling, and message formatting.
+"""
+
 import pytest
-from queue import Empty
-from aimq.logger import Logger, LogLevel, LogEvent
+
+from aimq.logger import LogEvent, Logger, LogLevel
+
 
 class TestLogger:
     """Test cases for Logger class."""
@@ -14,21 +22,26 @@ class TestLogger:
         """Test all logging levels."""
         test_msg = "test message"
         test_data = {"key": "value"}
-        
+
         # Test each log level
         logger.debug(test_msg, test_data)
         logger.info(test_msg, test_data)
         logger.warning(test_msg, test_data)
         logger.error(test_msg, test_data)
         logger.critical(test_msg, test_data)
-        
+
         # Verify events
         events = list(logger.events(block=False))
         assert len(events) == 5
-        
-        levels = [LogLevel.DEBUG, LogLevel.INFO, LogLevel.WARNING, 
-                 LogLevel.ERROR, LogLevel.CRITICAL]
-        
+
+        levels = [
+            LogLevel.DEBUG,
+            LogLevel.INFO,
+            LogLevel.WARNING,
+            LogLevel.ERROR,
+            LogLevel.CRITICAL,
+        ]
+
         for event, level in zip(events, levels):
             assert isinstance(event, LogEvent)
             assert event.level == level
@@ -39,7 +52,7 @@ class TestLogger:
         """Test events iterator with blocking behavior."""
         logger.info("test")
         logger.stop()
-        
+
         events = list(logger.events(block=True))
         assert len(events) == 1
         assert events[0].msg == "test"
@@ -55,11 +68,12 @@ class TestLogger:
         logger.info("info message")
         logger.warning("warning message")
         logger.stop()
-        
+
         # Print only WARNING and above
-        logger.print(block=True, level=LogLevel.WARNING)
+        for _ in logger.print(block=True, level=LogLevel.WARNING):
+            pass
         captured = capsys.readouterr()
-        
+
         assert "debug message" not in captured.out
         assert "info message" not in captured.out
         assert "warning message" in captured.out
@@ -68,6 +82,6 @@ class TestLogger:
         """Test print method with string level parameter."""
         logger.info("test message")
         logger.stop()
-        
+
         # Should not raise an error
         logger.print(block=True, level="info")

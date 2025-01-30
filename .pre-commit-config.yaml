@@ -1,6 +1,6 @@
 repos:
 - repo: https://github.com/pre-commit/pre-commit-hooks
-  rev: v4.5.0
+  rev: v5.0.0
   hooks:
     - id: trailing-whitespace
     - id: end-of-file-fixer
@@ -11,29 +11,53 @@ repos:
     - id: detect-private-key
 
 - repo: https://github.com/psf/black
-  rev: 23.12.1
+  rev: 24.10.0
   hooks:
     - id: black
       language_version: python3.11
+      args: ["--line-length", "88"]
 
 - repo: https://github.com/pycqa/isort
   rev: 5.13.2
   hooks:
     - id: isort
       name: isort (python)
-      args: ["--profile", "black"]
+      args: ["--profile", "black", "--line-length", "88"]
 
 - repo: https://github.com/pycqa/flake8
-  rev: 7.0.0
+  rev: 7.1.1
   hooks:
     - id: flake8
+      args: ["--max-line-length", "88"]
       additional_dependencies:
         - flake8-docstrings
         - flake8-bugbear
         - flake8-comprehensions
+        - pydocstyle>=6.0.0
 
 - repo: https://github.com/pre-commit/mirrors-mypy
-  rev: v1.8.0
+  rev: v1.14.1
   hooks:
     - id: mypy
       exclude: ^tests/
+      args: ["--ignore-missing-imports", "--check-untyped-defs"]
+
+- repo: https://github.com/executablebooks/mdformat
+  rev: 0.7.21
+  hooks:
+    - id: mdformat
+      name: Format markdown
+      args: ["--wrap", "88"]
+      additional_dependencies:
+        - mdformat-gfm  # GitHub-Flavored Markdown
+        - mdformat-frontmatter  # YAML frontmatter
+        - mdformat-footnote  # Footnotes
+        - mdformat-tables  # Tables
+      files: \.(md|markdown)$
+
+- repo: https://github.com/igorshubovych/markdownlint-cli
+  rev: v0.44.0
+  hooks:
+    - id: markdownlint
+      name: Check markdown style
+      args: ["--config", ".markdownlint.json"]
