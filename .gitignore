@@ -76,3 +76,7 @@ MANIFEST
 *.spec
 pip-log.txt
 pip-delete-this-directory.txt
+
+# Packer secrets (do not commit)
+# packer/aimq.auto.pkrvars.hcl
+# *.auto.pkrvars.hcl
