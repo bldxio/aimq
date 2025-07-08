@@ -31,4 +31,4 @@ RUN poetry config virtualenvs.create false \
 # EXPOSE 8080
 
 # Entrypoint for the processor
-CMD ["python", "-m", "aimq.processor"]
+CMD ["python", "-m", "aimq.worker"]
