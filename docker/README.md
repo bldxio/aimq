@@ -14,10 +14,33 @@ Use the provided `build.sh` script to build the Docker image for your local mach
 
 ```sh
 cd docker
-./build.sh [tag]
+./build.sh [TAG]
 ```
-- If you omit `[tag]`, it defaults to `local` (image will be tagged as `aimq:local`).
+- If you omit `[TAG]`, it defaults to `local` (image will be tagged as `aimq:local`).
 - Example: `./build.sh dev`
+
+#### 🆘 Script Help
+You can view usage instructions at any time:
+
+```sh
+./build.sh --help
+```
+_Output:_
+```
+Usage: ./build.sh [TAG]
+
+Builds the local Docker image for AIMQ.
+
+Arguments:
+  TAG         Optional. Tag to assign to the built image (default: 'local').
+
+Options:
+  -h, --help  Show this help message and exit.
+
+Example:
+  ./build.sh dev
+  # Builds the Docker image as aimq:dev
+```
 
 ---
 
