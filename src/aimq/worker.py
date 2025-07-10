@@ -223,3 +223,14 @@ class Worker(BaseModel):
         worker.logger.info(f"Tasks loaded from file {worker_path}")
 
         return worker
+
+
+def main():
+    """Entrypoint for running the worker as a module. Fill in registration logic as needed."""
+    worker = Worker()
+    # TODO: Register tasks/queues here if needed
+    worker.start()
+
+
+if __name__ == "__main__":
+    main()

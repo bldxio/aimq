@@ -66,6 +66,7 @@ nav:
       - Queue Processing: user-guide/queue-processing.md
       - Document Processing: user-guide/document-processing.md
       - OCR: user-guide/ocr.md
+  - Docker & Kubernetes Deployment: deployment/docker-kubernetes.md
   - API Reference:
       - Overview: api/overview.md
       - Tools: api/tools.md
