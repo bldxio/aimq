@@ -25,7 +25,7 @@ jobs:
       - name: Set up Docker config.json for DOCR
         run: |
           mkdir -p ~/.docker
-          echo "${{ secrets.DOCKER_CONFIG_JSON }}" > ~/.docker/config.json
+          echo '${{ secrets.DOCKER_CONFIG_JSON }}' > ~/.docker/config.json
 
       - name: Set image tag
         id: vars
