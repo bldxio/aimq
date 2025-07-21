@@ -1,34 +1,38 @@
-FROM python:3.12-slim
+# Stage 1: Build dependencies and install app
+FROM python:3.12-slim AS builder
 
-# System dependencies for Poetry, OCR, and image processing
-RUN apt-get update \
-  && apt-get install -y --no-install-recommends \
-  build-essential \
-  libgl1 \
-  libglib2.0-0 \
-  git \
-  curl \
-  && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    libgl1 \
+    libglib2.0-0 \
+    git \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
 
-# Install the latest Poetry
-RUN curl -sSL https://install.python-poetry.org | python3 - \
-  && ln -s /root/.local/bin/poetry /usr/local/bin/poetry
+RUN curl -sSL https://install.python-poetry.org | python3 - && \
+    ln -s /root/.local/bin/poetry /usr/local/bin/poetry
 
-# Set workdir
 WORKDIR /app
 
-# Copy only dependency files first for better caching
 COPY pyproject.toml poetry.lock* README.md ./
-
-# Copy the source code (adjust if your code is not in src/aimq)
 COPY src/aimq ./src/aimq
 
-# Install dependencies and the project
-RUN poetry config virtualenvs.create false \
-  && poetry install --no-interaction --no-ansi --only main
+RUN poetry config virtualenvs.create false && \
+    poetry install --no-interaction --no-ansi --only main
 
-# Expose port if needed (optional, e.g., 8080)
+# Stage 2: Runtime image
+FROM python:3.12-slim
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libgl1 \
+    libglib2.0-0 \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+COPY --from=builder /app /app
+
+# Expose port if needed
 # EXPOSE 8080
 
-# Entrypoint for the processor
 CMD ["python", "-m", "aimq.worker"]
