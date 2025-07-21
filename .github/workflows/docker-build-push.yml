@@ -14,7 +14,6 @@ jobs:
       REGISTRY: ${{ vars.REGISTRY_NAME }}
       REPOSITORY: ${{ vars.REPOSITORY_NAME }}
       IMAGE_NAME: aimq
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
