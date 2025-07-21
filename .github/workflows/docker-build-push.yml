@@ -11,8 +11,8 @@ jobs:
     runs-on: ubuntu-latest
     environment: ${{ github.ref == 'refs/heads/main' && 'prd' || 'dev' }}
     env:
-      REGISTRY: ${{ vars.REGISTRY_NAME }}
-      REPOSITORY: ${{ vars.REPOSITORY_NAME }}
+      REGISTRY: registry.digitalocean.com/bldx
+      REPOSITORY: aimq
       IMAGE_NAME: aimq
     steps:
       - name: Checkout code
@@ -38,6 +38,9 @@ jobs:
             TAG="${BRANCH}-${SHORT_SHA}"
           fi
           echo "TAG=$TAG" >> $GITHUB_ENV
+
+      - name: Print image name
+        run: echo "$REGISTRY/$REPOSITORY:$TAG"
 
       - name: Build and push Docker image
         run: |
