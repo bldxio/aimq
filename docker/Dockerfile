@@ -15,10 +15,11 @@ RUN curl -sSL https://install.python-poetry.org | python3 - && \
 WORKDIR /app
 
 COPY pyproject.toml poetry.lock* README.md ./
-COPY src/aimq ./src/aimq
+COPY src ./src
 
 RUN poetry config virtualenvs.create false && \
-    poetry install --no-interaction --no-ansi --only main
+    poetry install --no-interaction --no-ansi --only main && \
+    poetry show
 
 # Stage 2: Runtime image
 FROM python:3.12-slim
@@ -30,7 +31,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /app
 
+# Copy the entire Python environment from builder
+COPY --from=builder /usr/local/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages
+COPY --from=builder /usr/local/bin /usr/local/bin
 COPY --from=builder /app /app
+
+# Ensure the aimq package is in the Python path
+ENV PYTHONPATH=/app/src
 
 # Expose port if needed
 # EXPOSE 8080
