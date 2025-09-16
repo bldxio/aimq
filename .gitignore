@@ -61,7 +61,6 @@ uploads/
 .aider*
 
 # Poetry
-poetry.lock
 .poetry/
 .venv/
 venv/
