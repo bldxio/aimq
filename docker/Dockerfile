@@ -4,7 +4,7 @@ FROM python:3.12-slim AS builder
 # Install build dependencies in one layer and clean up
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
-    libgl1-mesa-glx \
+    libgl1 \
     libglib2.0-0 \
     git \
     curl \
@@ -37,7 +37,7 @@ FROM python:3.12-slim
 
 # Install only runtime dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    libgl1-mesa-glx \
+    libgl1 \
     libglib2.0-0 \
     libgomp1 \
     && rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/*
