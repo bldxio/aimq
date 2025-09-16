@@ -1,3 +1,5 @@
+"""Command for starting the AIMQ worker."""
+
 from pathlib import Path
 from typing import Optional
 import signal
@@ -7,10 +9,6 @@ import typer
 from aimq.worker import Worker
 from aimq.logger import LogLevel
 
-app = typer.Typer()
-
-# @app.callback(invoke_without_command=True)
-@app.command()
 def start(
     worker_path: Optional[Path] = typer.Argument(
         None,
@@ -61,4 +59,4 @@ def start(
         sys.exit(1)
 
 if __name__ == "__main__":
-    app()
+    typer.run(start)

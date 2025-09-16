@@ -38,6 +38,9 @@ plugins:
             show_category_heading: true
             show_bases: true
             merge_init_into_class: true
+            docstring_section_style: table
+            show_if_no_docstring: true
+            preload_modules: [aimq]
 
 markdown_extensions:
   - admonition
@@ -66,6 +69,9 @@ nav:
       - Queue Processing: user-guide/queue-processing.md
       - Document Processing: user-guide/document-processing.md
       - OCR: user-guide/ocr.md
+      - Writing Tasks: user-guide/writing-tasks.md
+      - Helpers: user-guide/helpers.md
+      - Worker Configuration: user-guide/worker-configuration.md
   - Docker & Kubernetes Deployment: deployment/docker-kubernetes.md
   - API Reference:
       - Overview: api/overview.md
@@ -86,6 +92,17 @@ nav:
           - Commands:
               - Overview: reference/aimq/commands/index.md
               - Start: reference/aimq/commands/start.md
+              - Enable: reference/aimq/commands/enable.md
+              - Disable: reference/aimq/commands/disable.md
+              - Init: reference/aimq/commands/init.md
+              - Send: reference/aimq/commands/send.md
+              - Shared:
+                  - Overview: reference/aimq/commands/shared/index.md
+                  - Config: reference/aimq/commands/shared/config.md
+                  - Migration: reference/aimq/commands/shared/migration.md
+                  - Paths: reference/aimq/commands/shared/paths.md
+                  - Templates:
+                      - Tasks: reference/aimq/commands/shared/templates/tasks.md
           - Providers:
               - Overview: reference/aimq/providers/index.md
               - Base: reference/aimq/providers/base.md

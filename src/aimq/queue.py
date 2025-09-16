@@ -27,7 +27,11 @@ class Queue(BaseModel):
     @property
     def name(self) -> str:
         """Get the queue name from the runnable."""
-        return self.runnable.name or self.runnable.__name__
+        if hasattr(self.runnable, "name") and self.runnable.name:
+            return str(self.runnable.name)
+        if hasattr(self.runnable, "__name__"):
+            return str(self.runnable.__name__)
+        return "unnamed_queue"
 
     def send(self, data: dict[str, Any], delay: int | None = None) -> int:
         """Add a message to the queue.
@@ -74,6 +78,7 @@ class Queue(BaseModel):
             return job
         except QueueNotFoundError as e:
             self.logger.error(f"Queue {self.name} not found", str(e))
+            return None
 
     def get_runtime_config(self, job: Job) -> RunnableConfig:
         """Create a runtime configuration for the job.
