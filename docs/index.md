@@ -52,7 +52,7 @@ and background job handling.
 - [Installation](getting-started/installation.md)
 - [Quick Start Guide](getting-started/quickstart.md)
 - [API Reference](api/overview.md)
-- [Contributing Guide](development/contributing.md)
+- [Contributing Guide](community/contributing.md)
 
 ## Project Status
 
