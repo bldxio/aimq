@@ -35,7 +35,7 @@ This directory contains examples demonstrating how to use AIMQ with Supabase for
    This will upload the test PDF from `supabase/seed/test.pdf` using AIMQ's Supabase client.
 
 5. Run the example tasks:
-   
+
    Option 1 - Using AIMQ CLI (Recommended):
    ```bash
    # Start the worker to process tasks

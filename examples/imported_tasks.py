@@ -7,7 +7,8 @@ This module shows how to:
 """
 
 from aimq.worker import Worker
-from .tasks import text_tasks, math_tasks
+
+from .tasks import math_tasks, text_tasks
 
 # Initialize the worker that will process the tasks
 worker = Worker()

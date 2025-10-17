@@ -1,28 +1,32 @@
-import pytest
-from unittest.mock import Mock, patch
-from aimq.tools.pdf.page_splitter import PageSplitter, PageSplitterInput
-import pypdfium2 as pdfium
 import io
+from unittest.mock import Mock
+
+import pypdfium2 as pdfium
+import pytest
+
+from aimq.tools.pdf.page_splitter import PageSplitter, PageSplitterInput
+
 
 @pytest.fixture
 def page_splitter_tool():
     return PageSplitter()
 
+
 @pytest.fixture
 def mock_pdf():
     # Create a mock PDF with 2 pages using pypdfium2
     pdf = pdfium.PdfDocument.new()
-    
+
     try:
         # Add two empty pages
         pdf.new_page(width=72, height=72)
         pdf.new_page(width=72, height=72)
-        
+
         # Convert to bytes
         pdf_bytes = io.BytesIO()
         pdf.save(pdf_bytes)
         pdf_bytes.seek(0)
-        
+
         mock = Mock()
         mock.data = pdf_bytes.read()
         mock.filename = "test.pdf"
@@ -30,6 +34,7 @@ def mock_pdf():
     finally:
         # Ensure PDF document is closed
         pdf.close()
+
 
 class TestPageSplitter:
     def test_init(self, page_splitter_tool):
@@ -41,10 +46,10 @@ class TestPageSplitter:
     def test_split_pdf(self, page_splitter_tool, mock_pdf):
         """Test splitting a PDF into individual pages."""
         result = page_splitter_tool._run(file=mock_pdf)
-        
+
         assert isinstance(result, list)
         assert len(result) == 2  # Should have 2 pages
-        
+
         # Verify each page
         for page in result:
             assert "file" in page
@@ -61,19 +66,19 @@ class TestPageSplitter:
         try:
             # Add one empty page
             pdf.new_page(width=72, height=72)
-            
+
             pdf_bytes = io.BytesIO()
             pdf.save(pdf_bytes)
             pdf_bytes.seek(0)
-            
+
             mock = Mock()
             mock.data = pdf_bytes.read()
             mock.filename = "empty.pdf"
-            
+
             result = page_splitter_tool._run(file=mock)
             assert isinstance(result, list)
             assert len(result) == 1  # Should have 1 page
-            
+
             # Verify the page
             page = result[0]
             assert "file" in page
@@ -90,6 +95,6 @@ class TestPageSplitter:
         mock = Mock()
         mock.data = b"invalid pdf data"
         mock.filename = "invalid.pdf"
-        
+
         with pytest.raises(Exception):
             page_splitter_tool._run(file=mock)

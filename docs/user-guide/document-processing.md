@@ -97,7 +97,7 @@ ocr = ImageOCR()
 @worker.processor("documents")
 async def process_document(job):
     attachment = job.data["attachment"]
-    
+
     # Process based on file type
     if attachment.is_image():
         return ocr.process(attachment)

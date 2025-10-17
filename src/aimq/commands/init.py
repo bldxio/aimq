@@ -5,24 +5,26 @@ directory structure and configuration files.
 """
 
 from pathlib import Path
-import os
-import typer
 from typing import Optional
+
+import typer
 
 from aimq.commands.shared.config import SupabaseConfig
 from aimq.commands.shared.migration import SupabaseMigrations
 from aimq.commands.shared.paths import ProjectPath
 
 
-def init(directory: Optional[str] = typer.Argument(None, help="Directory to initialize AIMQ project in")) -> None:
+def init(
+    directory: Optional[str] = typer.Argument(None, help="Directory to initialize AIMQ project in")
+) -> None:
     """Initialize a new AIMQ project in the specified directory.
-    
+
     Creates the required directory structure and configuration files for a new AIMQ project.
     If no directory is specified, initializes in the current directory.
-    
+
     Args:
         directory: Optional directory path to initialize project in. Defaults to current directory.
-        
+
     Raises:
         typer.Exit: If project initialization fails, exits with status code 1.
         FileNotFoundError: If template files cannot be found.

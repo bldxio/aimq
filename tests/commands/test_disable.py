@@ -1,7 +1,7 @@
 """Tests for the disable command functionality."""
 
-from unittest.mock import Mock, patch
 from typing import Generator
+from unittest.mock import Mock, patch
 
 import pytest
 from typer.testing import CliRunner

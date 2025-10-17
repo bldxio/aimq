@@ -3,7 +3,9 @@
 import typer
 
 from aimq.commands.shared.config import SupabaseConfig
+
 from .shared.paths import ProjectPath
+
 
 def enable() -> None:
     """Enable PGMQ in Supabase by adding pgmq_public to API schemas."""

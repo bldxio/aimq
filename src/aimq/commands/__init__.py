@@ -1,13 +1,14 @@
 """
 AIMQ command line interface.
 """
+
 import typer
 
-from .start import start
-from .send import send
-from .enable import enable
 from .disable import disable
+from .enable import enable
 from .init import init
+from .send import send
+from .start import start
 
 app = typer.Typer(no_args_is_help=True)
 

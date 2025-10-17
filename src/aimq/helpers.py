@@ -5,15 +5,14 @@ including functions for chaining, selecting, and transforming data through
 the runnable pipeline.
 """
 
-from graphlib import TopologicalSorter
-from langchain_core.runnables import RunnableConfig, RunnableParallel, RunnablePassthrough, RunnableSequence, chain, RunnableSerializable
-from langchain_core.runnables.passthrough import RunnableAssign, RunnablePick
-from langchain_core.runnables.base import Runnable, RunnableEach, RunnableLambda 
 from typing import Any, Callable, TypeVar
 
-from langchain_core.tools import tool
+from langchain_core.runnables import RunnableConfig, RunnableParallel, RunnablePassthrough, chain
+from langchain_core.runnables.base import Runnable, RunnableLambda
+from langchain_core.runnables.passthrough import RunnableAssign, RunnablePick
 
 T = TypeVar("T")
+
 
 @chain
 def echo(input: T) -> T:
@@ -27,6 +26,7 @@ def echo(input: T) -> T:
     """
     print(input)
     return input
+
 
 def select(key: str | list[str] | dict[str, str] | None = None) -> Runnable:
     """Create a runnable that selects specific keys from the input.
@@ -51,12 +51,15 @@ def select(key: str | list[str] | dict[str, str] | None = None) -> Runnable:
     elif isinstance(key, list):
         return RunnablePick(key)
     elif isinstance(key, dict):
-        return RunnableParallel({
-            new_key: RunnablePassthrough() if old_key == "*" else RunnablePick(old_key)
-            for old_key, new_key in key.items()
-        })
+        return RunnableParallel(
+            {
+                new_key: RunnablePassthrough() if old_key == "*" else RunnablePick(old_key)
+                for old_key, new_key in key.items()
+            }
+        )
     else:
         raise ValueError(f"Invalid key type: {type(key)}")
+
 
 def const(value: T) -> Callable[[Any], T]:
     """Create a function that always returns a constant value.
@@ -68,6 +71,7 @@ def const(value: T) -> Callable[[Any], T]:
         A function that takes any input and returns the constant value.
     """
     return lambda x: value
+
 
 def assign(runnables: dict[str, Any] = {}) -> RunnableAssign:
     """Create a RunnableAssign from a dictionary of runnables or constant values.
@@ -84,6 +88,7 @@ def assign(runnables: dict[str, Any] = {}) -> RunnableAssign:
             runnables[k] = const(v)
     return RunnableAssign(RunnableParallel(runnables))
 
+
 def pick(key: str | list[str]) -> RunnablePick:
     """Create a RunnablePick to select specific keys from the input.
 
@@ -95,6 +100,7 @@ def pick(key: str | list[str]) -> RunnablePick:
     """
     return RunnablePick(key)
 
+
 def orig(key: str | list[str] | None = None) -> Runnable[Any, dict[str, Any]]:
     """Create a runnable that retrieves the original configuration.
 
@@ -105,10 +111,12 @@ def orig(key: str | list[str] | None = None) -> Runnable[Any, dict[str, Any]]:
     Returns:
         A runnable that returns the selected configuration values.
     """
+
     def _orig(input: Any, config: RunnableConfig) -> dict[str, Any]:
         return config.get("configurable", {})
+
     runnable = RunnableLambda(_orig)
 
     if key is not None:
-        runnable = runnable | pick(key) # type: ignore
+        runnable = runnable | pick(key)  # type: ignore
     return runnable

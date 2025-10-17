@@ -1,17 +1,22 @@
-import pytest
 from unittest.mock import Mock, patch
-from aimq.tools.supabase.read_file import ReadFile, ReadFileInput
-from aimq.attachment import Attachment
+
+import pytest
 from langchain.prompts import PromptTemplate
+
+from aimq.attachment import Attachment
+from aimq.tools.supabase.read_file import ReadFile, ReadFileInput
+
 
 @pytest.fixture
 def read_file_tool():
     return ReadFile()
 
+
 @pytest.fixture
 def mock_supabase():
-    with patch('aimq.tools.supabase.read_file.supabase') as mock:
+    with patch("aimq.tools.supabase.read_file.supabase") as mock:
         yield mock
+
 
 class TestReadFile:
     def test_init(self, read_file_tool):
@@ -36,14 +41,17 @@ class TestReadFile:
         """Test reading a file with default parameters."""
         file_path = "test/file.txt"
         file_content = b"test content"
-        expected_data = {"file": Attachment(data=file_content), "metadata": {"bucket": "files", "path": file_path}}
-        
+        expected_data = {
+            "file": Attachment(data=file_content),
+            "metadata": {"bucket": "files", "path": file_path},
+        }
+
         mock_storage = Mock()
         mock_storage.download.return_value = file_content
         mock_supabase.client.storage.from_.return_value = mock_storage
-        
+
         result = read_file_tool._run(path=file_path, bucket="files")
-        
+
         assert result["metadata"] == expected_data["metadata"]
         assert isinstance(result["file"], Attachment)
         assert result["file"].data == file_content
@@ -55,14 +63,17 @@ class TestReadFile:
         file_path = "test/file.txt"
         bucket = "custom_bucket"
         file_content = b"test content"
-        expected_data = {"file": Attachment(data=file_content), "metadata": {"bucket": bucket, "path": file_path}}
-        
+        expected_data = {
+            "file": Attachment(data=file_content),
+            "metadata": {"bucket": bucket, "path": file_path},
+        }
+
         mock_storage = Mock()
         mock_storage.download.return_value = file_content
         mock_supabase.client.storage.from_.return_value = mock_storage
-        
+
         result = read_file_tool._run(path=file_path, bucket=bucket)
-        
+
         assert result["metadata"] == expected_data["metadata"]
         assert isinstance(result["file"], Attachment)
         assert result["file"].data == file_content
@@ -74,14 +85,17 @@ class TestReadFile:
         file_path = "test/file.txt"
         metadata = {"type": "text", "size": 100}
         file_content = b"test content"
-        expected_data = {"file": Attachment(data=file_content), "metadata": {"bucket": "files", "path": file_path, **metadata}}
-        
+        expected_data = {
+            "file": Attachment(data=file_content),
+            "metadata": {"bucket": "files", "path": file_path, **metadata},
+        }
+
         mock_storage = Mock()
         mock_storage.download.return_value = file_content
         mock_supabase.client.storage.from_.return_value = mock_storage
-        
+
         result = read_file_tool._run(path=file_path, bucket="files", metadata=metadata)
-        
+
         assert result["metadata"] == expected_data["metadata"]
         assert isinstance(result["file"], Attachment)
         assert result["file"].data == file_content
@@ -91,10 +105,10 @@ class TestReadFile:
     def test_file_not_found(self, read_file_tool, mock_supabase):
         """Test behavior when file is not found."""
         file_path = "non-existent/file.txt"
-        
+
         mock_storage = Mock()
         mock_storage.download.side_effect = Exception("File not found")
         mock_supabase.client.storage.from_.return_value = mock_storage
-        
-        with pytest.raises(ValueError, match=f"Error reading file from Supabase: File not found"):
+
+        with pytest.raises(ValueError, match="Error reading file from Supabase: File not found"):
             read_file_tool._run(path=file_path)

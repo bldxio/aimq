@@ -47,7 +47,7 @@ async def process_document(job):
     # Access job data
     file_id = job.data["file_id"]
     process_type = job.data["process_type"]
-    
+
     # Process based on type
     if process_type == "ocr":
         return await process_ocr(file_id)

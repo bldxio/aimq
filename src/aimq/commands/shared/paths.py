@@ -1,13 +1,13 @@
-import os
-from pathlib import Path
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Optional
+
 
 class ProjectPath:
     def __init__(self, root: Optional[Path] = None):
         """
         Initialize ProjectPath with a root directory.
-        
+
         Args:
             root (Optional[Path]): Root directory path. Defaults to current working directory.
         """
@@ -66,6 +66,7 @@ class ProjectPath:
         Format: YYYYMMDDHHMMSS (equivalent to Go's 20060102150405)
         """
         return datetime.now(timezone.utc).strftime("%Y%m%d%H%M%S")
+
 
 # Create a default instance for backward compatibility
 default_paths = ProjectPath()

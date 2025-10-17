@@ -1,4 +1,5 @@
 """Test the main entry point."""
+
 import sys
 from unittest.mock import patch
 
