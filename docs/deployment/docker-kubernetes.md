@@ -1,111 +1,177 @@
-# AIMQ Worker: Docker & Kubernetes Deployment Guide
+# Docker & Kubernetes Deployment
+
+This guide covers deploying AIMQ workers using Docker and Kubernetes for production environments.
 
 ## Overview
 
-This project provides a Python-based worker for processing jobs from queues, designed for robust deployment in Docker and Kubernetes environments. The worker uses a modular, extensible design and is compatible with modern orchestration and CI/CD workflows.
+AIMQ provides two Docker deployment approaches:
 
----
+1. **Local Development**: Generate project-specific Docker files with `aimq init --docker`
+2. **Production**: Use the published AIMQ image with volume mounts or git URLs
 
-## Project Structure
+## Local Development Setup
 
-- `src/aimq/worker.py`: Core worker logic and entrypoint.
-- `docker/Dockerfile`: Docker build instructions.
-- `.dockerignore`: Keeps your Docker image clean.
-- `examples/`: Example task definitions and usage patterns.
-
----
-
-## Docker Usage
-
-### Build the Image
+### Generate Docker Files
 
 ```bash
-cd docker
-bash build.sh
+# Initialize with Docker files
+aimq init --docker
+
+# This creates:
+# - Dockerfile (optimized for your project)
+# - docker-compose.yml (with volume mounts)
+# - .dockerignore
 ```
 
-This will create a Docker image named `aimq:local`.
-
-### Run the Worker Container
+### Start with Docker Compose
 
 ```bash
-docker run --rm -it aimq:local
+# Start the worker
+docker-compose up -d
+
+# View logs
+docker-compose logs -f
+
+# Stop
+docker-compose down
 ```
 
-- The container runs the worker using `python -m aimq.worker`, following Python and Docker best practices.
-- All dependencies are installed with Poetry during the build, but Poetry is not required at runtime.
+The generated `docker-compose.yml` mounts your local `tasks.py` and `.env` files, allowing for rapid development iteration.
 
 ---
 
-## Code Entrypoint
+## Production Deployment
 
-**`src/aimq/worker.py`** defines a `main()` function:
-```python
-def main():
-    worker = Worker()
-    # TODO: Register tasks/queues here if needed
-    worker.start()
+### Using the Published Image
 
-if __name__ == "__main__":
-    main()
+AIMQ publishes Docker images that can be used with two patterns:
+
+#### Pattern 1: Volume Mount (Simple)
+
+Mount your local `tasks.py` and `.env` files:
+
+```bash
+docker run --rm \
+  -v $(pwd)/tasks.py:/app/tasks.py:ro \
+  -v $(pwd)/.env:/app/.env:ro \
+  aimq:latest
 ```
-- This allows the worker to be started as a module: `python -m aimq.worker`.
 
----
+#### Pattern 2: Git Repository (Recommended for Production)
 
-## Task Registration
+Load tasks from a git repository using environment variables:
 
-To add processing logic, use the `@worker.task()` decorator:
+```bash
+# Default branch from GitHub
+docker run --rm \
+  -e AIMQ_TASKS=git:mycompany/aimq-tasks \
+  -e SUPABASE_URL=https://xxx.supabase.co \
+  -e SUPABASE_KEY=eyJ... \
+  aimq:latest
 
-```python
-def main():
-    worker = Worker()
+# Specific branch or tag
+docker run --rm \
+  -e AIMQ_TASKS=git:mycompany/aimq-tasks@production \
+  -e SUPABASE_URL=https://xxx.supabase.co \
+  -e SUPABASE_KEY=eyJ... \
+  aimq:latest
 
-    @worker.task()
-    def echo_task(data: dict):
-        print("Received:", data)
-        return data
-
-    worker.start()
+# Monorepo subdirectory
+docker run --rm \
+  -e AIMQ_TASKS=git:mycompany/monorepo#services/worker \
+  -e SUPABASE_URL=https://xxx.supabase.co \
+  -e SUPABASE_KEY=eyJ... \
+  aimq:latest
 ```
-- See `examples/` for more advanced patterns and integrations (e.g., Supabase).
+
+### Git URL Patterns
+
+AIMQ supports npm-style git URLs:
+
+- `git:user/repo` - Default branch from GitHub
+- `git:user/repo@branch` - Specific branch or tag
+- `git:user/repo#path/to/tasks` - Subdirectory in monorepo
+- `git:gitlab.com/user/repo@v1.0.0` - Full URL with version tag
+
+### Git Authentication
+
+**For private repositories:**
+
+#### HTTPS with Token (Quick Setup)
+```bash
+docker run --rm \
+  -e AIMQ_TASKS=git:mycompany/private-repo@main \
+  -e GIT_USERNAME=myuser \
+  -e GIT_PASSWORD=ghp_your_github_token \
+  aimq:latest
+```
+
+#### SSH (Recommended for Production)
+```bash
+docker run --rm \
+  -v ~/.ssh:/home/aimq/.ssh:ro \
+  -e AIMQ_TASKS=git:mycompany/private-repo@main \
+  -e AIMQ_USE_SSH=true \
+  aimq:latest
+```
 
 ---
 
-## Kubernetes-Ready
+## Docker Compose Examples
 
-- The container uses a minimal, production-grade Python base image.
-- Entrypoint and signal handling are compatible with Kubernetes pod lifecycle.
-- For production, add readiness/liveness probes as needed.
+### Production with Git Repository
+
+```yaml
+version: '3.8'
+
+services:
+  aimq-worker:
+    image: aimq:latest
+    environment:
+      - AIMQ_TASKS=git:mycompany/aimq-tasks@production
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_KEY=${SUPABASE_KEY}
+      - WORKER_NAME=aimq-worker
+      - WORKER_LOG_LEVEL=info
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    restart: unless-stopped
+    # For private repos with SSH:
+    # volumes:
+    #   - ~/.ssh:/home/aimq/.ssh:ro
+```
+
+### Local Development with Volume Mounts
+
+```yaml
+version: '3.8'
+
+services:
+  aimq-worker:
+    image: aimq:latest
+    volumes:
+      - ./tasks.py:/app/tasks.py:ro
+      - ./.env:/app/.env:ro
+    restart: unless-stopped
+```
 
 ---
 
-## Development vs. Production
-
-- **Development:** Use `poetry run python ...` for local testing.
-- **Production:** The Docker image runs with `python -m aimq.worker` for reliability and simplicity.
-
 ---
 
-## Next Steps
+## Kubernetes Deployment
 
-- Register your actual processing tasks in `main()` in `worker.py`.
-- Configure environment variables and secrets as needed for your deployment.
-- For CI/CD and Kubernetes manifests, see `.github/workflows/` and adapt as required.
+### Basic Deployment with Git URL
 
----
-
-## Example: Kubernetes Deployment Manifest
-
-Below is a minimal, production-ready Kubernetes manifest for deploying the AIMQ worker. Adjust image, resource requests, and environment variables as needed.
+Minimal production-ready Kubernetes deployment using git URLs:
 
 ```yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: aimq-worker
+  namespace: default
 spec:
-  replicas: 1
+  replicas: 3  # Scale based on workload
   selector:
     matchLabels:
       app: aimq-worker
@@ -116,37 +182,223 @@ spec:
     spec:
       containers:
         - name: aimq-worker
-          image: aimq:local  # Use your registry/image:tag in production
-          imagePullPolicy: IfNotPresent
+          image: aimq:latest
+          imagePullPolicy: Always
           env:
-            # Example environment variables
+            # Load tasks from git repository
+            - name: AIMQ_TASKS
+              value: "git:mycompany/aimq-tasks@production"
+
+            # Supabase configuration
             - name: SUPABASE_URL
-              value: "https://your-supabase-url"
+              valueFrom:
+                secretKeyRef:
+                  name: aimq-secrets
+                  key: supabase-url
             - name: SUPABASE_KEY
               valueFrom:
                 secretKeyRef:
-                  name: supabase-secrets
-                  key: service-role-key
+                  name: aimq-secrets
+                  key: supabase-key
+
+            # Worker configuration
+            - name: WORKER_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: WORKER_LOG_LEVEL
+              value: "info"
+
+            # AI Provider Keys (optional)
+            - name: OPENAI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: aimq-secrets
+                  key: openai-api-key
+                  optional: true
+
           resources:
             requests:
-              cpu: "250m"
-              memory: "256Mi"
-            limits:
-              cpu: "1"
+              cpu: "500m"
               memory: "1Gi"
-          # Optional: Graceful shutdown for Kubernetes
+            limits:
+              cpu: "2"
+              memory: "4Gi"
+
+          # Graceful shutdown
           lifecycle:
             preStop:
               exec:
-                command: ["/bin/sh", "-c", "sleep 10"]
+                command: ["/bin/sh", "-c", "sleep 15"]
+
       restartPolicy: Always
 ```
 
-**Best Practices:**
-- Use secrets for sensitive values (see `env` section above).
-- Set resource requests/limits for predictable scheduling.
-- Add readiness/liveness probes if your worker exposes an HTTP endpoint.
-- Use `imagePullPolicy: Always` if pulling from a remote registry.
-- Adjust `replicas` and labels as needed for your workload.
+### Create Kubernetes Secret
+
+```bash
+kubectl create secret generic aimq-secrets \
+  --from-literal=supabase-url='https://xxx.supabase.co' \
+  --from-literal=supabase-key='your-service-key' \
+  --from-literal=openai-api-key='sk-...'
+```
+
+### For Private Git Repositories
+
+If using private git repositories with SSH:
+
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: git-ssh-key
+type: Opaque
+data:
+  ssh-privatekey: <base64-encoded-ssh-key>
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aimq-worker
+spec:
+  # ... (same as above)
+  template:
+    spec:
+      containers:
+        - name: aimq-worker
+          # ... (same as above)
+          env:
+            - name: AIMQ_TASKS
+              value: "git:mycompany/private-repo@main"
+            - name: AIMQ_USE_SSH
+              value: "true"
+          volumeMounts:
+            - name: ssh-key
+              mountPath: /home/aimq/.ssh
+              readOnly: true
+      volumes:
+        - name: ssh-key
+          secret:
+            secretName: git-ssh-key
+            defaultMode: 0400
+```
 
 ---
+
+## Environment Variables Reference
+
+| Variable | Description | Required | Default |
+|----------|-------------|----------|---------|
+| `AIMQ_TASKS` | Path or git URL to tasks.py | No | `./tasks.py` |
+| `AIMQ_USE_SSH` | Use SSH for git operations | No | `false` |
+| `SUPABASE_URL` | Supabase project URL | Yes | - |
+| `SUPABASE_KEY` | Supabase API key | Yes | - |
+| `WORKER_NAME` | Worker instance name | No | `peon` |
+| `WORKER_LOG_LEVEL` | Logging level | No | `info` |
+| `WORKER_IDLE_WAIT` | Seconds to wait when idle | No | `10.0` |
+| `OPENAI_API_KEY` | OpenAI API key (optional) | No | - |
+| `MISTRAL_API_KEY` | Mistral API key (optional) | No | - |
+| `LANGCHAIN_TRACING_V2` | Enable LangChain tracing | No | `false` |
+| `LANGCHAIN_API_KEY` | LangChain API key | No | - |
+
+---
+
+## Production Best Practices
+
+### Scaling
+
+Run multiple worker instances for parallel processing:
+
+```bash
+# Scale deployment
+kubectl scale deployment aimq-worker --replicas=5
+
+# Or use HorizontalPodAutoscaler
+kubectl autoscale deployment aimq-worker \
+  --min=2 --max=10 --cpu-percent=70
+```
+
+### GitOps Workflow
+
+1. Store tasks in version-controlled git repositories
+2. Use git tags/branches for versioning (e.g., `@v1.0.0`, `@production`)
+3. Update deployment by changing the git reference
+4. Workers automatically pull latest code on restart
+
+### Monitoring
+
+Add health checks and metrics:
+
+```yaml
+# In container spec
+livenessProbe:
+  exec:
+    command: ["pgrep", "-f", "aimq"]
+  initialDelaySeconds: 30
+  periodSeconds: 10
+
+readinessProbe:
+  exec:
+    command: ["pgrep", "-f", "aimq"]
+  initialDelaySeconds: 5
+  periodSeconds: 5
+```
+
+### Resource Limits
+
+Set appropriate limits based on AI model requirements:
+
+- **Light tasks** (text processing): 500m CPU, 1Gi memory
+- **OCR processing**: 1 CPU, 2Gi memory
+- **Heavy AI models**: 2+ CPU, 4Gi+ memory
+
+### Security
+
+1. **Use Secrets**: Never hardcode credentials in manifests
+2. **SSH Keys**: Use volume mounts for private git repos
+3. **Read-only mounts**: Mount tasks.py and SSH keys as read-only
+4. **Network Policies**: Restrict traffic to Supabase only
+5. **Service Accounts**: Use Kubernetes service accounts for cloud provider auth
+
+---
+
+## Troubleshooting
+
+### Git Clone Fails
+```bash
+# Check git URL format
+echo $AIMQ_TASKS
+# Should be: git:user/repo[@branch][#subdir]
+
+# Enable debug logging
+kubectl set env deployment/aimq-worker WORKER_LOG_LEVEL=debug
+
+# View logs
+kubectl logs -f deployment/aimq-worker
+```
+
+### Tasks Not Found
+```bash
+# For volume mounts, ensure path is correct
+kubectl exec -it deployment/aimq-worker -- ls -la /app/tasks.py
+
+# For git URLs, check subdirectory path
+# git:user/repo#correct/path/to/tasks.py
+```
+
+### Supabase Connection Errors
+```bash
+# Verify environment variables
+kubectl exec -it deployment/aimq-worker -- env | grep SUPABASE
+
+# Test connectivity
+kubectl exec -it deployment/aimq-worker -- curl $SUPABASE_URL
+```
+
+---
+
+## Next Steps
+
+- Review the [Configuration Guide](../getting-started/configuration.md) for all options
+- Check [docker/README.md](../../docker/README.md) for image build details
+- See the [Quick Start Guide](../getting-started/quickstart.md) for local testing

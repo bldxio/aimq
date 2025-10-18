@@ -1,23 +1,39 @@
 # Configuration
 
-AIMQ can be configured through environment variables and requires proper Supabase queue setup.
+AIMQ can be configured through environment variables. Configuration is loaded from `.env` files or environment variables.
 
-## Supabase Queue Setup
+## Supabase Setup
 
-1. Enable Queue Integration:
-   - Go to your Supabase project dashboard
-   - Navigate to Database → Extensions
-   - Enable the "pg_net" and "pg_cron" extensions if not already enabled
-   - Navigate to Database → Queues (Beta)
-   - Click "Enable Queue"
-   - Make sure to enable "Expose Queues via PostgREST"
+AIMQ uses Supabase's pgmq (PostgreSQL Message Queue) extension for queue management.
 
-2. Create Queues:
-   - In the Queues interface, click "Create a new queue"
-   - Give your queue a name (this will be referenced in your `@worker.task` decorators)
-   - Configure queue settings as needed
+### Enable pgmq Extension
 
-For more details, see the [Supabase Queue Documentation](https://supabase.com/docs/guides/queues/quickstart).
+1. Go to your Supabase project dashboard
+2. Navigate to **Database → Extensions**
+3. Search for `pgmq` and enable it
+
+### Initialize AIMQ Schema (Optional)
+
+If you used `aimq init --supabase`, a migration file was created to set up the necessary schema:
+
+```bash
+# The migration is created in supabase/migrations/
+# Apply it using the Supabase CLI or dashboard
+supabase db push
+```
+
+This sets up the `pgmq_public` schema which AIMQ uses for queue operations.
+
+### Create Queues
+
+Queues are created automatically when you first send a message to them, or you can create them manually via SQL:
+
+```sql
+-- Create a queue (optional - queues are auto-created)
+SELECT pgmq.create('my-queue');
+```
+
+For more details, see the [Supabase pgmq Documentation](https://supabase.com/docs/guides/database/extensions/pgmq).
 
 ## Environment Variables
 
@@ -54,23 +70,53 @@ SUPABASE_KEY=your-service-role-key
 WORKER_NAME=my-worker
 ```
 
-## Using Poetry
+## Using uv for Development
 
-Since this project uses Poetry for dependency management, you can:
+If you're developing AIMQ or running from source, use `uv` for dependency management:
 
-1. Install dependencies:
 ```bash
-poetry install
+# Install dependencies
+uv sync --group dev
+
+# Run commands in the uv environment
+uv run aimq start
+uv run pytest
 ```
 
-2. Run with environment variables:
+## Using the Task Runner (just)
+
+AIMQ uses [`just`](https://github.com/casey/just) as a task runner for common development tasks:
+
 ```bash
-poetry run python -m aimq.worker
+# Install dependencies
+just install
+
+# Run tests
+just test
+just test-cov
+
+# Code quality
+just lint
+just format
+just type-check
+
+# Run all checks (CI)
+just ci
+
+# Docker
+just dev           # Start dev environment
+just logs          # View logs
+
+# See all available commands
+just --list
 ```
 
-Or use your `.env` file:
+Install `just`:
 ```bash
-poetry run python -m aimq.worker
+# macOS
+brew install just
+
+# Other platforms: https://github.com/casey/just#installation
 ```
 
 ## Configuration in Code
@@ -83,6 +129,7 @@ from aimq.config import config
 # Access configuration values
 supabase_url = config.supabase_url
 worker_name = config.worker_name
+log_level = config.worker_log_level
 
 # Create a worker with custom configuration
 from aimq import Worker
@@ -94,7 +141,39 @@ worker = Worker(
 )
 ```
 
+## Advanced Configuration
+
+### Worker Path
+
+Specify where to find your tasks file:
+
+```bash
+# Via environment variable
+export AIMQ_TASKS=./my_tasks.py
+
+# Via command line
+aimq start custom_tasks.py
+
+# Using git URL
+export AIMQ_TASKS=git:mycompany/aimq-tasks@production
+aimq start
+```
+
+### Git URL Configuration
+
+For loading tasks from git repositories:
+
+```bash
+# Use SSH for private repos
+export AIMQ_USE_SSH=true
+
+# Git credentials (for HTTPS)
+export GIT_USERNAME=myuser
+export GIT_PASSWORD=token
+```
+
 ## Next Steps
 
 - See the [Quick Start Guide](quickstart.md) for usage examples
 - Learn about [Worker Configuration](../user-guide/worker-configuration.md) for advanced settings
+- Check out [Docker deployment](../deployment/docker-kubernetes.md) options
