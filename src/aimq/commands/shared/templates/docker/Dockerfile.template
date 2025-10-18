@@ -1,0 +1,37 @@
+# AIMQ Worker Dockerfile
+# This Dockerfile sets up a containerized AIMQ worker using uvx for zero-config dependency management
+
+FROM python:3.12-slim
+
+# Install runtime dependencies for AI/ML libraries
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libgl1 \
+    libglib2.0-0 \
+    libgomp1 \
+    && rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/*
+
+# Create non-root user for security
+RUN groupadd -r aimq && useradd -r -g aimq aimq
+
+WORKDIR /app
+
+# Copy your tasks.py and environment configuration
+COPY tasks.py ./
+COPY .env* ./
+
+# Install uv for package management
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+
+# Install aimq package system-wide using uv
+RUN uv pip install --system aimq
+
+# Change ownership to non-root user
+RUN chown -R aimq:aimq /app
+
+USER aimq
+
+# Disable Python output buffering for better logging
+ENV PYTHONUNBUFFERED=1
+
+# Start the AIMQ worker
+CMD ["aimq", "start", "tasks.py"]

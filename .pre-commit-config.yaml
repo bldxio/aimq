@@ -6,6 +6,7 @@ repos:
     - id: end-of-file-fixer
     - id: check-yaml
     - id: check-added-large-files
+      args: ['--maxkb=1000']  # Allow lock files up to 1MB
     - id: check-toml
     - id: check-json
     - id: detect-private-key

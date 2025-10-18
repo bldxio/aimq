@@ -80,7 +80,8 @@ class TestSendCommand:
 
         # Assert
         assert result.exit_code == 1
-        assert "Invalid JSON data" in result.stdout
+        # Error messages are written to stderr, but CliRunner combines them in output
+        assert "Invalid JSON data" in result.output
 
     def test_send_missing_arguments(self, runner: CliRunner) -> None:
         """Test sending without required arguments.
@@ -96,7 +97,8 @@ class TestSendCommand:
 
         # Assert
         assert result.exit_code == 2
-        assert "Missing argument" in result.stdout
+        # CLI usage errors are written to stderr
+        assert "Missing argument" in result.output
 
     def test_send_with_delay(self, runner: CliRunner, mock_supabase_provider: Mock) -> None:
         """Test sending a job with delay parameter.
@@ -143,7 +145,8 @@ class TestSendCommand:
 
         # Assert
         assert result.exit_code == 1
-        assert "Error: Provider error" in result.stdout
+        # Error messages are written to stderr, but CliRunner combines them in output
+        assert "Error: Provider error" in result.output
 
     def test_send_complex_json(self, runner: CliRunner, mock_supabase_provider: Mock) -> None:
         """Test sending complex nested JSON data.

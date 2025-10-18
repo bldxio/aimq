@@ -62,7 +62,7 @@ class TestStartCommand:
 
         # Assert
         assert result.exit_code == 0
-        mock_class.assert_called_once()
+        mock_class.load.assert_called_once()
         mock_instance.start.assert_called_once()
         assert mock_instance.log_level == LogLevel.INFO
 
@@ -83,7 +83,8 @@ class TestStartCommand:
         worker_path = "worker.py"
 
         # Act
-        result = cli_runner.invoke(app, ["start", worker_path])
+        with patch("pathlib.Path.exists", return_value=True):
+            result = cli_runner.invoke(app, ["start", worker_path])
 
         # Assert
         assert result.exit_code == 0
@@ -110,7 +111,7 @@ class TestStartCommand:
 
         # Assert
         assert result.exit_code == 0
-        mock_class.assert_called_once()
+        mock_class.load.assert_called_once()
         mock_instance.start.assert_called_once()
         assert mock_instance.log_level == LogLevel.DEBUG
 
