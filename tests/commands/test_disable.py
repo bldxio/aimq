@@ -59,5 +59,6 @@ class TestDisableCommand:
         mock_supabase_config.disable.side_effect = Exception("Test error")
         result = runner.invoke(app, ["disable"])
         assert result.exit_code == 1
-        assert "Failed to disable PGMQ: Test error" in result.stdout
+        # Error messages are written to stderr, but CliRunner combines them in output
+        assert "Failed to disable PGMQ: Test error" in result.output
         mock_supabase_config.disable.assert_called_once()

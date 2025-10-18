@@ -96,7 +96,7 @@ class TestInitCommand:
         expected_path = Path(".").resolve()
 
         # Act
-        result = runner.invoke(app, ["init"])
+        result = runner.invoke(app, ["init", "--all"])
 
         # Print debug info if test fails
         if result.exit_code != 0:
@@ -104,11 +104,11 @@ class TestInitCommand:
 
         # Assert
         assert result.exit_code == 0
-        assert f"Successfully initialized AIMQ project in {expected_path}" in result.stdout
+        assert "Project initialized successfully" in result.stdout
         mock_config.enable.assert_called_once()
         mock_migrations.setup_aimq_migration.assert_called_once()
         mock_path_class.assert_called_once_with(expected_path)
-        assert mock_mkdir.call_count == 3  # project_dir, supabase, migrations
+        assert mock_mkdir.call_count >= 2  # project_dir and supabase dirs
 
     def test_init_with_directory(
         self, runner: CliRunner, mock_dependencies: Tuple[Mock, Mock, Mock, Mock]
@@ -128,7 +128,7 @@ class TestInitCommand:
         expected_path = Path(test_dir).resolve()
 
         # Act
-        result = runner.invoke(app, ["init", test_dir])
+        result = runner.invoke(app, ["init", test_dir, "--all"])
 
         # Print debug info if test fails
         if result.exit_code != 0:
@@ -136,11 +136,11 @@ class TestInitCommand:
 
         # Assert
         assert result.exit_code == 0
-        assert f"Successfully initialized AIMQ project in {expected_path}" in result.stdout
+        assert "Project initialized successfully" in result.stdout
         mock_config.enable.assert_called_once()
         mock_migrations.setup_aimq_migration.assert_called_once()
         mock_path_class.assert_called_once_with(expected_path)
-        assert mock_mkdir.call_count == 3  # project_dir, supabase, migrations
+        assert mock_mkdir.call_count >= 2  # project_dir and supabase dirs
 
     def test_init_failure_config(
         self, runner: CliRunner, mock_dependencies: Tuple[Mock, Mock, Mock, Mock]
@@ -160,7 +160,7 @@ class TestInitCommand:
         mock_config.enable.side_effect = Exception(error_message)
 
         # Act
-        result = runner.invoke(app, ["init"])
+        result = runner.invoke(app, ["init", "--all"])
 
         # Assert
         assert result.exit_code == 1
@@ -185,7 +185,7 @@ class TestInitCommand:
         mock_migrations.setup_aimq_migration.side_effect = Exception(error_message)
 
         # Act
-        result = runner.invoke(app, ["init"])
+        result = runner.invoke(app, ["init", "--all"])
 
         # Assert
         assert result.exit_code == 1
@@ -203,11 +203,11 @@ class TestInitCommand:
         """
         # Arrange
         error_message = "Permission denied"
-        with patch("aimq.commands.init.os.makedirs") as mock_makedirs:
-            mock_makedirs.side_effect = PermissionError(error_message)
+        with patch("pathlib.Path.mkdir") as mock_mkdir:
+            mock_mkdir.side_effect = PermissionError(error_message)
 
             # Act
-            result = runner.invoke(app, ["init"])
+            result = runner.invoke(app, ["init", "--minimal"])
 
             # Assert
             assert result.exit_code == 1

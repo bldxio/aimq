@@ -86,7 +86,8 @@ class TestEnableCommand:
 
         # Assert
         assert result.exit_code == 1
-        assert f"Failed to enable PGMQ: {error_message}" in result.stdout
+        # Error messages are written to stderr, but CliRunner combines them in output
+        assert f"Failed to enable PGMQ: {error_message}" in result.output
         mock_supabase_config.enable.assert_called_once()
 
     def test_enable_project_path_error(self, runner: CliRunner) -> None:
@@ -108,4 +109,5 @@ class TestEnableCommand:
 
             # Assert
             assert result.exit_code == 1
-            assert f"Failed to enable PGMQ: {error_message}" in result.stdout
+            # Error messages are written to stderr, but CliRunner combines them in output
+            assert f"Failed to enable PGMQ: {error_message}" in result.output
