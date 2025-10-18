@@ -1,44 +1,49 @@
-# Stage 1: Build dependencies and install app
+# AIMQ Worker Docker Image (Published)
+# This image is designed for deployment where users provide their own tasks.py
+# via volume mount or git URL environment variable.
+#
+# Built from source during CI/CD to ensure version consistency.
+#
+# Usage:
+#   Volume mount: docker run -v ./tasks.py:/app/tasks.py -v ./.env:/app/.env aimq:latest
+#   Git URL:      docker run -e AIMQ_TASKS=git:user/repo@branch aimq:latest
+#
+# Multi-stage build for minimal final image size
+
+# Stage 1: Builder - Install dependencies and build package
 FROM python:3.12-slim AS builder
 
-# Install build dependencies in one layer and clean up
+# Install build dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
-    libgl1 \
-    libglib2.0-0 \
     git \
-    curl \
     && rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/*
 
 # Install uv
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
-WORKDIR /app
+WORKDIR /build
 
-# Copy dependency files first for better caching
+# Copy package files for dependency resolution
 COPY pyproject.toml uv.lock README.md .python-version ./
 
 # Copy source code
 COPY src ./src
 
-# Install dependencies using native uv sync (reproducible from lockfile)
-# --frozen: Don't update lockfile, use exact versions
-# Excludes dev dependency group by default
+# Install the package and its dependencies using uv
+# --frozen: Use exact versions from lockfile
+# This ensures reproducible builds
 RUN uv sync --frozen
 
-# Remove unnecessary files to reduce layer size
-RUN find /usr/local/lib/python3.12/site-packages -name "*.pyc" -delete && \
-    find /usr/local/lib/python3.12/site-packages -name "__pycache__" -type d -exec rm -rf {} + 2>/dev/null || true && \
-    find /usr/local/lib/python3.12/site-packages -name "*.pyo" -delete
-
-# Stage 2: Minimal runtime image
+# Stage 2: Runtime - Minimal image with only runtime dependencies
 FROM python:3.12-slim
 
-# Install only runtime dependencies
+# Install runtime dependencies for AI/ML libraries and git
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libgl1 \
     libglib2.0-0 \
     libgomp1 \
+    git \
     && rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/*
 
 # Create non-root user for security
@@ -46,20 +51,24 @@ RUN groupadd -r aimq && useradd -r -g aimq aimq
 
 WORKDIR /app
 
-# Copy only necessary Python packages (more selective copying)
-COPY --from=builder /usr/local/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages
-COPY --from=builder /usr/local/bin/python* /usr/local/bin/
-COPY --from=builder /app/src ./src
+# Copy installed packages from builder
+COPY --from=builder /build/.venv/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages
+
+# Copy the aimq source code (required since it's installed in editable mode)
+COPY --from=builder /build/src/aimq /usr/local/lib/python3.12/site-packages/aimq
 
 # Change ownership to non-root user
 RUN chown -R aimq:aimq /app
 
 USER aimq
 
-# Ensure the aimq package is in the Python path
-ENV PYTHONPATH=/app/src
+# Disable Python output buffering for better logging
+ENV PYTHONUNBUFFERED=1
 
-# Expose port if needed
-# EXPOSE 8080
-
-CMD ["python", "-m", "aimq.worker"]
+# Default command starts the worker using Python module execution
+# Users can override with volume mount or AIMQ_TASKS environment variable:
+# - Volume: -v ./tasks.py:/app/tasks.py
+# - Git URL: -e AIMQ_TASKS=git:user/repo@branch
+# - Git subdir: -e AIMQ_TASKS=git:user/monorepo#services/worker
+ENTRYPOINT ["python", "-m", "aimq"]
+CMD ["start"]

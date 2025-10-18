@@ -226,20 +226,22 @@ supabase.rpc("pgmq_send", {
 
 ## Docker Deployment
 
-AIMQ can be easily deployed using Docker for production environments.
+AIMQ provides two Docker deployment options: local development setup and using the published image.
 
-### Quick Docker Setup
+### Option 1: Local Development (Recommended for Getting Started)
+
+Generate Docker files in your project:
 
 ```bash
 # Initialize with Docker files
 aimq init --docker
 
 # This creates:
-# - Dockerfile
-# - docker-compose.yml
+# - Dockerfile (optimized for your project)
+# - docker-compose.yml (with volume mounts)
 # - .dockerignore
 
-# Build and run
+# Start the worker
 docker-compose up -d
 
 # View logs
@@ -249,57 +251,62 @@ docker-compose logs -f
 docker-compose down
 ```
 
-### Manual Docker Setup
+### Option 2: Published Image (Recommended for Production)
 
-If you already have a project, you can manually create a Dockerfile:
+Use the pre-built AIMQ image from the registry:
 
-```dockerfile
-FROM python:3.12-slim
-
-# Install runtime dependencies
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    libgl1 libglib2.0-0 libgomp1 \
-    && rm -rf /var/lib/apt/lists/*
-
-WORKDIR /app
-
-# Copy your tasks.py
-COPY tasks.py .env ./
-
-# Install uv and aimq
-COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
-RUN uv pip install --system aimq
-
-ENV PYTHONUNBUFFERED=1
-
-CMD ["aimq", "start", "tasks.py"]
+**With local tasks.py (development):**
+```bash
+docker run --rm \
+  -v $(pwd)/tasks.py:/app/tasks.py:ro \
+  -v $(pwd)/.env:/app/.env:ro \
+  aimq:latest
 ```
 
-And a `docker-compose.yml`:
+**With git repository (production):**
+```bash
+# Load tasks from a git repository
+docker run --rm \
+  -e AIMQ_TASKS=git:mycompany/aimq-tasks@production \
+  -e SUPABASE_URL=https://xxx.supabase.co \
+  -e SUPABASE_KEY=your-key \
+  aimq:latest
+```
 
+**Docker Compose with git repository:**
 ```yaml
 version: '3.8'
 
 services:
   aimq-worker:
-    build: .
-    volumes:
-      - ./tasks.py:/app/tasks.py:ro
-      - ./.env:/app/.env:ro
+    image: aimq:latest
     environment:
+      - AIMQ_TASKS=git:mycompany/aimq-tasks@production
       - SUPABASE_URL=${SUPABASE_URL}
       - SUPABASE_KEY=${SUPABASE_KEY}
       - WORKER_NAME=aimq-worker
     restart: unless-stopped
 ```
 
-### Production Deployment Considerations
+### Git URL Patterns
 
-- **Scaling**: Run multiple worker containers to process more messages in parallel
+AIMQ supports npm-style git URLs for loading tasks from repositories:
+
+- `git:user/repo` - Default branch from GitHub
+- `git:user/repo@branch` - Specific branch or tag
+- `git:user/repo#path/to/tasks` - Subdirectory in monorepo
+- `git:gitlab.com/user/repo@v1.0.0` - Full URL with version
+
+### Production Deployment Tips
+
+- **Scaling**: Run multiple worker containers for parallel processing
+- **Git Repos**: Store tasks in version-controlled repositories for GitOps workflows
+- **Secrets**: Use Docker secrets or environment variable injection
 - **Monitoring**: Add health checks and logging aggregation
-- **Secrets**: Use Docker secrets or environment variable injection (not .env files in production)
-- **Resource Limits**: Set memory and CPU limits based on your AI model requirements
-- **Network**: Ensure workers can reach your Supabase instance (check firewall rules)
+- **Resource Limits**: Set memory/CPU limits based on AI model requirements
+- **Authentication**: For private git repos, mount SSH keys or use HTTPS tokens
+
+For detailed Docker deployment patterns and troubleshooting, see [docker/README.md](docker/README.md).
 
 ## Development
 

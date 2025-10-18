@@ -1,5 +1,6 @@
 """Command for starting the AIMQ worker."""
 
+import os
 import signal
 import sys
 from pathlib import Path
@@ -7,30 +8,61 @@ from typing import Optional
 
 import typer
 
+from aimq.commands.shared.git_loader import GitURLError, is_git_url, load_from_git_url
 from aimq.config import config
 from aimq.logger import LogLevel
 from aimq.worker import Worker
 
 
-def resolve_worker_path(worker_path: Optional[Path]) -> Path:
+def resolve_worker_path(worker_path: Optional[str]) -> Path:
     """Resolve the worker path with fallback logic.
 
+    Supports:
+    - Local file paths: tasks.py, /path/to/tasks.py
+    - Git URLs: git:user/repo, git:user/repo@branch, git:host/user/repo#path
+    - Environment variable: AIMQ_TASKS
+
     Args:
-        worker_path: Optional worker path provided by user.
+        worker_path: Optional worker path or git URL provided by user.
 
     Returns:
         Resolved Path to the worker file.
+
+    Raises:
+        GitURLError: If git URL is invalid or loading fails.
     """
+    # Check for environment variable first
+    if worker_path is None:
+        worker_path = os.getenv("AIMQ_TASKS")
+
+    # If still None, use config default or current directory
     if worker_path is None:
         # Check for WORKER_PATH env var or config default
-        worker_path = Path(config.worker_path)
+        worker_path_obj = Path(config.worker_path)
 
         # If the config default doesn't exist, try current directory
-        if not worker_path.exists():
+        if not worker_path_obj.exists():
             cwd_tasks = Path.cwd() / "tasks.py"
             if cwd_tasks.exists():
-                worker_path = cwd_tasks
+                worker_path_obj = cwd_tasks
+        return worker_path_obj
 
+    # Check if it's a git URL
+    if is_git_url(worker_path):
+        try:
+            # Check for SSH preference (git operations might need SSH keys)
+            use_ssh = os.getenv("AIMQ_USE_SSH", "false").lower() == "true"
+            return load_from_git_url(worker_path, use_ssh=use_ssh)
+        except GitURLError as e:
+            typer.echo(f"Error loading from git URL: {e}", err=True)
+            typer.echo("\nGit URL format: git:user/repo[@ref][#subdir]", err=True)
+            typer.echo("Examples:", err=True)
+            typer.echo("  git:mycompany/aimq-tasks", err=True)
+            typer.echo("  git:mycompany/aimq-tasks@production", err=True)
+            typer.echo("  git:mycompany/monorepo#services/worker", err=True)
+            raise typer.Exit(1)
+
+    # Treat as local path
     return Path(worker_path)
 
 
@@ -94,9 +126,9 @@ def load_worker_safely(worker_path: Path) -> Worker:
 
 
 def start(
-    worker_path: Optional[Path] = typer.Argument(
+    worker_path: Optional[str] = typer.Argument(
         None,
-        help="Path to the Python file containing worker definitions",
+        help="Path to tasks.py or git URL (git:user/repo[@ref][#path])",
     ),
     log_level: LogLevel = typer.Option(
         LogLevel.INFO,
@@ -114,10 +146,17 @@ def start(
 ):
     """Start the AIMQ worker with the specified tasks.
 
+    Supports local files and git URLs:
+    - Local: aimq start tasks.py
+    - Git URL: aimq start git:user/repo
+    - Git branch: aimq start git:user/repo@production
+    - Git subdir: aimq start git:user/monorepo#services/worker
+
     If no worker_path is provided, attempts to use:
-    1. WORKER_PATH environment variable
-    2. ./tasks.py in the current directory
-    3. Config default (usually ./tasks.py)
+    1. AIMQ_TASKS environment variable (can be local path or git URL)
+    2. WORKER_PATH environment variable
+    3. ./tasks.py in the current directory
+    4. Config default (usually ./tasks.py)
     """
     # Resolve and validate worker path
     resolved_path = resolve_worker_path(worker_path)
