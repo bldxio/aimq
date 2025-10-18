@@ -12,18 +12,42 @@ AIMQ (AI Message Queue) is a robust message queue processor designed specificall
 
 ## Installation
 
-This project uses Poetry for dependency management. To get started:
+This project uses [uv](https://docs.astral.sh/uv/) for extremely fast Python package and project management. To get started:
 
 ```bash
-# Install Poetry if you haven't already
-curl -sSL https://install.python-poetry.org | python3 -
+# Install uv if you haven't already
+curl -LsSf https://astral.sh/uv/install.sh | sh
 
 # Clone the repository
 git clone <your-repo-url>
 cd aimq
 
-# Install dependencies
-poetry install
+# Install dependencies from lockfile (production)
+# Creates .venv automatically and installs exact versions from uv.lock
+uv sync
+
+# For development (includes test/dev tools)
+uv sync --group dev
+```
+
+### Key uv Commands
+
+```bash
+# Add a new dependency
+uv add requests
+
+# Add a development dependency
+uv add --dev pytest
+
+# Remove a dependency
+uv remove requests
+
+# Update dependencies
+uv lock --upgrade
+
+# Run commands in the uv environment
+uv run python -m aimq.worker
+uv run pytest
 ```
 
 ## Configuration
@@ -43,7 +67,7 @@ QUEUE_NAME=your_queue_name
 1. Start the processor:
 
 ```bash
-poetry run python -m aimq.processor
+uv run python -m aimq.processor
 ```
 
 2. Process documents by adding messages to your Supabase queue:
@@ -66,7 +90,7 @@ To contribute to AIMQ:
 1. Fork the repository
 2. Create a feature branch
 3. Make your changes
-4. Run tests: `poetry run pytest`
+4. Run tests: `uv run pytest`
 5. Submit a pull request
 
 ## License

@@ -10,22 +10,21 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     && rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/*
 
-# Install Poetry
-RUN pip install --no-cache-dir poetry
+# Install uv
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
 WORKDIR /app
 
 # Copy dependency files first for better caching
-COPY pyproject.toml poetry.lock* README.md ./
-
-# Configure Poetry and install dependencies (skip installing the current project)
-RUN poetry config virtualenvs.create false && \
-    poetry install --no-interaction --no-ansi --only main --no-root && \
-    pip uninstall -y poetry && \
-    pip cache purge
+COPY pyproject.toml uv.lock README.md .python-version ./
 
 # Copy source code
 COPY src ./src
+
+# Install dependencies using native uv sync (reproducible from lockfile)
+# --frozen: Don't update lockfile, use exact versions
+# Excludes dev dependency group by default
+RUN uv sync --frozen
 
 # Remove unnecessary files to reduce layer size
 RUN find /usr/local/lib/python3.12/site-packages -name "*.pyc" -delete && \

@@ -20,7 +20,6 @@ wheels/
 .installed.cfg
 *.egg
 *.pyc
-.python-version
 .mypy_cache/
 .ruff_cache/
 .dmypy.json
