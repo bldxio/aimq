@@ -116,17 +116,17 @@ Document your tasks thoroughly:
 ```python
 def create_classification_task():
     """Create a task for text classification.
-    
+
     This task processes input text and classifies it into predefined categories
     using a specified classification model.
-    
+
     Returns:
         A runnable pipeline that:
         1. Validates input text
         2. Preprocesses text for classification
         3. Applies classification model
         4. Formats results with confidence scores
-    
+
     Example:
         ```python
         classifier = create_classification_task()
@@ -149,7 +149,7 @@ Write unit tests for individual components:
 def test_summarization_task():
     task = create_summarization_task()
     result = task.invoke({"content": "Test content"})
-    
+
     assert "summary" in result
     assert isinstance(result["summary"], str)
 ```
@@ -165,7 +165,7 @@ def test_analysis_pipeline():
         "text": "Test content",
         "metadata": {"source": "test"}
     })
-    
+
     assert "summary" in result
     assert "sentiment" in result
     assert result["metadata"]["source"] == "test"

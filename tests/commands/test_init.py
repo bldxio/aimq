@@ -5,8 +5,8 @@ initializing a new AIMQ project with the required directory structure and files.
 """
 
 from pathlib import Path
-from typing import Generator, Tuple, Optional, Union
-from unittest.mock import Mock, patch, call
+from typing import Generator, Optional, Tuple, Union
+from unittest.mock import Mock, patch
 
 import pytest
 from typer.testing import CliRunner
@@ -42,23 +42,24 @@ class TestInitCommand:
             The Path operations (mkdir, exists, write_text, read_text) are mocked to simulate
             file system operations without actually performing them.
         """
-        with patch("aimq.commands.init.SupabaseConfig") as mock_config, \
-             patch("aimq.commands.init.SupabaseMigrations") as mock_migrations, \
-             patch("aimq.commands.init.ProjectPath") as mock_path_class, \
-             patch("pathlib.Path.mkdir") as mock_mkdir, \
-             patch("pathlib.Path.exists") as mock_exists, \
-             patch("pathlib.Path.write_text") as mock_write_text, \
-             patch("pathlib.Path.read_text") as mock_read_text:
-
+        with (
+            patch("aimq.commands.init.SupabaseConfig") as mock_config,
+            patch("aimq.commands.init.SupabaseMigrations") as mock_migrations,
+            patch("aimq.commands.init.ProjectPath") as mock_path_class,
+            patch("pathlib.Path.mkdir") as mock_mkdir,
+            patch("pathlib.Path.exists") as mock_exists,
+            patch("pathlib.Path.write_text") as mock_write_text,
+            patch("pathlib.Path.read_text") as mock_read_text,
+        ):
             config_instance = Mock(spec=SupabaseConfig)
             migrations_instance = Mock(spec=SupabaseMigrations)
-            
+
             def create_path_instance(root: Optional[Union[str, Path]] = None) -> Mock:
                 """Create a mock ProjectPath instance.
-                
+
                 Args:
                     root: Optional root path for the project. Can be a string, Path, or None.
-                    
+
                 Returns:
                     Mock: Configured mock ProjectPath instance.
                 """
@@ -67,7 +68,7 @@ class TestInitCommand:
                 path_instance.supabase = path_instance.root / "supabase"
                 path_instance.migrations = path_instance.supabase / "migrations"
                 return path_instance
-            
+
             mock_config.return_value = config_instance
             mock_migrations.return_value = migrations_instance
             mock_path_class.side_effect = create_path_instance
@@ -78,7 +79,9 @@ class TestInitCommand:
 
             yield config_instance, migrations_instance, mock_path_class, mock_mkdir
 
-    def test_init_successful(self, runner: CliRunner, mock_dependencies: Tuple[Mock, Mock, Mock, Mock]) -> None:
+    def test_init_successful(
+        self, runner: CliRunner, mock_dependencies: Tuple[Mock, Mock, Mock, Mock]
+    ) -> None:
         """Test successful project initialization.
 
         Args:
@@ -94,7 +97,7 @@ class TestInitCommand:
 
         # Act
         result = runner.invoke(app, ["init"])
-        
+
         # Print debug info if test fails
         if result.exit_code != 0:
             print(f"Command failed with output: {result.stdout}")
@@ -107,7 +110,9 @@ class TestInitCommand:
         mock_path_class.assert_called_once_with(expected_path)
         assert mock_mkdir.call_count == 3  # project_dir, supabase, migrations
 
-    def test_init_with_directory(self, runner: CliRunner, mock_dependencies: Tuple[Mock, Mock, Mock, Mock]) -> None:
+    def test_init_with_directory(
+        self, runner: CliRunner, mock_dependencies: Tuple[Mock, Mock, Mock, Mock]
+    ) -> None:
         """Test project initialization with a specific directory.
 
         Args:
@@ -124,7 +129,7 @@ class TestInitCommand:
 
         # Act
         result = runner.invoke(app, ["init", test_dir])
-        
+
         # Print debug info if test fails
         if result.exit_code != 0:
             print(f"Command failed with output: {result.stdout}")
@@ -137,7 +142,9 @@ class TestInitCommand:
         mock_path_class.assert_called_once_with(expected_path)
         assert mock_mkdir.call_count == 3  # project_dir, supabase, migrations
 
-    def test_init_failure_config(self, runner: CliRunner, mock_dependencies: Tuple[Mock, Mock, Mock, Mock]) -> None:
+    def test_init_failure_config(
+        self, runner: CliRunner, mock_dependencies: Tuple[Mock, Mock, Mock, Mock]
+    ) -> None:
         """Test handling of config setup failures.
 
         Args:
@@ -160,7 +167,9 @@ class TestInitCommand:
         assert f"Failed to initialize AIMQ project: {error_message}" in result.stdout
         mock_config.enable.assert_called_once()
 
-    def test_init_failure_migrations(self, runner: CliRunner, mock_dependencies: Tuple[Mock, Mock, Mock, Mock]) -> None:
+    def test_init_failure_migrations(
+        self, runner: CliRunner, mock_dependencies: Tuple[Mock, Mock, Mock, Mock]
+    ) -> None:
         """Test handling of migration setup failures.
 
         Args:

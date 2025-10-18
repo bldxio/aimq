@@ -1,6 +1,8 @@
 from datetime import datetime
 from typing import Any, Optional
+
 from pydantic import BaseModel, Field, PrivateAttr
+
 
 class Job(BaseModel):
     """A job in the queue.
@@ -20,13 +22,13 @@ class Job(BaseModel):
         queue: Optional name of the queue this job belongs to
     """
 
-    id: int = Field(alias='msg_id')
-    attempt: int = Field(alias='read_ct')
+    id: int = Field(alias="msg_id")
+    attempt: int = Field(alias="read_ct")
     updated_at: datetime = Field(default_factory=datetime.now)
     enqueued_at: datetime
-    expires_at: datetime = Field(alias='vt')
-    data: dict[str, Any] = Field(alias='message')
-    status: str = Field(default='pending')
+    expires_at: datetime = Field(alias="vt")
+    data: dict[str, Any] = Field(alias="message")
+    status: str = Field(default="pending")
     queue: Optional[str] = Field(default=None)
     _popped: bool = PrivateAttr(default=False)
 
@@ -40,7 +42,9 @@ class Job(BaseModel):
         return self._popped
 
     @classmethod
-    def from_response(cls, response_data: dict, queue: Optional[str] = None, popped: bool = False) -> 'Job':
+    def from_response(
+        cls, response_data: dict, queue: Optional[str] = None, popped: bool = False
+    ) -> "Job":
         """Create a Job instance from API response data.
 
         Args:

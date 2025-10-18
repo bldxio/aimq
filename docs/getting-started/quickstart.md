@@ -49,7 +49,7 @@ def process_with_ai(data):
     prompt = ChatPromptTemplate.from_template("Summarize this text: {text}")
     model = ChatOpenAI()
     chain = prompt | model
-    
+
     # Process the input
     return chain.with_config({"text": data.get("text", "")})
 

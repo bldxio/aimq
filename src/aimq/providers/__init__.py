@@ -1,4 +1,4 @@
-from .base import QueueProvider, QueueNotFoundError
+from .base import QueueNotFoundError, QueueProvider
 from .supabase import SupabaseQueueProvider
 
-__all__ = ['QueueProvider', 'QueueNotFoundError', 'SupabaseQueueProvider']
+__all__ = ["QueueProvider", "QueueNotFoundError", "SupabaseQueueProvider"]

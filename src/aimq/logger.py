@@ -1,6 +1,7 @@
 import queue
 from enum import Enum
-from typing import Any, Optional, NamedTuple, Union
+from typing import Any, NamedTuple, Optional, Union
+
 from pydantic import BaseModel, Field
 from rich.console import Console
 from rich.panel import Panel
@@ -8,9 +9,11 @@ from rich.text import Text
 
 console = Console()
 
+
 class LogStyle(NamedTuple):
     template: str
     color: str
+
 
 class LogLevel(str, Enum):
     DEBUG = "debug"
@@ -25,17 +28,20 @@ class LogLevel(str, Enum):
         levels = list(LogLevel)
         return levels.index(self) >= levels.index(other)
 
+
 class LogEvent(BaseModel):
     level: LogLevel
     msg: str
     data: Optional[Any] = None
-    styles: dict[str, LogStyle] = Field(default_factory=lambda: {
-        LogLevel.DEBUG: LogStyle("🔍 DEBUG", "blue"),
-        LogLevel.INFO: LogStyle("ℹ️ INFO", "green"),
-        LogLevel.WARNING: LogStyle("⚠️ WARNING", "yellow"),
-        LogLevel.ERROR: LogStyle("❌ ERROR", "red"),
-        LogLevel.CRITICAL: LogStyle("🚨 CRITICAL", "red bold")
-    })
+    styles: dict[str, LogStyle] = Field(
+        default_factory=lambda: {
+            LogLevel.DEBUG: LogStyle("🔍 DEBUG", "blue"),
+            LogLevel.INFO: LogStyle("ℹ️ INFO", "green"),
+            LogLevel.WARNING: LogStyle("⚠️ WARNING", "yellow"),
+            LogLevel.ERROR: LogStyle("❌ ERROR", "red"),
+            LogLevel.CRITICAL: LogStyle("🚨 CRITICAL", "red bold"),
+        }
+    )
 
     def __str__(self) -> str:
         style = self.styles[self.level]
@@ -52,16 +58,17 @@ class LogEvent(BaseModel):
         text = Text()
         text.append(f"{style.template}: ", style=f"{style.color}")
         text.append(self.msg, style=f"dim {style.color}")
-        
+
         if self.data:
             text.append("\nData: ", style=f"{style.color} bold")
             text.append(str(self.data), style=f"dim {style.color}")
-        
+
         return text
 
     def print(self):
         style = self.styles[self.level]
         console.print(Panel(self.__rich__(), border_style=style.color))
+
 
 class Logger:
     def __init__(self):

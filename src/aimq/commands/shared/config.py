@@ -1,8 +1,8 @@
 import shutil
+from pathlib import Path
+
 import tomlkit
 from tomlkit import TOMLDocument, items
-from pathlib import Path
-from typing import Dict, Any
 
 from .paths import ProjectPath
 
@@ -79,4 +79,3 @@ class SupabaseConfig:
         if "pgmq_public" in schemas:
             schemas.remove("pgmq_public")
             self.save()
-

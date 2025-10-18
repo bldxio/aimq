@@ -37,8 +37,10 @@ class TestEnableCommand:
         Notes:
             This fixture also mocks the ProjectPath class to avoid filesystem operations.
         """
-        with patch("aimq.commands.enable.SupabaseConfig") as mock_config, \
-             patch("aimq.commands.enable.ProjectPath") as mock_path:
+        with (
+            patch("aimq.commands.enable.SupabaseConfig") as mock_config,
+            patch("aimq.commands.enable.ProjectPath") as mock_path,
+        ):
             instance = Mock(spec=SupabaseConfig)
             mock_config.return_value = instance
             mock_path.return_value = Mock(spec=ProjectPath)
