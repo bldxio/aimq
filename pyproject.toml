@@ -1,6 +1,6 @@
 [project]
 name = "aimq"
-version = "0.1.0"
+version = "0.1.1a1"
 description = "A robust message queue processor for Supabase pgmq with AI-powered document processing capabilities"
 authors = [{name = "AIMQ Contributors"}]
 readme = "README.md"
@@ -31,8 +31,8 @@ dependencies = [
     "python-dotenv>=1.0.0,<2.0.0",
     "supabase>=2.10.0,<3.0.0",
     "typer>=0.9.0,<1.0.0",
-    "rich>=13.7.0,<14.0.0",
-    "pillow>=10.2.0,<11.0.0",
+    "rich>=13.7.0,<15.0.0",
+    "pillow>=10.2.0,<13.0.0",
     "openai>=1.57.1,<2.0.0",
     "langchain>=0.3.10,<0.4.0",
     "langchain-openai>=0.2.12,<0.3.0",
@@ -105,7 +105,7 @@ dev = [
     "pytest-asyncio>=0.23.5,<1.0.0",
     "httpx>=0.28.0,<1.0.0",
     "pytest-cov>=4.1.0,<5.0.0",
-    "ipykernel>=6.29.5,<7.0.0",
+    "ipykernel>=6.29.5,<8.0.0",
     "mkdocs>=1.6.1,<2.0.0",
     "mkdocs-material>=9.5.49,<10.0.0",
     "mkdocstrings[python]>=0.27.0,<1.0.0",
