@@ -85,12 +85,49 @@ message = QueueMessage(
 
 ## Development
 
-To contribute to AIMQ:
+This project uses [just](https://github.com/casey/just) as a task runner. Install it with:
+
+```bash
+# macOS
+brew install just
+
+# Other platforms: https://github.com/casey/just#installation
+```
+
+### Common Tasks
+
+```bash
+# Setup development environment
+just install
+
+# Run tests
+just test
+just test-cov          # With coverage
+
+# Code quality
+just lint              # Check code style
+just format            # Format code
+just type-check        # Type checking
+just ci                # Run all checks (lint + type + test)
+
+# Docker
+just dev               # Start dev environment
+just dev-build         # Build and start
+just logs              # View logs
+
+# Documentation
+just docs-serve        # Serve docs locally
+
+# See all available tasks
+just --list
+```
+
+### Contributing
 
 1. Fork the repository
 2. Create a feature branch
 3. Make your changes
-4. Run tests: `uv run pytest`
+4. Run quality checks: `just ci`
 5. Submit a pull request
 
 ## License
