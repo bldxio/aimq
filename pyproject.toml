@@ -73,7 +73,7 @@ multi_line_output = 3
 line_length = 100
 
 [tool.pytest.ini_options]
-minversion = "0.1.1b2"
+minversion = "8.0"
 addopts = "-ra -q --cov=aimq --cov-report=term-missing"
 testpaths = ["tests"]
 
