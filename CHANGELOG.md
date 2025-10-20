@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.1b2] - 2025-10-20
+
 ### Added
 - Automated PyPI publishing workflow via GitHub Actions
 - Comprehensive CI/CD pipeline (lint, type-check, test on Python 3.11-3.13)
@@ -29,6 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated all GitHub Actions workflows to use uv
 - Improved release process with guided workflows
 - Documentation updated to reflect uv migration
+- Improved type hints and type checker compatibility across codebase
 
 ### Deprecated
 - N/A
