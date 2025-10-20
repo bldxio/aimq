@@ -1,5 +1,11 @@
 # AIMQ
 
+[![PyPI version](https://badge.fury.io/py/aimq.svg)](https://pypi.org/project/aimq/)
+[![Python Versions](https://img.shields.io/pypi/pyversions/aimq.svg)](https://pypi.org/project/aimq/)
+[![CI](https://github.com/bldxio/aimq/actions/workflows/ci.yml/badge.svg)](https://github.com/bldxio/aimq/actions/workflows/ci.yml)
+[![Documentation](https://img.shields.io/badge/docs-latest-blue.svg)](https://bldxio.github.io/aimq/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 AIMQ (AI Message Queue) is a robust message queue processor designed specifically for Supabase's pgmq integration. It provides a powerful framework for processing queued tasks with built-in support for AI-powered document processing and OCR capabilities.
 
 ## Features

@@ -237,6 +237,184 @@ This is implemented in `src/aimq/commands/shared/git_loader.py` and used by the 
 - Uses `uv sync --frozen` for reproducible builds
 - See docker/README.md for deployment patterns
 
+## Release Workflow
+
+### IMPORTANT: CHANGELOG.md Updates
+
+**ALWAYS update CHANGELOG.md before making commits!**
+
+When making changes:
+1. Add your changes to the `[Unreleased]` section under the appropriate heading:
+   - `Added` - New features
+   - `Changed` - Changes to existing functionality
+   - `Deprecated` - Soon-to-be removed features
+   - `Removed` - Removed features
+   - `Fixed` - Bug fixes
+   - `Security` - Security updates
+
+2. Use clear, user-facing descriptions (not internal implementation details)
+
+3. When preparing a release, the `[Unreleased]` section will be moved to a dated version section
+
+### Version Strategy
+
+- **dev branch**: Beta versions (0.1.1b1, 0.1.1b2, etc.) → TestPyPI
+- **main branch**: Stable versions (0.1.1, 0.2.0, etc.) → PyPI
+- **Release candidates**: Optional (0.1.1rc1) for pre-release testing
+
+### Beta Release Process (dev branch)
+
+1. **Prepare the release:**
+   ```bash
+   just release-beta
+   ```
+   This will:
+   - Run CI checks (lint, type-check, test)
+   - Bump version (0.1.1b1 → 0.1.1b2)
+   - Prompt to update CHANGELOG.md
+   - Build the package
+
+2. **Update CHANGELOG.md:**
+   - Move changes from `[Unreleased]` to new version section
+   - Add release date
+   - Ensure all changes are documented
+
+3. **Commit and push:**
+   ```bash
+   git add -A
+   git commit -m "chore: release v0.1.1b2"
+   git push origin dev
+   ```
+
+4. **Automated publishing:**
+   - GitHub Actions detects version change in pyproject.toml
+   - Automatically publishes to TestPyPI
+   - Creates summary with installation instructions
+
+5. **Test the release:**
+   ```bash
+   uv pip install --index-url https://test.pypi.org/simple/ aimq==0.1.1b2
+   ```
+
+### Stable Release Process (main branch - Maintainers Only)
+
+1. **Ensure dev is ready:**
+   - All tests passing
+   - CHANGELOG.md up to date
+   - Documentation current
+
+2. **Prepare stable release:**
+   ```bash
+   just release
+   ```
+   This will:
+   - Run CI checks
+   - Bump to stable (0.1.1b2 → 0.1.1)
+   - Prompt to update CHANGELOG.md
+   - Build the package
+
+3. **Create release branch:**
+   ```bash
+   git add -A
+   git commit -m "chore: release v0.1.1"
+   git checkout -b release/v0.1.1
+   git push origin release/v0.1.1
+   ```
+
+4. **Create PR to main:**
+   - Create pull request from `release/v0.1.1` to `main`
+   - Review and approve
+   - Merge to main
+
+5. **Automated publishing:**
+   - GitHub Actions publishes to PyPI
+   - Creates GitHub release with tag `v0.1.1`
+   - Generates release notes
+
+6. **Sync back to dev:**
+   ```bash
+   git checkout main
+   git pull
+   git checkout dev
+   git merge main
+   git push origin dev
+   ```
+
+### Manual Version Bumps
+
+When Claude Code is asked to bump versions:
+
+```bash
+# Check current version
+just version
+
+# Beta versions (dev branch)
+just version-beta          # 0.1.1b1 → 0.1.1b2
+
+# Release candidates
+just version-rc            # 0.1.1b2 → 0.1.1rc1
+
+# Stable release
+just version-stable        # 0.1.1rc1 → 0.1.1
+
+# Semantic versioning (stable versions only)
+just version-patch         # 0.1.1 → 0.1.2
+just version-minor         # 0.1.1 → 0.2.0
+just version-major         # 0.1.1 → 1.0.0
+```
+
+### Pre-Release Checklist
+
+Before any release, verify:
+- [ ] All tests passing (`just ci`)
+- [ ] CHANGELOG.md updated with all changes
+- [ ] Version numbers synced (pyproject.toml and __init__.py)
+- [ ] Documentation reflects changes
+- [ ] No uncommitted changes
+- [ ] Branch is up to date with remote
+
+### GitHub Actions Workflows
+
+**CI Workflow (`.github/workflows/ci.yml`)**
+- Runs on: PR to dev/main, push to dev/main
+- Tests: Python 3.11, 3.12, 3.13
+- Checks: lint, type-check, test coverage
+
+**Publish Workflow (`.github/workflows/publish.yml`)**
+- Triggers: Version change in pyproject.toml
+- dev → TestPyPI
+- main → PyPI + GitHub Release
+
+**Docs Workflow (`.github/workflows/docs.yml`)**
+- Triggers: Push to main
+- Builds and deploys to GitHub Pages
+
+### Required GitHub Secrets
+
+Ensure these secrets are set in GitHub repository settings:
+
+**Environment: dev**
+- `TEST_PYPI_API_TOKEN` - TestPyPI API token
+
+**Environment: prd**
+- `PYPI_API_TOKEN` - PyPI API token
+
+### Troubleshooting Releases
+
+**Version not publishing:**
+- Check GitHub Actions logs
+- Verify pyproject.toml version changed in commit
+- Ensure secrets are set correctly
+
+**Tests failing on CI:**
+- Run `just ci` locally first
+- Check for environment-specific issues
+- Review test logs in GitHub Actions
+
+**Version sync issues:**
+- Run `uv run python scripts/sync_version.py <version>` manually
+- Verify both pyproject.toml and __init__.py match
+
 ## Common Pitfalls
 
 1. **Don't use pip/poetry** - This project uses uv exclusively

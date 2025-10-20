@@ -8,30 +8,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- Initial project setup
-- Core message queue processing functionality
-- OCR processing tools
-- Supabase pgmq integration
-- Docker support for development and production
-- Poetry for dependency management
-- Pre-commit hooks for code quality
-- Testing framework and conventions
-- Documentation structure
+- Automated PyPI publishing workflow via GitHub Actions
+- Comprehensive CI/CD pipeline (lint, type-check, test on Python 3.11-3.13)
+- Release management `just` commands for version bumping
+- Version synchronization script for pyproject.toml and __init__.py
+- Beta/RC/stable release workflows
+- TestPyPI publishing for dev branch
+- PyPI publishing for main branch
 
 ### Changed
-- N/A
+- Migrated from Poetry to uv for dependency management
+- Updated all GitHub Actions workflows to use uv
+- Improved release process with guided workflows
+- Documentation updated to reflect uv migration
 
 ### Deprecated
 - N/A
 
 ### Removed
-- N/A
+- Poetry dependency management
 
 ### Fixed
-- N/A
+- Version synchronization between pyproject.toml and __init__.py
 
 ### Security
 - N/A
+
+## [0.1.1b1] - 2025-10-19
+
+### Added
+- Git URL loading support for Docker deployments
+- Enhanced Docker deployment guide
+- Kubernetes deployment examples
+
+### Changed
+- Version bumped to beta for testing release workflow
+
+### Fixed
+- Test coverage improvements (89%+)
 
 ## [0.1.0] - 2025-01-17
 

@@ -170,3 +170,185 @@ add-dev package:
 # Remove a dependency
 remove package:
     uv remove {{package}}
+
+# ============================================================================
+# Release Management
+# ============================================================================
+
+# Get current version
+version:
+    @uv run python scripts/sync_version.py
+
+# Bump to next beta version (e.g., 0.1.1b1 -> 0.1.1b2)
+version-beta:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    current=$(uv run python -c "import tomllib; print(tomllib.load(open('pyproject.toml', 'rb'))['project']['version'])")
+    if [[ $current =~ ^([0-9]+\.[0-9]+\.[0-9]+)b([0-9]+)$ ]]; then
+        base="${BASH_REMATCH[1]}"
+        num="${BASH_REMATCH[2]}"
+        new_num=$((num + 1))
+        new_version="${base}b${new_num}"
+    else
+        # If not a beta, assume we want the first beta of next patch
+        if [[ $current =~ ^([0-9]+\.[0-9]+\.)([0-9]+)(.*)$ ]]; then
+            major_minor="${BASH_REMATCH[1]}"
+            patch="${BASH_REMATCH[2]}"
+            new_patch=$((patch + 1))
+            new_version="${major_minor}${new_patch}b1"
+        else
+            echo "Error: Could not parse version $current"
+            exit 1
+        fi
+    fi
+    uv run python scripts/sync_version.py "$new_version"
+
+# Bump to release candidate (e.g., 0.1.1b2 -> 0.1.1rc1)
+version-rc:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    current=$(uv run python -c "import tomllib; print(tomllib.load(open('pyproject.toml', 'rb'))['project']['version'])")
+    if [[ $current =~ ^([0-9]+\.[0-9]+\.[0-9]+)(b[0-9]+)?$ ]]; then
+        base="${BASH_REMATCH[1]}"
+        new_version="${base}rc1"
+    else
+        echo "Error: Could not parse version $current"
+        exit 1
+    fi
+    uv run python scripts/sync_version.py "$new_version"
+
+# Bump to stable release (e.g., 0.1.1rc1 -> 0.1.1)
+version-stable:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    current=$(uv run python -c "import tomllib; print(tomllib.load(open('pyproject.toml', 'rb'))['project']['version'])")
+    if [[ $current =~ ^([0-9]+\.[0-9]+\.[0-9]+)(b[0-9]+|rc[0-9]+)?$ ]]; then
+        base="${BASH_REMATCH[1]}"
+        new_version="$base"
+    else
+        echo "Error: Could not parse version $current"
+        exit 1
+    fi
+    uv run python scripts/sync_version.py "$new_version"
+
+# Bump patch version (e.g., 0.1.1 -> 0.1.2)
+version-patch:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    current=$(uv run python -c "import tomllib; print(tomllib.load(open('pyproject.toml', 'rb'))['project']['version'])")
+    if [[ $current =~ ^([0-9]+\.[0-9]+\.)([0-9]+)$ ]]; then
+        prefix="${BASH_REMATCH[1]}"
+        patch="${BASH_REMATCH[2]}"
+        new_patch=$((patch + 1))
+        new_version="${prefix}${new_patch}"
+    else
+        echo "Error: Could not parse version $current (must be stable X.Y.Z)"
+        exit 1
+    fi
+    uv run python scripts/sync_version.py "$new_version"
+
+# Bump minor version (e.g., 0.1.1 -> 0.2.0)
+version-minor:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    current=$(uv run python -c "import tomllib; print(tomllib.load(open('pyproject.toml', 'rb'))['project']['version'])")
+    if [[ $current =~ ^([0-9]+\.)([0-9]+)\.[0-9]+$ ]]; then
+        major="${BASH_REMATCH[1]}"
+        minor="${BASH_REMATCH[2]}"
+        new_minor=$((minor + 1))
+        new_version="${major}${new_minor}.0"
+    else
+        echo "Error: Could not parse version $current (must be stable X.Y.Z)"
+        exit 1
+    fi
+    uv run python scripts/sync_version.py "$new_version"
+
+# Bump major version (e.g., 0.1.1 -> 1.0.0)
+version-major:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    current=$(uv run python -c "import tomllib; print(tomllib.load(open('pyproject.toml', 'rb'))['project']['version'])")
+    if [[ $current =~ ^([0-9]+)\.[0-9]+\.[0-9]+$ ]]; then
+        major="${BASH_REMATCH[1]}"
+        new_major=$((major + 1))
+        new_version="${new_major}.0.0"
+    else
+        echo "Error: Could not parse version $current (must be stable X.Y.Z)"
+        exit 1
+    fi
+    uv run python scripts/sync_version.py "$new_version"
+
+# Build distribution packages
+build:
+    @echo "Building distribution packages..."
+    uv build
+    @echo "✓ Build complete. Packages in dist/"
+
+# Publish to TestPyPI (for testing)
+publish-test: build
+    @echo "Publishing to TestPyPI..."
+    uv publish --publish-url https://test.pypi.org/legacy/
+    @echo "✓ Published to TestPyPI"
+    @echo "Test installation: uv pip install --index-url https://test.pypi.org/simple/ aimq"
+
+# Publish to PyPI (production)
+publish: build
+    @echo "Publishing to PyPI..."
+    uv publish
+    @echo "✓ Published to PyPI"
+
+# Complete beta release workflow
+release-beta: ci
+    @echo "=== Beta Release Workflow ==="
+    @echo ""
+    @echo "Current version: $(uv run python -c \"import tomllib; print(tomllib.load(open('pyproject.toml', 'rb'))['project']['version'])\")"
+    @echo ""
+    @echo "This will:"
+    @echo "  1. Bump to next beta version"
+    @echo "  2. Prompt you to update CHANGELOG.md"
+    @echo "  3. Build the package"
+    @echo ""
+    @read -p "Continue? (y/N) " -n 1 -r; echo; [[ $$REPLY =~ ^[Yy]$$ ]]
+    just version-beta
+    @echo ""
+    @echo "⚠️  Please update CHANGELOG.md now with your changes"
+    @echo "Press Enter when done..."
+    @read
+    just build
+    @echo ""
+    @echo "✅ Beta release prepared!"
+    @echo ""
+    @echo "Next steps:"
+    @echo "  1. Review changes: git diff"
+    @echo "  2. Commit: git add -A && git commit -m 'chore: release v$(uv run python -c \"import tomllib; print(tomllib.load(open('pyproject.toml', 'rb'))['project']['version'])\")'"
+    @echo "  3. Push: git push origin dev"
+    @echo "  4. GitHub Actions will automatically publish to TestPyPI"
+
+# Complete stable release workflow
+release: ci
+    @echo "=== Stable Release Workflow ==="
+    @echo ""
+    @echo "Current version: $(uv run python -c \"import tomllib; print(tomllib.load(open('pyproject.toml', 'rb'))['project']['version'])\")"
+    @echo ""
+    @echo "This will:"
+    @echo "  1. Bump to stable version"
+    @echo "  2. Prompt you to update CHANGELOG.md"
+    @echo "  3. Build the package"
+    @echo ""
+    @read -p "Continue? (y/N) " -n 1 -r; echo; [[ $$REPLY =~ ^[Yy]$$ ]]
+    just version-stable
+    @echo ""
+    @echo "⚠️  Please update CHANGELOG.md now with your changes"
+    @echo "Press Enter when done..."
+    @read
+    just build
+    @echo ""
+    @echo "✅ Stable release prepared!"
+    @echo ""
+    @echo "Next steps:"
+    @echo "  1. Review changes: git diff"
+    @echo "  2. Commit: git add -A && git commit -m 'chore: release v$(uv run python -c \"import tomllib; print(tomllib.load(open('pyproject.toml', 'rb'))['project']['version'])\")'"
+    @echo "  3. Create release branch: git checkout -b release/v$(uv run python -c \"import tomllib; print(tomllib.load(open('pyproject.toml', 'rb'))['project']['version'])\")"
+    @echo "  4. Push: git push origin release/v$(uv run python -c \"import tomllib; print(tomllib.load(open('pyproject.toml', 'rb'))['project']['version'])\")"
+    @echo "  5. Create PR to main branch"
+    @echo "  6. After merge, GitHub Actions will publish to PyPI"
