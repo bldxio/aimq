@@ -33,3 +33,12 @@ repos:
       #   - flake8-docstrings
       #   - flake8-bugbear
       #   - flake8-comprehensions
+
+- repo: local
+  hooks:
+    - id: check-version-sync
+      name: Check version sync (pyproject.toml ↔ __init__.py)
+      entry: python scripts/check_version_sync.py
+      language: system
+      pass_filenames: false
+      files: ^(pyproject\.toml|src/aimq/__init__\.py)$

@@ -209,3 +209,58 @@ just test-watch
 # Or use pytest-watch
 uv run ptw
 ```
+
+## Codecov Integration
+
+AIMQ uses [Codecov](https://codecov.io) for coverage tracking and reporting:
+
+### Features
+
+- **PR Comments**: Automatic coverage reports on pull requests
+- **Coverage Trends**: Track coverage changes over time
+- **Visual Reports**: See which lines are covered/uncovered
+- **Free for Open Source**: No cost for public repositories
+
+### Setup
+
+1. Sign up at [https://codecov.io](https://codecov.io) with your GitHub account
+2. Add your repository to Codecov
+3. Add `CODECOV_TOKEN` secret to GitHub repository settings
+4. Coverage reports will automatically upload on CI runs
+
+See detailed setup instructions in [codecov-setup.md](./codecov-setup.md).
+
+### Viewing Coverage
+
+**In Pull Requests:**
+- Codecov comments on PRs with coverage changes
+- Shows patch coverage (coverage of changed lines)
+- Highlights uncovered lines
+
+**In Codecov Dashboard:**
+- Overall coverage percentage
+- File-by-file coverage breakdown
+- Coverage trends and graphs
+- Uncovered lines report
+
+### Local Coverage Reports
+
+Generate HTML coverage reports locally:
+
+```bash
+# Generate HTML coverage report
+uv run pytest --cov=src/aimq --cov-report=html
+
+# Open in browser
+open htmlcov/index.html
+```
+
+### Coverage Best Practices
+
+1. **Write tests first** - Test-driven development improves coverage
+2. **Focus on critical paths** - Prioritize high-value code
+3. **Test edge cases** - Boundary conditions, error cases
+4. **Don't chase 100%** - Quality > quantity
+5. **Review coverage reports** - Use them to find gaps
+
+For more information, see [codecov-setup.md](./codecov-setup.md).

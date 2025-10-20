@@ -399,6 +399,11 @@ Ensure these secrets are set in GitHub repository settings:
 **Environment: prd**
 - `PYPI_API_TOKEN` - PyPI API token
 
+**Repository Secrets**
+- `CODECOV_TOKEN` - Codecov upload token (optional, for coverage reports)
+  - See `docs/development/codecov-setup.md` for setup instructions
+  - Free for open source projects at https://codecov.io
+
 ### Troubleshooting Releases
 
 **Version not publishing:**

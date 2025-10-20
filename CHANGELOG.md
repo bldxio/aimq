@@ -15,6 +15,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Beta/RC/stable release workflows
 - TestPyPI publishing for dev branch
 - PyPI publishing for main branch
+- Custom `/release` slash command for guided release workflow in Claude Code
+- Pre-commit hook for version synchronization validation
+- Comprehensive Codecov integration documentation
+- Enhanced testing documentation with coverage best practices
 
 ### Changed
 - Migrated from Poetry to uv for dependency management
