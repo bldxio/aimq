@@ -1,0 +1,65 @@
+# Codecov Configuration
+# https://docs.codecov.com/docs/codecov-yaml
+
+# Coverage target and thresholds
+coverage:
+  # Overall project coverage goals
+  status:
+    project:
+      default:
+        target: 85%            # Minimum coverage target
+        threshold: 1%          # Allow 1% decrease without failing
+        if_ci_failed: error    # Fail if CI fails
+
+    # Patch coverage (coverage of changed lines in PR)
+    patch:
+      default:
+        target: 80%            # New code should have 80%+ coverage
+        threshold: 5%          # Allow some flexibility for refactoring
+        if_no_uploads: error   # Fail if no uploads
+
+  # Precision of coverage percentage (2 decimal places)
+  precision: 2
+
+  # Coverage calculation rounding
+  round: down
+
+# Pull request comments
+comment:
+  # Enable PR comments with coverage info
+  layout: "reach,diff,flags,tree,reach"
+  behavior: default
+  require_changes: false
+  require_base: false
+  require_head: true
+
+# Paths to ignore in coverage reports
+ignore:
+  - "src/aimq/commands/shared/templates/**"  # Template files
+  - "tests/**"                                # Test files themselves
+  - "**/__pycache__/**"                       # Cache directories
+  - "**/*.pyc"                                # Compiled Python files
+  - ".tox/**"                                 # Tox environments
+  - ".venv/**"                                # Virtual environments
+  - "docs/**"                                 # Documentation
+  - "scripts/**"                              # Utility scripts
+
+# GitHub Actions integration
+github_checks:
+  annotations: true
+
+# Notification settings
+slack:
+  enabled: false
+
+# Flags for different types of tests (future use)
+flags:
+  unit:
+    paths:
+      - tests/aimq/
+    carryforward: true
+
+  integration:
+    paths:
+      - tests/integration/
+    carryforward: true
