@@ -1,4 +1,3 @@
-import os
 from unittest.mock import patch
 
 import pytest
@@ -9,33 +8,14 @@ from aimq.clients.supabase import SupabaseClient, SupabaseError
 @pytest.fixture
 def supabase_client():
     """Fixture for SupabaseClient with mocked environment variables."""
-    original_url = os.environ.get("SUPABASE_URL")
-    original_key = os.environ.get("SUPABASE_KEY")
+    from aimq.config import config
 
-    os.environ["SUPABASE_URL"] = "http://test.url"
-    os.environ["SUPABASE_KEY"] = "test-key"
-
-    # Clear the config cache to ensure it picks up new env vars
-    from aimq.config import get_config
-
-    get_config.cache_clear()
-
-    client = SupabaseClient()
-    yield client
-
-    # Restore original environment
-    if original_url:
-        os.environ["SUPABASE_URL"] = original_url
-    else:
-        del os.environ["SUPABASE_URL"]
-
-    if original_key:
-        os.environ["SUPABASE_KEY"] = original_key
-    else:
-        del os.environ["SUPABASE_KEY"]
-
-    # Clear the config cache again
-    get_config.cache_clear()
+    # Patch the config singleton directly
+    with patch.object(config, "supabase_url", "http://test.url"), patch.object(
+        config, "supabase_key", "test-key"
+    ):
+        client = SupabaseClient()
+        yield client
 
 
 class TestSupabaseClient:
