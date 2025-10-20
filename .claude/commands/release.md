@@ -23,10 +23,12 @@ You are helping with an AIMQ release. Follow the Release Workflow documented in 
 
    If any checks fail, report to user and ask how to proceed.
 
-3. **CHANGELOG.md Review**
-   - Read the `[Unreleased]` section in CHANGELOG.md
-   - If empty or missing changes, **STOP and ask user** to update it first
-   - Summarize the unreleased changes to confirm they're ready for release
+3. **Auto-Generate CHANGELOG.md**
+   - Run `just changelog-preview` to preview generated entries from commits
+   - Show the user what will be added
+   - If entries look good, automatically update CHANGELOG.md with `just changelog`
+   - If no meaningful commits found, **STOP and inform user** they need conventional commits
+   - Summarize the changes that will be in the release
 
 4. **Version Bump Strategy**
    Based on the branch and current version, determine the next version:
@@ -50,7 +52,8 @@ You are helping with an AIMQ release. Follow the Release Workflow documented in 
    # This will:
    # - Run CI checks (lint, type-check, test)
    # - Bump version to next beta
-   # - Prompt to update CHANGELOG.md (pause for user)
+   # - Auto-generate CHANGELOG.md from git commits
+   # - Prompt to review CHANGELOG.md (pause for user)
    # - Build the package
 
    # Then commit and push:
@@ -59,6 +62,18 @@ You are helping with an AIMQ release. Follow the Release Workflow documented in 
    git push origin dev
 
    # GitHub Actions will automatically publish to TestPyPI
+   ```
+
+   **Manual CHANGELOG generation (if needed):**
+   ```bash
+   # Preview what will be generated
+   just changelog-preview
+
+   # Generate CHANGELOG entries from commits
+   just changelog
+
+   # Generate from specific commit/tag
+   just changelog-since v0.1.0
    ```
 
    **For Stable Release (main branch):**
@@ -85,11 +100,32 @@ You are helping with an AIMQ release. Follow the Release Workflow documented in 
 
 ## Important Reminders
 
-- **ALWAYS check CHANGELOG.md before proceeding** - it must have unreleased changes documented
+- **CHANGELOG.md is auto-generated** from git commit messages using conventional commit format
+- **Use conventional commits** for automatic categorization (feat:, fix:, docs:, etc.)
 - **Version numbers must be in sync** between pyproject.toml and __init__.py (the scripts handle this)
 - **Beta versions go to TestPyPI**, stable versions go to PyPI
 - **Never release from feature branches** - only dev or main
 - **Follow CONTRIBUTING.md** for the complete release process
+
+## Conventional Commit Format
+
+For automatic CHANGELOG generation, use these commit prefixes:
+
+- `feat:` → Added section
+- `fix:` → Fixed section
+- `docs:` → Changed section
+- `refactor:` → Changed section
+- `perf:` → Changed section
+- `test:` → Skipped
+- `chore:` → Skipped
+- `security:` → Security section
+
+Example:
+```
+feat: add user authentication
+fix: resolve database connection timeout
+docs: update API documentation
+```
 
 ## Error Handling
 

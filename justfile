@@ -179,6 +179,19 @@ remove package:
 version:
     @uv run python scripts/sync_version.py
 
+# Generate CHANGELOG.md entries from git commits
+changelog:
+    @echo "Generating CHANGELOG.md from commit messages..."
+    uv run python scripts/generate_changelog.py
+
+# Preview changelog without updating file
+changelog-preview:
+    @uv run python scripts/generate_changelog.py --dry-run
+
+# Generate changelog from specific git reference
+changelog-since ref:
+    @uv run python scripts/generate_changelog.py --since {{ref}}
+
 # Bump to next beta version (e.g., 0.1.1b1 -> 0.1.1b2)
 version-beta:
     #!/usr/bin/env bash
@@ -305,14 +318,17 @@ release-beta: ci
     @echo ""
     @echo "This will:"
     @echo "  1. Bump to next beta version"
-    @echo "  2. Prompt you to update CHANGELOG.md"
+    @echo "  2. Auto-generate CHANGELOG.md from commits"
     @echo "  3. Build the package"
     @echo ""
     @read -p "Continue? (y/N) " -n 1 -r; echo; [[ $$REPLY =~ ^[Yy]$$ ]]
     just version-beta
     @echo ""
-    @echo "⚠️  Please update CHANGELOG.md now with your changes"
-    @echo "Press Enter when done..."
+    @echo "📝 Generating CHANGELOG.md from commit messages..."
+    just changelog
+    @echo ""
+    @echo "⚠️  Please review the generated CHANGELOG.md"
+    @echo "   Edit manually if needed, then press Enter to continue..."
     @read
     just build
     @echo ""
@@ -332,14 +348,17 @@ release: ci
     @echo ""
     @echo "This will:"
     @echo "  1. Bump to stable version"
-    @echo "  2. Prompt you to update CHANGELOG.md"
+    @echo "  2. Auto-generate CHANGELOG.md from commits"
     @echo "  3. Build the package"
     @echo ""
     @read -p "Continue? (y/N) " -n 1 -r; echo; [[ $$REPLY =~ ^[Yy]$$ ]]
     just version-stable
     @echo ""
-    @echo "⚠️  Please update CHANGELOG.md now with your changes"
-    @echo "Press Enter when done..."
+    @echo "📝 Generating CHANGELOG.md from commit messages..."
+    just changelog
+    @echo ""
+    @echo "⚠️  Please review the generated CHANGELOG.md"
+    @echo "   Edit manually if needed, then press Enter to continue..."
     @read
     just build
     @echo ""

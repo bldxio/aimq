@@ -239,22 +239,61 @@ This is implemented in `src/aimq/commands/shared/git_loader.py` and used by the 
 
 ## Release Workflow
 
-### IMPORTANT: CHANGELOG.md Updates
+### IMPORTANT: CHANGELOG.md Automation
 
-**ALWAYS update CHANGELOG.md before making commits!**
+**CHANGELOG.md is automatically generated from git commits!**
 
-When making changes:
-1. Add your changes to the `[Unreleased]` section under the appropriate heading:
-   - `Added` - New features
-   - `Changed` - Changes to existing functionality
-   - `Deprecated` - Soon-to-be removed features
-   - `Removed` - Removed features
-   - `Fixed` - Bug fixes
-   - `Security` - Security updates
+#### Using Conventional Commits
 
-2. Use clear, user-facing descriptions (not internal implementation details)
+AIMQ uses conventional commit format for automatic CHANGELOG generation:
 
-3. When preparing a release, the `[Unreleased]` section will be moved to a dated version section
+- `feat:` → Added section
+- `fix:` → Fixed section
+- `docs:`, `refactor:`, `perf:` → Changed section
+- `security:` → Security section
+- `deprecate:` → Deprecated section
+- `remove:` → Removed section
+- `test:`, `chore:`, `ci:`, `build:` → Skipped
+
+**Examples:**
+```
+feat: add batch processing for OCR jobs
+fix: resolve race condition in worker startup
+docs: update Docker deployment guide
+refactor: simplify queue provider interface
+```
+
+#### Manual CHANGELOG Generation
+
+During development, you can generate CHANGELOG entries:
+
+```bash
+# Preview what will be generated from commits
+just changelog-preview
+
+# Generate and update CHANGELOG.md
+just changelog
+
+# Generate from specific commit/tag
+just changelog-since v0.1.0
+```
+
+#### Release Workflows Automate This
+
+The `just release-beta` and `just release` commands automatically:
+1. Generate CHANGELOG from commits since last release
+2. Prompt you to review the generated entries
+3. Allow manual edits before finalizing
+
+#### When to Update Manually
+
+You should manually edit CHANGELOG.md when:
+- Generated entries need clarification
+- You want to add user-facing context
+- Combining multiple related commits into one entry
+- Adding breaking change warnings
+
+**See:** `docs/development/conventional-commits.md` for complete guide
 
 ### Version Strategy
 
@@ -271,13 +310,14 @@ When making changes:
    This will:
    - Run CI checks (lint, type-check, test)
    - Bump version (0.1.1b1 → 0.1.1b2)
-   - Prompt to update CHANGELOG.md
+   - **Auto-generate CHANGELOG.md** from git commits
+   - Prompt to review generated entries
    - Build the package
 
-2. **Update CHANGELOG.md:**
-   - Move changes from `[Unreleased]` to new version section
-   - Add release date
-   - Ensure all changes are documented
+2. **Review CHANGELOG.md:**
+   - Generated automatically from conventional commits
+   - Edit manually if needed (add context, clarify entries)
+   - Ensure all changes are user-facing
 
 3. **Commit and push:**
    ```bash
@@ -367,11 +407,14 @@ just version-major         # 0.1.1 → 1.0.0
 
 Before any release, verify:
 - [ ] All tests passing (`just ci`)
-- [ ] CHANGELOG.md updated with all changes
+- [ ] Using conventional commits (feat:, fix:, etc.)
+- [ ] CHANGELOG.md will be auto-generated or manually updated
 - [ ] Version numbers synced (pyproject.toml and __init__.py)
 - [ ] Documentation reflects changes
 - [ ] No uncommitted changes
 - [ ] Branch is up to date with remote
+
+**Tip:** Use conventional commits (feat:, fix:, docs:) for automatic CHANGELOG generation!
 
 ### GitHub Actions Workflows
 

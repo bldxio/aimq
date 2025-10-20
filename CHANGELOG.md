@@ -19,6 +19,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Pre-commit hook for version synchronization validation
 - Comprehensive Codecov integration documentation
 - Enhanced testing documentation with coverage best practices
+- Automatic CHANGELOG generation from git commits using conventional commit format
+- `just changelog` command for generating CHANGELOG entries
+- Conventional commits documentation and best practices guide
+- Integrated CHANGELOG automation into release workflows
 
 ### Changed
 - Migrated from Poetry to uv for dependency management
