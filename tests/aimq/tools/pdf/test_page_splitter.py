@@ -1,7 +1,7 @@
 import io
 from unittest.mock import Mock
 
-import pypdfium2 as pdfium
+import pypdfium2 as pdfium  # type: ignore
 import pytest
 
 from aimq.tools.pdf.page_splitter import PageSplitter, PageSplitterInput

@@ -2,7 +2,7 @@ import io
 import typing
 from typing import Any
 
-import filetype
+import filetype  # type: ignore
 import humanize
 from PIL import Image
 from pydantic import BaseModel, ConfigDict, Field, PrivateAttr, computed_field
@@ -16,13 +16,11 @@ class Attachment(BaseModel):
     _mimetype: str = PrivateAttr(default="application/octet-stream")
     _extension: str | None = PrivateAttr(default=None)
 
-    @computed_field
-    @property
+    @computed_field  # type: ignore[prop-decorator]
     def mimetype(self) -> str:
         return self._mimetype
 
-    @computed_field
-    @property
+    @computed_field  # type: ignore[prop-decorator]
     def extension(self) -> str | None:
         return self._extension
 

@@ -10,7 +10,7 @@ import time
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
-import easyocr
+import easyocr  # type: ignore
 import numpy as np
 from PIL import Image, ImageDraw
 
@@ -102,18 +102,23 @@ def group_text_boxes(
             merged_group = group1.copy()
             used.add(i)
 
-            box1 = grow_box(merge_boxes([det["bounding_box"] for det in merged_group]))
+            merged_box1 = merge_boxes([det["bounding_box"] for det in merged_group])
+            assert merged_box1 is not None  # Groups are never empty
+            box1 = grow_box(merged_box1)
 
             for j, group2 in enumerate(groups):
                 if j in used:
                     continue
 
                 box2 = merge_boxes([det["bounding_box"] for det in group2])
+                assert box2 is not None  # Groups are never empty
 
                 if boxes_overlap(box1, box2):
                     merged_group.extend(group2)
                     used.add(j)
-                    box1 = grow_box(merge_boxes([det["bounding_box"] for det in merged_group]))
+                    merged_box1 = merge_boxes([det["bounding_box"] for det in merged_group])
+                    assert merged_box1 is not None  # Groups are never empty
+                    box1 = grow_box(merged_box1)
                     merged = True
 
             new_groups.append(merged_group)
@@ -202,17 +207,17 @@ class OCRProcessor:
             pil_image = Image.open(image_path)
         elif isinstance(image, bytes):
             image_stream = io.BytesIO(image)
-            pil_image = Image.open(image_stream)
+            pil_image = Image.open(image_stream)  # type: ignore[assignment]
             image_path = None
         elif isinstance(image, Image.Image):
-            pil_image = image
+            pil_image = image  # type: ignore[assignment]
             image_path = None
         else:
             raise ValueError("Image must be a file path, PIL Image, or bytes")
 
         # Convert PIL Image to numpy array for EasyOCR
         if pil_image.mode != "RGB":
-            pil_image = pil_image.convert("RGB")
+            pil_image = pil_image.convert("RGB")  # type: ignore[assignment]
         np_image = np.array(pil_image)
 
         # Read the image with optimized parameters

@@ -1,6 +1,6 @@
 import io
 
-import filetype
+import filetype  # type: ignore
 import pytest
 from PIL import Image
 

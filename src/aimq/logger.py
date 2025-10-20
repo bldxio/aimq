@@ -33,7 +33,7 @@ class LogEvent(BaseModel):
     level: LogLevel
     msg: str
     data: Optional[Any] = None
-    styles: dict[str, LogStyle] = Field(
+    styles: dict[LogLevel, LogStyle] = Field(
         default_factory=lambda: {
             LogLevel.DEBUG: LogStyle("🔍 DEBUG", "blue"),
             LogLevel.INFO: LogStyle("ℹ️ INFO", "green"),

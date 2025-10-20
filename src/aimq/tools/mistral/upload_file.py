@@ -25,8 +25,8 @@ class UploadFile(BaseTool):
     def _run(self, file: Attachment) -> dict:
         """Upload a file to Mistral."""
         try:
-            response = mistral.client.files.upload(file.data)
-            signed_url = mistral.client.files.get_signed_url(response["id"])
-            return {"file_id": response["id"], "signed_url": signed_url}
+            response = mistral.client.files.upload(file.data)  # type: ignore[arg-type, misc]
+            signed_url = mistral.client.files.get_signed_url(response["id"])  # type: ignore[index, misc]
+            return {"file_id": response["id"], "signed_url": signed_url}  # type: ignore[index]
         except Exception as e:
             raise ValueError(f"Error uploading file to Mistral: {str(e)}")

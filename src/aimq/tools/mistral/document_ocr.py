@@ -24,4 +24,4 @@ class DocumentOCR(BaseTool):
             include_image_base64=True,
         )
 
-        return ocr_response
+        return ocr_response  # type: ignore[return-value]

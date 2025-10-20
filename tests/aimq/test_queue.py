@@ -15,7 +15,7 @@ class MockRunnable(Runnable):
 
     name = "test_runnable"
 
-    def invoke(self, input: Any, config: RunnableConfig | None = None) -> Any:
+    def invoke(self, input: Any, config: RunnableConfig | None = None, **kwargs: Any) -> Any:
         return input
 
 
@@ -39,7 +39,7 @@ def queue(mock_provider):
 
 
 def create_test_job(
-    job_id: int = 1, queue_name: str = "test_queue", data: dict = None, popped: bool = False
+    job_id: int = 1, queue_name: str = "test_queue", data: dict | None = None, popped: bool = False
 ) -> Job:
     """Helper function to create a test job."""
     now = datetime.now()

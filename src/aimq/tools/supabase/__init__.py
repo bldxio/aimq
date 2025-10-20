@@ -24,7 +24,7 @@ def get_tools() -> List[BaseTool]:
     tools: List[BaseTool] = [
         ReadRecord(),
         WriteRecord(),
-        ReadFile(),
-        WriteFile(),
+        ReadFile(),  # type: ignore[call-arg]
+        WriteFile(),  # type: ignore[call-arg]
     ]
     return tools

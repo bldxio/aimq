@@ -3,7 +3,7 @@
 import io
 from typing import List, Type
 
-import pypdfium2 as pdfium
+import pypdfium2 as pdfium  # type: ignore
 from langchain.tools import BaseTool
 from pydantic import BaseModel, Field
 

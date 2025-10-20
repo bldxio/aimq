@@ -23,7 +23,7 @@ class SupabaseQueueProvider(QueueProvider):
             raise
 
     def send(self, queue_name: str, data: dict[str, Any], delay: int | None = None) -> int:
-        params = {"queue_name": queue_name, "message": data}
+        params: dict[str, Any] = {"queue_name": queue_name, "message": data}
         if delay is not None:
             params["sleep_seconds"] = delay
 
@@ -33,7 +33,7 @@ class SupabaseQueueProvider(QueueProvider):
     def send_batch(
         self, queue_name: str, data_list: list[dict[str, Any]], delay: int | None = None
     ) -> list[int]:
-        params = {"queue_name": queue_name, "messages": data_list}
+        params: dict[str, Any] = {"queue_name": queue_name, "messages": data_list}
         if delay is not None:
             params["sleep_seconds"] = delay
 
