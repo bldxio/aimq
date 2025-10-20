@@ -20,7 +20,9 @@ class WriteRecord(BaseTool):
     """Tool for writing records to Supabase."""
 
     name: str = "write_record"
-    description: str = "Write a record to Supabase. If an ID is provided, updates existing record; otherwise creates new record."
+    description: str = (
+        "Write a record to Supabase. If an ID is provided, updates existing record; otherwise creates new record."
+    )
     args_schema: Type[BaseModel] = WriteRecordInput
 
     def _run(self, table: str, data: Dict[str, Any], id: str) -> Dict[str, Any]:

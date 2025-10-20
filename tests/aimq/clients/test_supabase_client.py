@@ -11,8 +11,9 @@ def supabase_client():
     from aimq.config import config
 
     # Patch the config singleton directly
-    with patch.object(config, "supabase_url", "http://test.url"), patch.object(
-        config, "supabase_key", "test-key"
+    with (
+        patch.object(config, "supabase_url", "http://test.url"),
+        patch.object(config, "supabase_key", "test-key"),
     ):
         client = SupabaseClient()
         yield client
