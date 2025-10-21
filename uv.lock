@@ -12,7 +12,7 @@ resolution-markers = [
 
 [[package]]
 name = "aimq"
-version = "0.1.1b2"
+version = "0.1.1b3"
 source = { editable = "." }
 dependencies = [
     { name = "easyocr" },
@@ -21,6 +21,7 @@ dependencies = [
     { name = "langchain" },
     { name = "langchain-mistralai" },
     { name = "langchain-openai" },
+    { name = "langchain-text-splitters" },
     { name = "mistralai" },
     { name = "mkdocs-dracula-theme" },
     { name = "openai" },
@@ -63,6 +64,7 @@ requires-dist = [
     { name = "langchain", specifier = ">=0.3.10,<0.4.0" },
     { name = "langchain-mistralai", specifier = ">=0.2.11,<0.3.0" },
     { name = "langchain-openai", specifier = ">=0.2.12,<0.3.0" },
+    { name = "langchain-text-splitters", specifier = ">=0.3.9,<1.0.0" },
     { name = "mistralai", specifier = ">=1.9.10,<2.0.0" },
     { name = "mkdocs-dracula-theme", specifier = ">=1.0.7,<2.0.0" },
     { name = "openai", specifier = ">=1.57.1,<2.0.0" },
@@ -73,7 +75,7 @@ requires-dist = [
     { name = "rich", specifier = ">=13.7.0,<15.0.0" },
     { name = "supabase", specifier = ">=2.10.0,<3.0.0" },
     { name = "tomlkit", specifier = ">=0.13.2,<1.0.0" },
-    { name = "torch", specifier = ">=2.1.2,<3.0.0" },
+    { name = "torch", specifier = ">=2.8.0,<3.0.0" },
     { name = "typer", specifier = ">=0.9.0,<1.0.0" },
 ]
 

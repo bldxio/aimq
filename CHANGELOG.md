@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security
+- Update torch minimum version to >=2.8.0 to fix resource shutdown vulnerability
+- Add explicit langchain-text-splitters>=0.3.9 dependency to prevent CVE-2025-6985 (XXE attack vulnerability)
+
 ## [0.1.1b3] - 2025-10-20
 
 ### Changed
