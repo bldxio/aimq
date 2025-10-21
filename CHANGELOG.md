@@ -7,15 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.1.1] - 2025-10-21
+## [0.1.2] - 2025-10-21
 
-### Added
+### Fixed
 
-- enhance release workflow with changelog finalization and PR automation
-
-### Security
-
-- update dependency constraints to fix CVE-2025-6985 and torch vulnerability
+- include template files in package distribution
 
 
 ## [0.1.0] - 2025-01-17
@@ -28,3 +24,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Docker configuration for development and production environments
 
 [0.1.1]: https://github.com/bldxio/aimq/compare/v0.1.0...v0.1.1
+[0.1.2]: https://github.com/bldxio/aimq/compare/v0.1.0...v0.1.2

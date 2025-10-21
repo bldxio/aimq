@@ -1,6 +1,6 @@
 [project]
 name = "aimq"
-version = "0.1.1"
+version = "0.1.2"
 description = "A robust message queue processor for Supabase pgmq with AI-powered document processing capabilities"
 authors = [{name = "AIMQ Contributors"}]
 readme = "README.md"
