@@ -125,11 +125,11 @@ def process_document(data):
     # Create attachment from image data
     attachment = Attachment(data=data["image_bytes"])
 
-    # Use the OCR tool
-    result = ocr_tool._run(
-        image=attachment,
-        save_debug_image=True
-    )
+    # Use the OCR tool (using public invoke API)
+    result = ocr_tool.invoke({
+        "image": attachment,
+        "save_debug_image": True
+    })
 
     return {
         "text": result["text"],

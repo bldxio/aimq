@@ -20,11 +20,15 @@ Usage:
 """
 
 import argparse
+import logging
 import re
 import subprocess
 import sys
 from pathlib import Path
 from typing import Dict, List, Tuple
+
+# Configure logger
+logger = logging.getLogger(__name__)
 
 
 def get_project_root() -> Path:
@@ -43,8 +47,12 @@ def get_last_version_tag() -> str:
         )
         if result.returncode == 0 and result.stdout.strip():
             return result.stdout.strip()
-    except Exception:
-        pass
+    except Exception as e:
+        logger.warning(
+            "Failed to get version tag from git: %s. Falling back to CHANGELOG.md parsing.",
+            e,
+            exc_info=True,
+        )
 
     # Try to get from CHANGELOG.md
     changelog_path = get_project_root() / "CHANGELOG.md"
