@@ -263,5 +263,5 @@ This ensures text on the same line or in the same paragraph is grouped together.
 
 For detailed API documentation, see:
 
-- [OCR Processor API](../api/tools.md#pdf-processor)
-- [ImageOCR Tool API](../api/tools.md#image-ocr)
+- [OCR Processor API](../reference/aimq/tools/ocr/processor.md)
+- [ImageOCR Tool API](../reference/aimq/tools/ocr/image_ocr.md)

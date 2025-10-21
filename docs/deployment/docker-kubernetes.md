@@ -400,5 +400,4 @@ kubectl exec -it deployment/aimq-worker -- curl $SUPABASE_URL
 ## Next Steps
 
 - Review the [Configuration Guide](../getting-started/configuration.md) for all options
-- Check [docker/README.md](../../docker/README.md) for image build details
 - See the [Quick Start Guide](../getting-started/quickstart.md) for local testing
