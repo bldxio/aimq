@@ -59,15 +59,15 @@ pre-commit:
 
 # Start development environment
 dev:
-    docker-compose up
+    docker compose up
 
 # Build and start development environment
 dev-build:
-    docker-compose up --build
+    docker compose up --build
 
 # Stop development environment
 dev-down:
-    docker-compose down
+    docker compose down
 
 # ============================================================================
 # Docker Production
@@ -75,15 +75,15 @@ dev-down:
 
 # Start production environment
 prod:
-    docker-compose -f docker-compose.prod.yml up
+    docker compose -f docker-compose.prod.yml up
 
 # Build and start production environment
 prod-build:
-    docker-compose -f docker-compose.prod.yml up --build
+    docker compose -f docker-compose.prod.yml up --build
 
 # Stop production environment
 prod-down:
-    docker-compose -f docker-compose.prod.yml down
+    docker compose -f docker-compose.prod.yml down
 
 # ============================================================================
 # Logs
@@ -91,19 +91,19 @@ prod-down:
 
 # Tail all container logs
 logs:
-    docker-compose logs -f
+    docker compose logs -f
 
 # Tail API container logs
 logs-api:
-    docker-compose logs -f api
+    docker compose logs -f api
 
 # Tail worker container logs
 logs-worker:
-    docker-compose logs -f worker
+    docker compose logs -f worker
 
 # Tail Redis container logs
 logs-redis:
-    docker-compose logs -f redis
+    docker compose logs -f redis
 
 # ============================================================================
 # Cleanup
@@ -111,8 +111,8 @@ logs-redis:
 
 # Clean up all Docker containers and volumes
 clean:
-    docker-compose down -v
-    docker-compose -f docker-compose.prod.yml down -v
+    docker compose down -v
+    docker compose -f docker-compose.prod.yml down -v
 
 # Clean Python cache files
 clean-py:
