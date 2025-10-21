@@ -44,6 +44,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libglib2.0-0 \
     libgomp1 \
     git \
+    openssh-client \
     && rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/*
 
 # Create non-root user for security
