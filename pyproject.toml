@@ -63,8 +63,7 @@ build-backend = "hatchling.build"
 [tool.hatch.build.targets.wheel]
 packages = ["src/aimq"]
 artifacts = [
-    "src/aimq/commands/shared/templates/*",
-    "src/aimq/commands/shared/templates/docker/*",
+    "src/aimq/commands/shared/templates/**/*",
 ]
 
 [tool.hatch.build.targets.sdist]
