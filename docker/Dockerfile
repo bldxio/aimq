@@ -47,8 +47,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     openssh-client \
     && rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/*
 
-# Create non-root user for security
-RUN groupadd -r aimq && useradd -r -g aimq aimq
+# Create non-root user for security with home directory
+# -m: Create home directory
+# -d: Specify home directory path
+RUN groupadd -r aimq && \
+    useradd -r -g aimq -m -d /home/aimq aimq && \
+    chown -R aimq:aimq /home/aimq
 
 WORKDIR /app
 
@@ -62,6 +66,9 @@ COPY --from=builder /build/src/aimq /usr/local/lib/python3.12/site-packages/aimq
 RUN chown -R aimq:aimq /app
 
 USER aimq
+
+# Set HOME for SSH mounts to ~/.ssh
+ENV HOME=/home/aimq
 
 # Disable Python output buffering for better logging
 ENV PYTHONUNBUFFERED=1

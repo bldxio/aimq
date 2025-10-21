@@ -14,6 +14,8 @@ import re
 import sys
 from pathlib import Path
 
+import tomlkit
+
 
 def get_project_root() -> Path:
     """Get the project root directory."""
@@ -21,14 +23,24 @@ def get_project_root() -> Path:
 
 
 def update_pyproject_version(version: str) -> None:
-    """Update version in pyproject.toml."""
+    """Update version in pyproject.toml using proper TOML parsing."""
     pyproject_path = get_project_root() / "pyproject.toml"
-    content = pyproject_path.read_text()
 
-    # Update version field
-    new_content = re.sub(r'version\s*=\s*"[^"]+"', f'version = "{version}"', content)
+    # Parse TOML file
+    with open(pyproject_path, "r") as f:
+        data = tomlkit.load(f)
 
-    pyproject_path.write_text(new_content)
+    # Ensure [project] section exists
+    if "project" not in data:
+        data["project"] = {}
+
+    # Update only the [project].version field
+    data["project"]["version"] = version
+
+    # Write back preserving formatting
+    with open(pyproject_path, "w") as f:
+        tomlkit.dump(data, f)
+
     print(f"✓ Updated pyproject.toml to version {version}")
 
 
@@ -45,15 +57,16 @@ def update_init_version(version: str) -> None:
 
 
 def get_current_version() -> str:
-    """Get the current version from pyproject.toml."""
+    """Get the current version from pyproject.toml using proper TOML parsing."""
     pyproject_path = get_project_root() / "pyproject.toml"
-    content = pyproject_path.read_text()
 
-    match = re.search(r'version\s*=\s*"([^"]+)"', content)
-    if not match:
-        raise ValueError("Could not find version in pyproject.toml")
+    with open(pyproject_path, "r") as f:
+        data = tomlkit.load(f)
 
-    return match.group(1)
+    if "project" not in data or "version" not in data["project"]:
+        raise ValueError("Could not find [project].version in pyproject.toml")
+
+    return data["project"]["version"]
 
 
 def validate_version(version: str) -> bool:
