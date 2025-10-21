@@ -151,14 +151,16 @@ processor = OCRProcessor()
 @worker.task(queue="document-ocr")
 def process_stored_document(data):
     """Process document from Supabase storage."""
-    # Read file from Supabase storage
-    result = read_file.invoke({
+    # Read file from Supabase storage (returns dict with "file" key)
+    file_result = read_file.invoke({
         "bucket": "documents",
         "path": data["document_path"]
     })
 
-    # Extract attachment and process with OCR
-    attachment = result["file"]
+    # Extract Attachment object from result
+    attachment = file_result["file"]
+
+    # Process image bytes with OCR
     ocr_result = processor.process_image(attachment.data)
 
     return {
@@ -259,10 +261,3 @@ OCR results are automatically grouped by spatial proximity. The grouping paramet
 - `height_growth=1`: Vertical tolerance for grouping text
 
 This ensures text on the same line or in the same paragraph is grouped together.
-
-## API Reference
-
-For detailed API documentation, see:
-
-- [OCR Processor API](../reference/aimq/tools/ocr/processor.md)
-- [ImageOCR Tool API](../reference/aimq/tools/ocr/image_ocr.md)
