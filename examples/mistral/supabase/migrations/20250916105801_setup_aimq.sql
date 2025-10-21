@@ -90,26 +90,6 @@ $$;
 comment on function pgmq_public.archive(queue_name text, message_id bigint) is 'Archives a message by moving it from the queue to a permanent archive.';
 
 
-create or replace function pgmq_public.archive(
-    queue_name text,
-    message_id bigint
-)
-  returns boolean
-  language plpgsql
-  set search_path = ''
-as $$
-begin
-    return
-    pgmq.archive(
-        queue_name := queue_name,
-        msg_id := message_id
-    );
-end;
-$$;
-
-comment on function pgmq_public.archive(queue_name text, message_id bigint) is 'Archives a message by moving it from the queue to a permanent archive.';
-
-
 create or replace function pgmq_public.delete(
     queue_name text,
     message_id bigint
