@@ -77,3 +77,6 @@ pip-delete-this-directory.txt
 # Packer secrets (do not commit)
 packer/aimq.auto.pkrvars.hcl
 *.auto.pkrvars.hcl
+
+# MkDocs build output
+site/
