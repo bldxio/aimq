@@ -42,7 +42,7 @@ def setup_env_template(project_dir: Path) -> None:
     """
     env_example_file = project_dir / ".env.example"
     if not env_example_file.exists():
-        template_env = Path(__file__).parent / "shared" / "templates" / ".env.example.template"
+        template_env = Path(__file__).parent / "shared" / "templates" / "env.example.template"
         env_example_file.write_text(template_env.read_text())
         console.print("✓ Created .env.example", style="green")
     else:
