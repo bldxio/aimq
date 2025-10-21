@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.1] - 2025-10-21
 
 ### Added
 
@@ -25,3 +26,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Core functionality for processing tasks from Supabase pgmq
 - OCR processing capabilities
 - Docker configuration for development and production environments
+
+[0.1.1]: https://github.com/bldxio/aimq/compare/v0.1.0...v0.1.1
