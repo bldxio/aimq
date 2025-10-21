@@ -89,6 +89,8 @@ jobs:
     if: needs.check-version.outputs.version_changed == 'true' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     environment: prd
+    permissions:
+      contents: write  # Required to create GitHub releases and tags
 
     steps:
       - name: Checkout code
