@@ -27,7 +27,7 @@ classifiers = [
 ]
 dependencies = [
     "easyocr>=1.7.1,<2.0.0",
-    "torch>=2.8.0,<3.0.0",
+    "torch>=2.9.0,<3.0.0",  # Exclude vulnerable 2.8.0 (CVE-2025-55551)
     "python-dotenv>=1.0.0,<2.0.0",
     "supabase>=2.10.0,<3.0.0",
     "typer>=0.9.0,<1.0.0",
