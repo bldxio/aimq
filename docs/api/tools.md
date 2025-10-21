@@ -4,42 +4,46 @@ AIMQ provides a set of built-in tools for document processing and storage operat
 
 ## OCR Tools
 
-### Image OCR {#image-ocr}
+AIMQ includes OCR (Optical Character Recognition) capabilities for extracting text from images.
 
-::: aimq.tools.ocr.image_ocr
-    options:
-      show_root_heading: true
-      show_source: true
+### ImageOCR
 
-### PDF Processor {#pdf-processor}
+LangChain tool for performing OCR on images. Supports multiple languages and debug visualization.
 
-::: aimq.tools.ocr.processor
-    options:
-      show_root_heading: true
-      show_source: true
+**Full Reference:** [ImageOCR API](../reference/aimq/tools/ocr/image_ocr.md)
+
+### OCRProcessor
+
+Low-level processor for direct image processing with EasyOCR. Provides detailed text detection results with bounding boxes and confidence scores.
+
+**Full Reference:** [OCRProcessor API](../reference/aimq/tools/ocr/processor.md)
+
+## PDF Tools
+
+### PageSplitter
+
+Tool for splitting PDF documents into individual pages for parallel processing.
+
+**Full Reference:** [PageSplitter API](../reference/aimq/tools/pdf/page_splitter.md)
 
 ## Storage Tools
 
+AIMQ includes tools for interacting with Supabase storage and database.
+
 ### Supabase Storage
 
-::: aimq.tools.supabase.read_file
-    options:
-      show_root_heading: true
-      show_source: true
-
-::: aimq.tools.supabase.write_file
-    options:
-      show_root_heading: true
-      show_source: true
+- **[ReadFile](../reference/aimq/tools/supabase/read_file.md)** - Read files from Supabase storage buckets
+- **[WriteFile](../reference/aimq/tools/supabase/write_file.md)** - Write files to Supabase storage buckets
 
 ### Supabase Database
 
-::: aimq.tools.supabase.read_record
-    options:
-      show_root_heading: true
-      show_source: true
+- **[ReadRecord](../reference/aimq/tools/supabase/read_record.md)** - Query records from Supabase database tables
+- **[WriteRecord](../reference/aimq/tools/supabase/write_record.md)** - Insert or update records in Supabase database tables
 
-::: aimq.tools.supabase.write_record
-    options:
-      show_root_heading: true
-      show_source: true
+### Queue Operations
+
+- **[Enqueue](../reference/aimq/tools/supabase/enqueue.md)** - Send messages to pgmq queues
+
+## See Also
+
+For complete auto-generated API documentation, see the [Reference section](../reference/aimq/tools/index.md).

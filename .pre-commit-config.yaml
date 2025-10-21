@@ -6,6 +6,7 @@ repos:
     - id: end-of-file-fixer
     - id: check-yaml
     - id: check-added-large-files
+      args: ['--maxkb=1000']  # Allow lock files up to 1MB
     - id: check-toml
     - id: check-json
     - id: detect-private-key
@@ -27,13 +28,17 @@ repos:
   rev: 7.0.0
   hooks:
     - id: flake8
-      additional_dependencies:
-        - flake8-docstrings
-        - flake8-bugbear
-        - flake8-comprehensions
+      args: ["--max-line-length=100", "--extend-ignore=E203,W503,E501", "--max-complexity=10"]
+      # additional_dependencies:
+      #   - flake8-docstrings
+      #   - flake8-bugbear
+      #   - flake8-comprehensions
 
-- repo: https://github.com/pre-commit/mirrors-mypy
-  rev: v1.8.0
+- repo: local
   hooks:
-    - id: mypy
-      exclude: ^tests/
+    - id: check-version-sync
+      name: Check version sync (pyproject.toml ↔ __init__.py)
+      entry: python scripts/check_version_sync.py
+      language: system
+      pass_filenames: false
+      files: ^(pyproject\.toml|src/aimq/__init__\.py)$

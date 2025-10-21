@@ -1,0 +1,169 @@
+name: Publish to PyPI
+
+on:
+  push:
+    branches:
+      - dev
+      - main
+    paths:
+      - 'pyproject.toml'
+
+jobs:
+  check-version:
+    name: Check Version Change
+    runs-on: ubuntu-latest
+    outputs:
+      version_changed: ${{ steps.check.outputs.changed }}
+      new_version: ${{ steps.get_version.outputs.version }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check if version changed
+        id: check
+        run: |
+          # Use full push range (before..after) to catch version bumps across multiple commits
+          if git diff ${{ github.event.before }}..${{ github.sha }} -- pyproject.toml | grep -q '^[+-]version = '; then
+            echo "changed=true" >> $GITHUB_OUTPUT
+            echo "Version changed detected"
+          else
+            echo "changed=false" >> $GITHUB_OUTPUT
+            echo "No version change"
+          fi
+
+      - name: Get new version
+        id: get_version
+        if: steps.check.outputs.changed == 'true'
+        run: |
+          VERSION=$(grep '^version = ' pyproject.toml | cut -d'"' -f2)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "New version: $VERSION"
+
+  publish-testpypi:
+    name: Publish to TestPyPI (dev)
+    needs: check-version
+    if: needs.check-version.outputs.version_changed == 'true' && github.ref == 'refs/heads/dev'
+    runs-on: ubuntu-latest
+    environment: dev
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Build package
+        run: uv build
+
+      - name: Publish to TestPyPI
+        env:
+          UV_PUBLISH_TOKEN: ${{ secrets.TEST_PYPI_API_TOKEN }}
+        run: |
+          uv publish \
+            --publish-url https://test.pypi.org/legacy/ \
+            --token $UV_PUBLISH_TOKEN
+
+      - name: Create release notes
+        run: |
+          VERSION="${{ needs.check-version.outputs.new_version }}"
+          echo "## 🧪 Beta Release v$VERSION" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Published to TestPyPI: https://test.pypi.org/project/aimq/$VERSION/" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Test Installation" >> $GITHUB_STEP_SUMMARY
+          echo '```bash' >> $GITHUB_STEP_SUMMARY
+          echo "uv pip install --index-url https://test.pypi.org/simple/ aimq==$VERSION" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+
+  publish-pypi:
+    name: Publish to PyPI (production)
+    needs: check-version
+    if: needs.check-version.outputs.version_changed == 'true' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: prd
+    permissions:
+      contents: write  # Required to create GitHub releases and tags
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Build package
+        run: uv build
+
+      - name: Publish to PyPI
+        env:
+          UV_PUBLISH_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
+        run: |
+          uv publish --token $UV_PUBLISH_TOKEN
+
+      - name: Check if tag exists
+        id: check_tag
+        run: |
+          TAG="v${{ needs.check-version.outputs.new_version }}"
+          if git ls-remote --tags origin | grep -q "refs/tags/$TAG$"; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+            echo "Tag $TAG already exists, skipping release creation"
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+            echo "Tag $TAG does not exist, will create release"
+          fi
+
+      - name: Create GitHub Release
+        if: steps.check_tag.outputs.exists == 'false'
+        uses: ncipollo/release-action@v1
+        with:
+          tag: v${{ needs.check-version.outputs.new_version }}
+          name: Release v${{ needs.check-version.outputs.new_version }}
+          body: |
+            ## Release v${{ needs.check-version.outputs.new_version }}
+
+            Published to PyPI: https://pypi.org/project/aimq/${{ needs.check-version.outputs.new_version }}/
+
+            ### Installation
+            ```bash
+            uv pip install aimq==${{ needs.check-version.outputs.new_version }}
+            # or
+            pip install aimq==${{ needs.check-version.outputs.new_version }}
+            ```
+
+            See [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md) for details.
+          draft: false
+          prerelease: false
+          generateReleaseNotes: true
+
+      - name: Create release summary
+        run: |
+          VERSION="${{ needs.check-version.outputs.new_version }}"
+          TAG_EXISTS="${{ steps.check_tag.outputs.exists }}"
+
+          echo "## 🚀 Production Release v$VERSION" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ "$TAG_EXISTS" = "true" ]; then
+            echo "**Note:** Git tag v$VERSION already exists, GitHub release was skipped." >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          echo "Published to PyPI: https://pypi.org/project/aimq/$VERSION/" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Installation" >> $GITHUB_STEP_SUMMARY
+          echo '```bash' >> $GITHUB_STEP_SUMMARY
+          echo "uv pip install aimq==$VERSION" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY

@@ -5,69 +5,62 @@ using the EasyOCR library. It includes utilities for handling text bounding boxe
 merging overlapping detections, and creating debug visualizations.
 """
 
-import easyocr
-from PIL import Image
-import time
-from typing import List, Dict, Union, Optional, Tuple, Any
-from pathlib import Path
-import numpy as np
 import io
-from PIL import ImageDraw
+import time
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Union
+
+import easyocr  # type: ignore
+import numpy as np
+from PIL import Image, ImageDraw
+
 
 def boxes_overlap(box1: Dict[str, int], box2: Dict[str, int]) -> bool:
     """
     Check if two boxes overlap at all.
-    
+
     Args:
         box1: Dictionary with x, y, width, height
         box2: Dictionary with x, y, width, height
-    
+
     Returns:
         bool: True if boxes overlap
     """
-    h_overlap = (
-        box1['x'] < box2['x'] + box2['width'] and
-        box2['x'] < box1['x'] + box1['width']
-    )
-    
-    v_overlap = (
-        box1['y'] < box2['y'] + box2['height'] and
-        box2['y'] < box1['y'] + box1['height']
-    )
-    
+    h_overlap = box1["x"] < box2["x"] + box2["width"] and box2["x"] < box1["x"] + box1["width"]
+
+    v_overlap = box1["y"] < box2["y"] + box2["height"] and box2["y"] < box1["y"] + box1["height"]
+
     return h_overlap and v_overlap
 
 
 def merge_boxes(boxes: List[Dict[str, int]]) -> Optional[Dict[str, int]]:
     """
     Merge a list of bounding boxes into a single box that encompasses all of them.
-    
+
     Args:
         boxes: List of dictionaries with x, y, width, height
-    
+
     Returns:
         dict: Merged bounding box or None if input is empty
     """
     if not boxes:
         return None
-        
-    min_x = min(box['x'] for box in boxes)
-    min_y = min(box['y'] for box in boxes)
-    max_x = max(box['x'] + box['width'] for box in boxes)
-    max_y = max(box['y'] + box['height'] for box in boxes)
-    
+
+    min_x = min(box["x"] for box in boxes)
+    min_y = min(box["y"] for box in boxes)
+    max_x = max(box["x"] + box["width"] for box in boxes)
+    max_y = max(box["y"] + box["height"] for box in boxes)
+
     return {
-        'x': int(min_x),
-        'y': int(min_y),
-        'width': int(max_x - min_x),
-        'height': int(max_y - min_y)
+        "x": int(min_x),
+        "y": int(min_y),
+        "width": int(max_x - min_x),
+        "height": int(max_y - min_y),
     }
 
 
 def group_text_boxes(
-    detections: List[Dict[str, Any]], 
-    width_growth: int = 0, 
-    height_growth: int = 0
+    detections: List[Dict[str, Any]], width_growth: int = 0, height_growth: int = 0
 ) -> List[Dict[str, Any]]:
     """Group text boxes that are spatially related.
 
@@ -89,63 +82,70 @@ def group_text_boxes(
     def grow_box(box: Dict[str, int]) -> Dict[str, int]:
         """Helper to expand a box by the growth parameters"""
         return {
-            'x': box['x'],
-            'y': box['y'],
-            'width': box['width'] + width_growth,
-            'height': box['height'] + height_growth
+            "x": box["x"],
+            "y": box["y"],
+            "width": box["width"] + width_growth,
+            "height": box["height"] + height_growth,
         }
 
     groups = [[det] for det in detections]
-    
+
     while True:
         merged = False
         new_groups = []
         used = set()
-        
+
         for i, group1 in enumerate(groups):
             if i in used:
                 continue
-                
+
             merged_group = group1.copy()
             used.add(i)
-            
-            box1 = grow_box(merge_boxes([det['bounding_box'] for det in merged_group]))
-            
+
+            merged_box1 = merge_boxes([det["bounding_box"] for det in merged_group])
+            assert merged_box1 is not None  # Groups are never empty
+            box1 = grow_box(merged_box1)
+
             for j, group2 in enumerate(groups):
                 if j in used:
                     continue
-                    
-                box2 = merge_boxes([det['bounding_box'] for det in group2])
-                
+
+                box2 = merge_boxes([det["bounding_box"] for det in group2])
+                assert box2 is not None  # Groups are never empty
+
                 if boxes_overlap(box1, box2):
                     merged_group.extend(group2)
                     used.add(j)
-                    box1 = grow_box(merge_boxes([det['bounding_box'] for det in merged_group]))
+                    merged_box1 = merge_boxes([det["bounding_box"] for det in merged_group])
+                    assert merged_box1 is not None  # Groups are never empty
+                    box1 = grow_box(merged_box1)
                     merged = True
-            
+
             new_groups.append(merged_group)
-        
+
         if not merged:
             break
-            
+
         groups = new_groups
-    
-    return [{
-        "text": ' '.join(det['text'] for det in sorted(
-            group,
-            key=lambda d: (d['bounding_box']['y'], d['bounding_box']['x'])
-        )),
-        "confidence": float(round(
-            sum(det['confidence'] for det in group) / len(group),
-            3
-        )),
-        "bounding_box": merge_boxes([det['bounding_box'] for det in group])
-    } for group in groups]
+
+    return [
+        {
+            "text": " ".join(
+                det["text"]
+                for det in sorted(
+                    group, key=lambda d: (d["bounding_box"]["y"], d["bounding_box"]["x"])
+                )
+            ),
+            "confidence": float(round(sum(det["confidence"] for det in group) / len(group), 3)),
+            "bounding_box": merge_boxes([det["bounding_box"] for det in group]),
+        }
+        for group in groups
+    ]
 
 
 class OCRProcessor:
     """Processor for performing OCR on images using EasyOCR.
-    
+
     This class provides a high-level interface for performing OCR on images. It handles
     initialization of the EasyOCR reader, image preprocessing, text detection, and
     optional debug visualization.
@@ -157,17 +157,17 @@ class OCRProcessor:
 
     def __init__(self, languages: Optional[List[str]] = None) -> None:
         """Initialize OCR processor with specified languages.
-        
+
         Args:
             languages: List of language codes (default: ['en'])
         """
-        self.languages = languages or ['en']
+        self.languages = languages or ["en"]
         self._reader = None
 
     @property
     def reader(self) -> easyocr.Reader:
         """Get or initialize the EasyOCR reader.
-        
+
         Returns:
             easyocr.Reader: Initialized EasyOCR reader instance
         """
@@ -176,12 +176,12 @@ class OCRProcessor:
         return self._reader
 
     def process_image(
-        self, 
-        image: Union[str, Path, Image.Image, bytes], 
+        self,
+        image: Union[str, Path, Image.Image, bytes],
         save_debug_image: bool = False,
     ) -> Dict[str, Any]:
         """Process an image and return OCR results.
-        
+
         Args:
             image: The image to process. Can be one of:
                 - Path to image file (str or Path)
@@ -200,26 +200,26 @@ class OCRProcessor:
             ValueError: If image format is invalid or unreadable
         """
         start_time = time.time()
-        
+
         # Convert input to a format EasyOCR can process
         if isinstance(image, (str, Path)):
             image_path = str(image)
             pil_image = Image.open(image_path)
         elif isinstance(image, bytes):
             image_stream = io.BytesIO(image)
-            pil_image = Image.open(image_stream)
+            pil_image = Image.open(image_stream)  # type: ignore[assignment]
             image_path = None
         elif isinstance(image, Image.Image):
-            pil_image = image
+            pil_image = image  # type: ignore[assignment]
             image_path = None
         else:
             raise ValueError("Image must be a file path, PIL Image, or bytes")
 
         # Convert PIL Image to numpy array for EasyOCR
-        if pil_image.mode != 'RGB':
-            pil_image = pil_image.convert('RGB')
+        if pil_image.mode != "RGB":
+            pil_image = pil_image.convert("RGB")  # type: ignore[assignment]
         np_image = np.array(pil_image)
-        
+
         # Read the image with optimized parameters
         results = self.reader.readtext(
             np_image,
@@ -232,7 +232,7 @@ class OCRProcessor:
             height_ths=0.9,
             ycenter_ths=0.9,
         )
-        
+
         # Format initial results
         detections = []
         for result in results:
@@ -241,49 +241,44 @@ class OCRProcessor:
                 confidence = 1.0
             else:
                 bbox, text, confidence = result
-                
+
             x1, y1 = int(bbox[0][0]), int(bbox[0][1])
-            x2, y2 = int(bbox[1][0]), int(bbox[1][1])
-            x3, y3 = int(bbox[2][0]), int(bbox[2][1])
-            x4, y4 = int(bbox[3][0]), int(bbox[3][1])
-            
-            detections.append({
-                "text": str(text),
-                "confidence": float(round(float(confidence), 3)),
-                "bounding_box": {
-                    "x": x1,
-                    "y": y1,
-                    "width": x2 - x1,
-                    "height": y3 - y1
+            x2, _ = int(bbox[1][0]), int(bbox[1][1])
+            _, y3 = int(bbox[2][0]), int(bbox[2][1])
+            _, _ = int(bbox[3][0]), int(bbox[3][1])
+
+            detections.append(
+                {
+                    "text": str(text),
+                    "confidence": float(round(float(confidence), 3)),
+                    "bounding_box": {"x": x1, "y": y1, "width": x2 - x1, "height": y3 - y1},
                 }
-            })
-        
+            )
+
         # Group the detections
-        grouped_detections = group_text_boxes(
-            detections,
-            width_growth=20,
-            height_growth=1
-        )
-        
+        grouped_detections = group_text_boxes(detections, width_growth=20, height_growth=1)
+
         end_time = time.time()
         output = {
             "processing_time": float(round(end_time - start_time, 2)),
             "detections": grouped_detections,
-            "text": " ".join(d["text"] for d in grouped_detections)
+            "text": " ".join(d["text"] for d in grouped_detections),
         }
 
         if save_debug_image:
             debug_image = self._create_debug_image(pil_image, grouped_detections)
             # Convert debug image to bytes
             debug_bytes = io.BytesIO()
-            debug_image.save(debug_bytes, format='PNG')
+            debug_image.save(debug_bytes, format="PNG")
             output["debug_image"] = debug_bytes.getvalue()
 
         return output
 
-    def _create_debug_image(self, image: Image.Image, detections: List[Dict[str, Any]]) -> Image.Image:
+    def _create_debug_image(
+        self, image: Image.Image, detections: List[Dict[str, Any]]
+    ) -> Image.Image:
         """Create a debug image with bounding boxes drawn around detected text.
-        
+
         Args:
             image: Original image
             detections: List of text detections with bounding boxes
@@ -293,18 +288,13 @@ class OCRProcessor:
         """
         debug_image = image.copy()
         draw = ImageDraw.Draw(debug_image)
-        
+
         for detection in detections:
             bbox = detection["bounding_box"]
             draw.rectangle(
-                [
-                    bbox["x"],
-                    bbox["y"],
-                    bbox["x"] + bbox["width"],
-                    bbox["y"] + bbox["height"]
-                ],
+                [bbox["x"], bbox["y"], bbox["x"] + bbox["width"], bbox["y"] + bbox["height"]],
                 outline="red",
-                width=2
+                width=2,
             )
-        
+
         return debug_image

@@ -1,8 +1,8 @@
-import pytest
-from pathlib import Path
-from aimq.config import Config
-from pydantic_settings import BaseSettings
 import os
+
+import pytest
+
+from aimq.config import Config
 
 
 @pytest.fixture

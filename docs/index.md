@@ -1,41 +1,61 @@
 # AIMQ Documentation
 
-AIMQ (AI Message Queue) is a Python library designed to simplify working with Supabase's queue system, which is built on top of pgmq. It provides an elegant way to process queued jobs using LangChain Runnables, making it perfect for AI-powered task processing and background job handling.
+AIMQ (AI Message Queue) is a robust message queue processor designed for Supabase's pgmq integration. It provides a powerful framework for processing queued tasks with built-in support for AI-powered document processing and OCR capabilities.
 
 ## Features
 
-- **Simple Task Definition**: Define queue processors using the `@worker.task` decorator to transform functions into LangChain RunnableLambda processors
-- **Supabase Integration**: Built on Supabase's queue system (pgmq) for reliable and scalable message queuing
-- **LangChain Compatibility**: Native support for LangChain Runnables, making it easy to integrate AI workflows
-- **Type Safety**: Full type hints and runtime validation using Pydantic
-- **Flexible Job Processing**: Support for delayed jobs, job timeouts, and customizable job completion handling
+- **Supabase pgmq Integration**: Seamlessly process messages from Supabase's PostgreSQL message queue
+- **Document OCR Processing**: Extract text from images using EasyOCR
+- **Queue-based Processing**: Efficient handling of document processing tasks
+- **AI-powered Analysis**: Leverage LangChain for advanced text analysis
+- **Flexible Architecture**: Easy to extend with new processing tools and capabilities
+- **Zero Installation Option**: Run with `uvx` without installing anything
+- **Git URL Support**: Load task definitions from git repositories for GitOps workflows
+- **Docker Ready**: Pre-built images for easy deployment
 
-## Quick Start
+## Quick Start (Zero Installation)
 
-1. Enable Supabase Queue Integration:
-   - In your Supabase project, enable the Queue integration
-   - Make sure "Expose Queues via PostgREST" is turned on
-   - Create your queues through the Supabase interface
+The fastest way to get started with AIMQ requires no installation:
 
-2. Configure Environment:
-   ```env
-   SUPABASE_URL=your-project-url
-   SUPABASE_KEY=your-service-role-key
-   ```
+```bash
+# Initialize a new AIMQ project
+uvx aimq init my-project
+cd my-project
 
-3. Create Tasks:
-   ```python
-   from aimq import Worker
+# Configure your .env file with Supabase credentials
+cp .env.example .env
+# Edit .env with your SUPABASE_URL and SUPABASE_KEY
 
-   worker = Worker()
+# Edit tasks.py to define your task queues
+# (A template is already created for you)
 
-   @worker.task(queue="process_text")
-   def process_text(job_data):
-       # Process job_data using LangChain
-       return {"result": "processed"}
+# Start the worker
+uvx aimq start
+```
 
-   worker.start()
-   ```
+That's it! No `pip install`, no virtual environments, no dependency conflicts.
+
+## Example Task Definition
+
+```python
+from aimq import Worker
+from typing import Dict, Any
+
+# Create a worker instance
+worker = Worker()
+
+@worker.task(queue="document-processing", timeout=300)
+def process_document(data: Dict[str, Any]) -> Dict[str, Any]:
+    """Process a document using AI tools."""
+    document_url = data.get("document_url")
+
+    # Your processing logic here...
+    # Use built-in AIMQ tools for OCR, PDF extraction, etc.
+
+    return {"status": "processed", "text": extracted_text}
+
+# The worker can be started with: aimq start
+```
 
 ## Quick Links
 

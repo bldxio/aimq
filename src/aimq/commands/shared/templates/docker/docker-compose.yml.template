@@ -1,0 +1,72 @@
+version: '3.8'
+
+services:
+  aimq-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: aimq-worker
+
+    # ========================================
+    # DEPLOYMENT OPTION 1: Local tasks.py (Development)
+    # ========================================
+    # Mount your local tasks.py and .env files for development
+    volumes:
+      - ./tasks.py:/app/tasks.py:ro
+      - ./.env:/app/.env:ro
+
+    # Environment variables (loaded from .env file)
+    environment:
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_KEY=${SUPABASE_KEY}
+      - WORKER_NAME=${WORKER_NAME:-aimq-worker}
+      - WORKER_LOG_LEVEL=${WORKER_LOG_LEVEL:-info}
+      - WORKER_IDLE_WAIT=${WORKER_IDLE_WAIT:-10.0}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - MISTRAL_API_KEY=${MISTRAL_API_KEY:-}
+      - LANGCHAIN_TRACING_V2=${LANGCHAIN_TRACING_V2:-false}
+      - LANGCHAIN_API_KEY=${LANGCHAIN_API_KEY:-}
+
+    # ========================================
+    # DEPLOYMENT OPTION 2: Git Repository (Production)
+    # ========================================
+    # To load tasks from a git repository instead of local file:
+    # 1. Comment out the 'volumes' section above
+    # 2. Uncomment the AIMQ_TASKS environment variable below
+    # 3. Optionally add AIMQ_USE_SSH=true for private repos
+    #
+    # environment:
+    #   - AIMQ_TASKS=git:youruser/yourrepo@main
+    #   - AIMQ_USE_SSH=false
+    #   - SUPABASE_URL=${SUPABASE_URL}
+    #   - SUPABASE_KEY=${SUPABASE_KEY}
+    #   - WORKER_NAME=${WORKER_NAME:-aimq-worker}
+    #   - WORKER_LOG_LEVEL=${WORKER_LOG_LEVEL:-info}
+    #
+    # Git URL patterns:
+    #   - git:user/repo             (default branch)
+    #   - git:user/repo@branch      (specific branch)
+    #   - git:user/repo#path        (subdirectory)
+    #   - git:host/user/repo@tag    (specific tag/version)
+    #
+    # For private repositories using SSH:
+    # volumes:
+    #   - ~/.ssh:/home/aimq/.ssh:ro
+
+    # Restart policy
+    restart: unless-stopped
+
+    # Health check (optional - uncomment if you add a health endpoint)
+    # healthcheck:
+    #   test: ["CMD", "python", "-c", "import sys; sys.exit(0)"]
+    #   interval: 30s
+    #   timeout: 10s
+    #   retries: 3
+    #   start_period: 40s
+
+    # Logging configuration
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"

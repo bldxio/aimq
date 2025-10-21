@@ -1,7 +1,7 @@
-import pytest
 from pathlib import Path
-from unittest.mock import Mock, patch, mock_open
-from typing import Generator
+from unittest.mock import Mock, mock_open, patch
+
+import pytest
 
 from aimq.commands.shared.migration import SupabaseMigrations
 from aimq.commands.shared.paths import ProjectPath
@@ -70,21 +70,22 @@ def test_create_migration_new(migrations: SupabaseMigrations, project_path: Mock
     template_content = "create table {{table_name}};"
     context = {"table_name": "test_table"}
     expected_content = "create table test_table;"
-    
+
     # Mock file operations
     project_path.find_existing_migration.return_value = None
     project_path.migration_path.return_value = Path("/test/migrations/test_migration.sql")
-    
-    with patch("builtins.open", mock_open(read_data=template_content)) as mock_file, \
-         patch("os.makedirs") as mock_makedirs, \
-         patch.object(Path, "exists", return_value=True):
-        
+
+    with (
+        patch("builtins.open", mock_open(read_data=template_content)) as mock_file,
+        patch("os.makedirs") as mock_makedirs,
+        patch.object(Path, "exists", return_value=True),
+    ):
         result = migrations.create_migration("test_migration", "template.sql", context)
-        
+
         # Verify the migration was created correctly
         assert result == Path("/test/migrations/test_migration.sql")
         mock_makedirs.assert_called_once_with(migrations.project_path.migrations, exist_ok=True)
-        
+
         # Verify file operations
         write_handle = mock_file.return_value.__enter__.return_value
         write_handle.write.assert_called_once_with(expected_content)
@@ -100,7 +101,7 @@ def test_create_migration_existing(migrations: SupabaseMigrations, project_path:
     """
     existing_path = Path("/test/migrations/existing.sql")
     project_path.find_existing_migration.return_value = existing_path
-    
+
     result = migrations.create_migration("existing", "template.sql")
     assert result == existing_path
     project_path.migration_path.assert_not_called()
@@ -115,10 +116,7 @@ def test_setup_aimq_migration(migrations: SupabaseMigrations) -> None:
     """
     with patch.object(migrations, "create_migration") as mock_create:
         migrations.setup_aimq_migration()
-        mock_create.assert_called_once_with(
-            name="setup_aimq",
-            template_name="setup_aimq.sql"
-        )
+        mock_create.assert_called_once_with(name="setup_aimq", template_name="setup_aimq.sql")
 
 
 def test_create_queue_migration(migrations: SupabaseMigrations) -> None:
@@ -134,5 +132,5 @@ def test_create_queue_migration(migrations: SupabaseMigrations) -> None:
         mock_create.assert_called_once_with(
             name=f"create_queue_{queue_name}",
             template_name="create_queue.sql",
-            context={"queue_name": queue_name}
+            context={"queue_name": queue_name},
         )

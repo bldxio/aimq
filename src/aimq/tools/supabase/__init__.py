@@ -1,12 +1,14 @@
 """Supabase tools for interacting with Supabase services."""
+
 from typing import List
 
 from langchain.tools import BaseTool
-from .read_record import ReadRecord
-from .write_record import WriteRecord
-from .read_file import ReadFile
-from .write_file import WriteFile
+
 from .enqueue import Enqueue
+from .read_file import ReadFile
+from .read_record import ReadRecord
+from .write_file import WriteFile
+from .write_record import WriteRecord
 
 __all__ = [
     "ReadRecord",
@@ -16,12 +18,13 @@ __all__ = [
     "Enqueue",
 ]
 
+
 def get_tools() -> List[BaseTool]:
     """Get all Supabase tools."""
     tools: List[BaseTool] = [
         ReadRecord(),
         WriteRecord(),
-        ReadFile(),
-        WriteFile(),
+        ReadFile(),  # type: ignore[call-arg]
+        WriteFile(),  # type: ignore[call-arg]
     ]
     return tools

@@ -1,18 +1,52 @@
 # OCR (Optical Character Recognition)
 
-This guide covers AIMQ's OCR capabilities for extracting text from images.
+This guide covers AIMQ's OCR capabilities for extracting text from images using EasyOCR.
+
+## Overview
+
+AIMQ provides two main interfaces for OCR:
+
+- **`OCRProcessor`**: Low-level processor for direct image processing
+- **`ImageOCR`**: LangChain tool for integration with AI workflows
 
 ## Basic Usage
 
+### Using OCRProcessor Directly
+
 ```python
-from aimq.tools.ocr import ImageOCR
+from aimq.tools.ocr.processor import OCRProcessor
+from PIL import Image
 
-# Initialize OCR
-ocr = ImageOCR()
+# Initialize processor
+processor = OCRProcessor(languages=["en"])
 
-# Process an image
-result = ocr.process_image("image.jpg")
+# Process an image (supports multiple input formats)
+result = processor.process_image("image.jpg")
 print(result["text"])
+print(f"Processing time: {result['processing_time']}s")
+
+# View individual text detections
+for detection in result["detections"]:
+    print(f"Text: {detection['text']}")
+    print(f"Confidence: {detection['confidence']}")
+    print(f"Position: {detection['bounding_box']}")
+```
+
+### Supported Input Formats
+
+```python
+# From file path
+result = processor.process_image("image.jpg")
+
+# From PIL Image
+from PIL import Image
+img = Image.open("image.jpg")
+result = processor.process_image(img)
+
+# From bytes
+with open("image.jpg", "rb") as f:
+    image_bytes = f.read()
+result = processor.process_image(image_bytes)
 ```
 
 ## Features
@@ -21,130 +55,206 @@ print(result["text"])
 
 ```python
 # Initialize with multiple languages
-ocr = ImageOCR(languages=["en", "es", "fr"])
+processor = OCRProcessor(languages=["en", "es", "fr", "de"])
 
-# Process image
-result = ocr.process_image("multilingual.jpg")
+# Process multilingual document
+result = processor.process_image("multilingual.jpg")
 ```
+
+**Supported languages** (partial list):
+- `en`: English
+- `es`: Spanish
+- `fr`: French
+- `de`: German
+- `ja`: Japanese
+- `zh`: Chinese
+- See [EasyOCR documentation](https://www.jaided.ai/easyocr/) for full list
 
 ### Debug Visualization
 
-```python
-# Process with debug visualization
-result = ocr.process_image("document.jpg", save_debug_image=True)
-
-# Access debug image
-debug_image = result["debug_image"]
-```
-
-### Text Regions
+Get a debug image with bounding boxes drawn around detected text:
 
 ```python
-# Get detailed text regions
-result = ocr.process_image("document.jpg")
-for region in result["regions"]:
-    print(f"Text: {region['text']}")
-    print(f"Confidence: {region['confidence']}")
-    print(f"Position: {region['bbox']}")
+result = processor.process_image("document.jpg", save_debug_image=True)
+
+# Access debug image bytes
+debug_image_bytes = result["debug_image"]
+
+# Save debug image
+from PIL import Image
+import io
+debug_img = Image.open(io.BytesIO(debug_image_bytes))
+debug_img.save("debug_output.png")
 ```
 
-## Integration Examples
+### Text Detection Details
 
-### Queue Processing
+```python
+result = processor.process_image("document.jpg")
+
+# Full extracted text
+print(result["text"])
+
+# Individual detections with positions and confidence
+for detection in result["detections"]:
+    text = detection["text"]
+    confidence = detection["confidence"]  # 0.0 to 1.0
+    bbox = detection["bounding_box"]  # {x, y, width, height}
+
+    print(f"{text} ({confidence:.2%} confident)")
+    print(f"  Position: x={bbox['x']}, y={bbox['y']}")
+```
+
+## Integration with AIMQ Workers
+
+### Using as a LangChain Tool
 
 ```python
 from aimq import Worker
 from aimq.tools.ocr import ImageOCR
+from aimq.attachment import Attachment
 
 worker = Worker()
-ocr = ImageOCR()
 
-@worker.task(queue="ocr")
-def process_image(data):
-    image_data = data["image"]
-    return ocr.process_image(image_data)
+# ImageOCR is a LangChain BaseTool
+ocr_tool = ImageOCR()
+
+@worker.task(queue="ocr-processing")
+def process_document(data):
+    """Process document with OCR."""
+    # Create attachment from image data
+    attachment = Attachment(data=data["image_bytes"])
+
+    # Use the OCR tool (using public invoke API)
+    result = ocr_tool.invoke({
+        "image": attachment,
+        "save_debug_image": True
+    })
+
+    return {
+        "text": result["text"],
+        "confidence": sum(d["confidence"] for d in result["detections"]) / len(result["detections"]),
+        "processing_time": result["processing_time"]
+    }
 ```
 
-### Batch Processing
+### Processing from Supabase Storage
 
 ```python
-from aimq.tools.ocr import BatchImageOCR
+from aimq import Worker
+from aimq.tools.ocr.processor import OCRProcessor
+from aimq.tools.supabase import read_file
 
-# Initialize batch processor
-batch_ocr = BatchImageOCR()
+worker = Worker()
+processor = OCRProcessor()
 
-# Process multiple images
-images = ["image1.jpg", "image2.jpg", "image3.jpg"]
-results = batch_ocr.process_images(images)
-```
+@worker.task(queue="document-ocr")
+def process_stored_document(data):
+    """Process document from Supabase storage."""
+    # Read file from Supabase storage (returns dict with "file" key containing Attachment)
+    result = read_file.invoke({
+        "bucket": "documents",
+        "path": data["document_path"]
+    })
 
-### PDF OCR
+    # Process image bytes with OCR (extract bytes from Attachment)
+    ocr_result = processor.process_image(result["file"].data)
 
-```python
-from aimq.tools.ocr import PDFImageOCR
-
-# Initialize PDF OCR processor
-pdf_ocr = PDFImageOCR()
-
-# Process PDF pages
-result = pdf_ocr.process_pdf("document.pdf")
+    return {
+        "text": ocr_result["text"],
+        "detections": ocr_result["detections"]
+    }
 ```
 
 ## Performance Optimization
 
-### Image Preprocessing
+### Image Quality Recommendations
+
+For best OCR results:
+
+1. **Resolution**: Minimum 300 DPI for scanned documents
+2. **Format**: PNG or JPG with minimal compression
+3. **Lighting**: Clear, even lighting without shadows
+4. **Contrast**: High contrast between text and background
+5. **Orientation**: Properly oriented (not rotated or skewed)
+
+### Language Selection Strategy
 
 ```python
-from aimq.tools.ocr import ImagePreprocessor
+# Single language (fastest)
+processor_en = OCRProcessor(languages=["en"])
 
-# Initialize preprocessor
-preprocessor = ImagePreprocessor()
+# Multiple languages (slower but more flexible)
+processor_multi = OCRProcessor(languages=["en", "es"])
 
-# Preprocess image
-processed_image = preprocessor.process(
-    image,
-    denoise=True,
-    deskew=True,
-    enhance_contrast=True
-)
-
-# Run OCR on processed image
-result = ocr.process_image(processed_image)
+# Choose based on your use case:
+# - Use single language when content is known
+# - Use multiple languages for mixed-language documents
 ```
 
-### Parallel Processing
+### Processing Large Volumes
+
+For processing many images, consider:
 
 ```python
-from aimq.tools.ocr import ParallelOCR
+from aimq import Worker
+from aimq.tools.ocr.processor import OCRProcessor
 
-# Initialize parallel processor
-parallel_ocr = ParallelOCR(num_workers=4)
+# Reuse the processor across multiple calls
+# (the EasyOCR reader is lazy-loaded and cached)
+processor = OCRProcessor()
 
-# Process images in parallel
-results = parallel_ocr.process_images(images)
+@worker.task(queue="batch-ocr")
+def batch_process(data):
+    """Process multiple images efficiently."""
+    results = []
+    for image_path in data["images"]:
+        result = processor.process_image(image_path)
+        results.append({
+            "path": image_path,
+            "text": result["text"]
+        })
+    return results
 ```
 
 ## Best Practices
 
-1. **Image Quality**
-   - Ensure good image resolution (at least 300 DPI)
-   - Use clear, well-lit images
-   - Remove noise and artifacts
+### Error Handling
 
-2. **Language Selection**
-   - Specify correct languages for better accuracy
-   - Use multiple languages only when needed
+```python
+from aimq.tools.ocr.processor import OCRProcessor
 
-3. **Performance**
-   - Use batch processing for multiple images
-   - Enable preprocessing for poor quality images
-   - Use parallel processing for large workloads
+processor = OCRProcessor()
 
-4. **Error Handling**
-   ```python
-   try:
-       result = ocr.process_image(image)
-   except OCRError as e:
-       logger.error(f"OCR failed: {e}")
-       # Handle error appropriately
-   ```
+try:
+    result = processor.process_image("document.jpg")
+    if not result["text"].strip():
+        print("Warning: No text detected")
+except ValueError as e:
+    print(f"Invalid image format: {e}")
+except Exception as e:
+    print(f"OCR processing failed: {e}")
+```
+
+### Filtering Low-Confidence Results
+
+```python
+result = processor.process_image("noisy_image.jpg")
+
+# Filter out low-confidence detections
+high_confidence_text = []
+for detection in result["detections"]:
+    if detection["confidence"] > 0.7:  # 70% confidence threshold
+        high_confidence_text.append(detection["text"])
+
+clean_text = " ".join(high_confidence_text)
+```
+
+### Text Grouping
+
+OCR results are automatically grouped by spatial proximity. The grouping parameters are:
+
+- `width_growth=20`: Horizontal tolerance for grouping text
+- `height_growth=1`: Vertical tolerance for grouping text
+
+This ensures text on the same line or in the same paragraph is grouped together.

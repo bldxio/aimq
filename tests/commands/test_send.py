@@ -4,13 +4,12 @@ This module contains tests for the send command, which is responsible for
 sending jobs to different queue providers.
 """
 
-from typing import Generator, Tuple
+import json
+from typing import Generator
 from unittest.mock import Mock, patch
 
 import pytest
 from typer.testing import CliRunner
-
-import json
 
 from aimq.commands import app
 from aimq.providers.supabase import SupabaseQueueProvider
@@ -56,18 +55,11 @@ class TestSendCommand:
         job_data = {"key": "value"}
 
         # Act
-        result = runner.invoke(
-            app,
-            ["send", queue_name, json.dumps(job_data)]
-        )
+        result = runner.invoke(app, ["send", queue_name, json.dumps(job_data)])
 
         # Assert
         assert result.exit_code == 0
-        mock_supabase_provider.send.assert_called_once_with(
-            queue_name,
-            job_data,
-            delay=None
-        )
+        mock_supabase_provider.send.assert_called_once_with(queue_name, job_data, delay=None)
         assert "Successfully sent job" in result.stdout
 
     def test_send_invalid_json(self, runner: CliRunner) -> None:
@@ -84,14 +76,12 @@ class TestSendCommand:
         invalid_data = "invalid-json"
 
         # Act
-        result = runner.invoke(
-            app,
-            ["send", queue_name, invalid_data]
-        )
+        result = runner.invoke(app, ["send", queue_name, invalid_data])
 
         # Assert
         assert result.exit_code == 1
-        assert "Invalid JSON data" in result.stdout
+        # Error messages are written to stderr, but CliRunner combines them in output
+        assert "Invalid JSON data" in result.output
 
     def test_send_missing_arguments(self, runner: CliRunner) -> None:
         """Test sending without required arguments.
@@ -107,7 +97,8 @@ class TestSendCommand:
 
         # Assert
         assert result.exit_code == 2
-        assert "Missing argument" in result.stdout
+        # CLI usage errors are written to stderr
+        assert "Missing argument" in result.output
 
     def test_send_with_delay(self, runner: CliRunner, mock_supabase_provider: Mock) -> None:
         """Test sending a job with delay parameter.
@@ -126,17 +117,12 @@ class TestSendCommand:
 
         # Act
         result = runner.invoke(
-            app,
-            ["send", queue_name, json.dumps(job_data), "--delay", str(delay)]
+            app, ["send", queue_name, json.dumps(job_data), "--delay", str(delay)]
         )
 
         # Assert
         assert result.exit_code == 0
-        mock_supabase_provider.send.assert_called_once_with(
-            queue_name,
-            job_data,
-            delay=delay
-        )
+        mock_supabase_provider.send.assert_called_once_with(queue_name, job_data, delay=delay)
         assert "Successfully sent job" in result.stdout
 
     def test_send_provider_error(self, runner: CliRunner, mock_supabase_provider: Mock) -> None:
@@ -155,14 +141,12 @@ class TestSendCommand:
         mock_supabase_provider.send.side_effect = Exception("Provider error")
 
         # Act
-        result = runner.invoke(
-            app,
-            ["send", queue_name, json.dumps(job_data)]
-        )
+        result = runner.invoke(app, ["send", queue_name, json.dumps(job_data)])
 
         # Assert
         assert result.exit_code == 1
-        assert "Error: Provider error" in result.stdout
+        # Error messages are written to stderr, but CliRunner combines them in output
+        assert "Error: Provider error" in result.output
 
     def test_send_complex_json(self, runner: CliRunner, mock_supabase_provider: Mock) -> None:
         """Test sending complex nested JSON data.
@@ -179,24 +163,13 @@ class TestSendCommand:
         complex_data = {
             "string": "value",
             "number": 42,
-            "nested": {
-                "bool": True,
-                "null": None,
-                "list": ["a", "b", "c"]
-            }
+            "nested": {"bool": True, "null": None, "list": ["a", "b", "c"]},
         }
 
         # Act
-        result = runner.invoke(
-            app,
-            ["send", queue_name, json.dumps(complex_data)]
-        )
+        result = runner.invoke(app, ["send", queue_name, json.dumps(complex_data)])
 
         # Assert
         assert result.exit_code == 0
-        mock_supabase_provider.send.assert_called_once_with(
-            queue_name,
-            complex_data,
-            delay=None
-        )
+        mock_supabase_provider.send.assert_called_once_with(queue_name, complex_data, delay=None)
         assert "Successfully sent job" in result.stdout

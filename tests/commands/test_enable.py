@@ -37,8 +37,10 @@ class TestEnableCommand:
         Notes:
             This fixture also mocks the ProjectPath class to avoid filesystem operations.
         """
-        with patch("aimq.commands.enable.SupabaseConfig") as mock_config, \
-             patch("aimq.commands.enable.ProjectPath") as mock_path:
+        with (
+            patch("aimq.commands.enable.SupabaseConfig") as mock_config,
+            patch("aimq.commands.enable.ProjectPath") as mock_path,
+        ):
             instance = Mock(spec=SupabaseConfig)
             mock_config.return_value = instance
             mock_path.return_value = Mock(spec=ProjectPath)
@@ -84,7 +86,8 @@ class TestEnableCommand:
 
         # Assert
         assert result.exit_code == 1
-        assert f"Failed to enable PGMQ: {error_message}" in result.stdout
+        # Error messages are written to stderr, but CliRunner combines them in output
+        assert f"Failed to enable PGMQ: {error_message}" in result.output
         mock_supabase_config.enable.assert_called_once()
 
     def test_enable_project_path_error(self, runner: CliRunner) -> None:
@@ -106,4 +109,5 @@ class TestEnableCommand:
 
             # Assert
             assert result.exit_code == 1
-            assert f"Failed to enable PGMQ: {error_message}" in result.stdout
+            # Error messages are written to stderr, but CliRunner combines them in output
+            assert f"Failed to enable PGMQ: {error_message}" in result.output

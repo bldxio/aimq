@@ -20,7 +20,6 @@ wheels/
 .installed.cfg
 *.egg
 *.pyc
-.python-version
 .mypy_cache/
 .ruff_cache/
 .dmypy.json
@@ -78,3 +77,6 @@ pip-delete-this-directory.txt
 # Packer secrets (do not commit)
 packer/aimq.auto.pkrvars.hcl
 *.auto.pkrvars.hcl
+
+# MkDocs build output
+site/

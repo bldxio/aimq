@@ -21,17 +21,19 @@ AIMQ follows a strict branching strategy:
    ```bash
    git remote add upstream https://github.com/ORIGINAL_OWNER/aimq.git
    ```
-4. Install Poetry (package manager):
+4. Install uv (package manager):
    ```bash
-   curl -sSL https://install.python-poetry.org | python3 -
+   curl -LsSf https://astral.sh/uv/install.sh | sh
+   # or on Windows: powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
    ```
 5. Install dependencies:
    ```bash
-   poetry install
+   uv sync --group dev
+   # or use just: just install
    ```
 6. Install pre-commit hooks:
    ```bash
-   poetry run pre-commit install
+   uv run pre-commit install
    ```
 
 ## Development Workflow
@@ -57,7 +59,8 @@ AIMQ follows a strict branching strategy:
 
 4. Run tests locally:
    ```bash
-   poetry run pytest
+   uv run pytest
+   # or use just: just test
    ```
 
 5. Commit your changes:
@@ -108,11 +111,109 @@ These are all configured in the pre-commit hooks.
 
 ## Release Process
 
-Releases are handled by repository maintainers only:
-1. Create a release branch from `dev`
-2. Update version numbers and CHANGELOG.md
-3. Create a pull request from the release branch to `main`
-4. After approval and merge, tag the release in GitHub
+### Version Strategy
+
+- **dev branch**: Beta versions (e.g., `0.1.1b1`, `0.1.1b2`) published to TestPyPI
+- **main branch**: Stable versions (e.g., `0.1.1`) published to PyPI
+- Release candidates (e.g., `0.1.1rc1`) can be used before stable releases
+
+### Beta Releases (Contributors)
+
+Beta releases are created on the `dev` branch for testing new features:
+
+1. Make sure all changes are committed and pushed
+2. Run the beta release workflow:
+   ```bash
+   just release-beta
+   ```
+3. This will:
+   - Run all CI checks (lint, type-check, test)
+   - Bump to the next beta version (e.g., `0.1.1b1` → `0.1.1b2`)
+   - Prompt you to update CHANGELOG.md
+   - Build the package
+4. Review the changes:
+   ```bash
+   git diff
+   ```
+5. Commit and push:
+   ```bash
+   git add -A
+   git commit -m "chore: release v0.1.1b2"
+   git push origin dev
+   ```
+6. GitHub Actions will automatically publish to TestPyPI
+7. Test the installation:
+   ```bash
+   uv pip install --index-url https://test.pypi.org/simple/ aimq==0.1.1b2
+   ```
+
+### Stable Releases (Maintainers Only)
+
+Stable releases are created on the `main` branch and published to PyPI:
+
+1. Ensure the `dev` branch is ready for release (all tests passing, CHANGELOG up to date)
+2. Run the stable release workflow:
+   ```bash
+   just release
+   ```
+3. This will:
+   - Run all CI checks
+   - Bump to stable version (e.g., `0.1.1b2` → `0.1.1`)
+   - Prompt you to update CHANGELOG.md
+   - Build the package
+4. Review the changes and commit:
+   ```bash
+   git add -A
+   git commit -m "chore: release v0.1.1"
+   ```
+5. Create a release branch:
+   ```bash
+   git checkout -b release/v0.1.1
+   git push origin release/v0.1.1
+   ```
+6. Create a pull request from `release/v0.1.1` to `main`
+7. After approval and merge, GitHub Actions will:
+   - Publish to PyPI
+   - Create a GitHub release with tag `v0.1.1`
+8. Merge `main` back to `dev` to sync versions
+
+### Version Bump Commands
+
+For manual version management, use these commands:
+
+```bash
+# Check current version
+just version
+
+# Beta versions (for dev branch)
+just version-beta          # 0.1.1b1 → 0.1.1b2
+
+# Release candidates
+just version-rc            # 0.1.1b2 → 0.1.1rc1
+
+# Stable releases
+just version-stable        # 0.1.1rc1 → 0.1.1
+
+# Semantic versioning (for stable versions only)
+just version-patch         # 0.1.1 → 0.1.2
+just version-minor         # 0.1.1 → 0.2.0
+just version-major         # 0.1.1 → 1.0.0
+```
+
+### Manual Publishing
+
+For manual publishing (not recommended):
+
+```bash
+# Build the package
+just build
+
+# Publish to TestPyPI
+just publish-test
+
+# Publish to PyPI (requires PYPI_API_TOKEN)
+just publish
+```
 
 ## Questions?
 

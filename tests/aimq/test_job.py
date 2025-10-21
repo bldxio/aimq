@@ -1,5 +1,7 @@
-import pytest
 from datetime import datetime, timedelta
+
+import pytest
+
 from aimq.job import Job
 
 
@@ -21,7 +23,7 @@ class TestJob:
     def test_job_creation(self, sample_job_data):
         """Test basic job creation with required fields."""
         job = Job(**sample_job_data)
-        
+
         assert job.id == sample_job_data["msg_id"]
         assert job.attempt == sample_job_data["read_ct"]
         assert job.expires_at == sample_job_data["vt"]
@@ -35,7 +37,7 @@ class TestJob:
         """Test creating a job from API response data."""
         queue_name = "test_queue"
         job = Job.from_response(sample_job_data, queue=queue_name, popped=True)
-        
+
         assert job.id == sample_job_data["msg_id"]
         assert job.queue == queue_name
         assert job._popped is True
@@ -44,12 +46,12 @@ class TestJob:
         """Test job creation with custom status."""
         sample_job_data["status"] = "processing"
         job = Job(**sample_job_data)
-        
+
         assert job.status == "processing"
 
     def test_job_updated_at_auto_set(self, sample_job_data):
         """Test that updated_at is automatically set if not provided."""
         job = Job(**sample_job_data)
-        
+
         assert isinstance(job.updated_at, datetime)
         assert job.updated_at is not None

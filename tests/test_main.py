@@ -1,4 +1,5 @@
 """Test the main entry point."""
+
 import sys
 from unittest.mock import patch
 
@@ -11,6 +12,6 @@ def test_main():
     """Test that the main entry point calls the app function."""
     runner = CliRunner()
     with patch.object(sys, "argv", ["aimq", "--help"]):  # Mock argv to avoid parsing test args
-        result = runner.invoke(app)
+        result = runner.invoke(app, ["--help"])
         assert result.exit_code == 0  # Help command should succeed
         assert "Usage:" in result.stdout  # Help output should be shown

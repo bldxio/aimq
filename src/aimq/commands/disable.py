@@ -5,6 +5,7 @@ import typer
 from aimq.commands.shared.config import SupabaseConfig
 from aimq.commands.shared.paths import ProjectPath
 
+
 def disable() -> None:
     """Disable PGMQ in Supabase by removing pgmq_public from API schemas."""
     try:
