@@ -192,6 +192,10 @@ changelog-preview:
 changelog-since ref:
     @uv run python scripts/generate_changelog.py --since {{ref}}
 
+# Finalize [Unreleased] section to a versioned release (stable releases only)
+changelog-finalize version:
+    @uv run python scripts/finalize_changelog.py {{version}}
+
 # Bump to next beta version (e.g., 0.1.1b1 -> 0.1.1b2)
 version-beta:
     #!/usr/bin/env bash
@@ -338,7 +342,7 @@ release-beta: ci
     @echo "  1. Review changes: git diff"
     @echo "  2. Commit: git add -A && git commit -m 'chore: release v$(uv run python -c \"import tomllib; print(tomllib.load(open('pyproject.toml', 'rb'))['project']['version'])\")'"
     @echo "  3. Push: git push origin dev"
-    @echo "  4. GitHub Actions will automatically publish to TestPyPI"
+    @echo "  4. GitHub Actions will automatically publish to TestPyPI (no git tag created)"
 
 # Complete stable release workflow
 release: ci
@@ -349,7 +353,8 @@ release: ci
     @echo "This will:"
     @echo "  1. Bump to stable version"
     @echo "  2. Auto-generate CHANGELOG.md from commits"
-    @echo "  3. Build the package"
+    @echo "  3. Finalize [Unreleased] → [VERSION] with git tag link"
+    @echo "  4. Build the package"
     @echo ""
     @read -p "Continue? (y/N) " -n 1 -r; echo; [[ $$REPLY =~ ^[Yy]$$ ]]
     just version-stable
@@ -357,8 +362,17 @@ release: ci
     @echo "📝 Generating CHANGELOG.md from commit messages..."
     just changelog
     @echo ""
-    @echo "⚠️  Please review the generated CHANGELOG.md"
+    @echo "⚠️  Please review the generated CHANGELOG.md [Unreleased] section"
     @echo "   Edit manually if needed, then press Enter to continue..."
+    @read
+    @NEW_VERSION=$$(uv run python -c "import tomllib; print(tomllib.load(open('pyproject.toml', 'rb'))['project']['version'])"); \
+    echo ""; \
+    echo "📦 Finalizing CHANGELOG for version $$NEW_VERSION..."; \
+    just changelog-finalize $$NEW_VERSION
+    @echo ""
+    @echo "⚠️  Please review the finalized CHANGELOG.md"
+    @echo "   The [Unreleased] section should now be [VERSION] - DATE"
+    @echo "   Press Enter to continue to build..."
     @read
     just build
     @echo ""
@@ -370,4 +384,4 @@ release: ci
     @echo "  3. Create release branch: git checkout -b release/v$(uv run python -c \"import tomllib; print(tomllib.load(open('pyproject.toml', 'rb'))['project']['version'])\")"
     @echo "  4. Push: git push origin release/v$(uv run python -c \"import tomllib; print(tomllib.load(open('pyproject.toml', 'rb'))['project']['version'])\")"
     @echo "  5. Create PR to main branch"
-    @echo "  6. After merge, GitHub Actions will publish to PyPI"
+    @echo "  6. After merge, GitHub Actions will publish to PyPI and create git tag"

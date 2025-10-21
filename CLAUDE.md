@@ -271,12 +271,32 @@ During development, you can generate CHANGELOG entries:
 # Preview what will be generated from commits
 just changelog-preview
 
-# Generate and update CHANGELOG.md
+# Generate and update CHANGELOG.md [Unreleased] section
 just changelog
 
 # Generate from specific commit/tag
 just changelog-since v0.1.0
+
+# Finalize [Unreleased] → [VERSION] for stable releases (automatic in workflow)
+just changelog-finalize 0.1.1
 ```
+
+#### Beta vs Stable CHANGELOG Workflow
+
+**Beta Releases (dev branch):**
+- Changes accumulate in `[Unreleased]` section
+- `just release-beta` updates `[Unreleased]` only
+- No version sections created for beta releases
+- Beta releases have no git tags, so no version sections in CHANGELOG
+
+**Stable Releases (main branch):**
+- `just release` workflow:
+  1. Updates `[Unreleased]` from commits
+  2. Prompts for review/edits
+  3. Converts `[Unreleased]` → `[X.Y.Z] - DATE`
+  4. Adds git tag comparison link
+- Version sections align with git tags
+- After merge to main, git tag is created
 
 #### Release Workflows Automate This
 
@@ -284,6 +304,7 @@ The `just release-beta` and `just release` commands automatically:
 1. Generate CHANGELOG from commits since last release
 2. Prompt you to review the generated entries
 3. Allow manual edits before finalizing
+4. **For stable releases only:** Convert `[Unreleased]` to version section with tag link
 
 #### When to Update Manually
 
@@ -297,11 +318,20 @@ You should manually edit CHANGELOG.md when:
 
 ### Version Strategy
 
-- **dev branch**: Beta versions (0.1.1b1, 0.1.1b2, etc.) → TestPyPI
-- **main branch**: Stable versions (0.1.1, 0.2.0, etc.) → PyPI
+- **dev branch**: Beta versions (0.1.1b1, 0.1.1b2, etc.) → TestPyPI (no git tags)
+- **main branch**: Stable versions (0.1.1, 0.2.0, etc.) → PyPI + git tags
 - **Release candidates**: Optional (0.1.1rc1) for pre-release testing
 
+**Git Tag Policy:**
+- Beta releases: No git tags created (tracked via TestPyPI only)
+- Stable releases: Git tags automatically created by GitHub Actions after merge to main
+- Tags point to merge commits on main branch
+
 ### Beta Release Process (dev branch)
+
+**Note:** Beta releases are published to TestPyPI but do NOT create git tags. Tags are only created for stable releases on main branch.
+
+**CHANGELOG Behavior:** Beta releases only update the `[Unreleased]` section. No version sections are created until stable release.
 
 1. **Prepare the release:**
    ```bash
@@ -310,14 +340,15 @@ You should manually edit CHANGELOG.md when:
    This will:
    - Run CI checks (lint, type-check, test)
    - Bump version (0.1.1b1 → 0.1.1b2)
-   - **Auto-generate CHANGELOG.md** from git commits
+   - **Update CHANGELOG [Unreleased]** from git commits
    - Prompt to review generated entries
    - Build the package
 
 2. **Review CHANGELOG.md:**
-   - Generated automatically from conventional commits
+   - Generated automatically from conventional commits into `[Unreleased]` section
    - Edit manually if needed (add context, clarify entries)
    - Ensure all changes are user-facing
+   - **No version section created** - changes stay in `[Unreleased]`
 
 3. **Commit and push:**
    ```bash
@@ -330,6 +361,7 @@ You should manually edit CHANGELOG.md when:
    - GitHub Actions detects version change in pyproject.toml
    - Automatically publishes to TestPyPI
    - Creates summary with installation instructions
+   - **No git tag is created** (beta releases are tracked via TestPyPI only)
 
 5. **Test the release:**
    ```bash
@@ -338,9 +370,13 @@ You should manually edit CHANGELOG.md when:
 
 ### Stable Release Process (main branch - Maintainers Only)
 
+**Note:** Git tags are created automatically by GitHub Actions AFTER merging to main. The tag points to the merge commit on main branch.
+
+**CHANGELOG Behavior:** Stable releases convert `[Unreleased]` to a versioned section `[X.Y.Z]` with git tag comparison link.
+
 1. **Ensure dev is ready:**
    - All tests passing
-   - CHANGELOG.md up to date
+   - All beta changes accumulated in `[Unreleased]` section
    - Documentation current
 
 2. **Prepare stable release:**
@@ -350,7 +386,10 @@ You should manually edit CHANGELOG.md when:
    This will:
    - Run CI checks
    - Bump to stable (0.1.1b2 → 0.1.1)
-   - Prompt to update CHANGELOG.md
+   - Update `[Unreleased]` from commits
+   - Prompt to review `[Unreleased]` entries
+   - **Convert `[Unreleased]` → `[0.1.1] - DATE`** with git tag link
+   - Prompt to review finalized version section
    - Build the package
 
 3. **Create release branch:**
@@ -366,10 +405,12 @@ You should manually edit CHANGELOG.md when:
    - Review and approve
    - Merge to main
 
-5. **Automated publishing:**
-   - GitHub Actions publishes to PyPI
-   - Creates GitHub release with tag `v0.1.1`
-   - Generates release notes
+5. **Automated publishing (triggered by merge to main):**
+   - GitHub Actions detects version change in pyproject.toml
+   - Publishes to PyPI
+   - **Creates git tag `v0.1.1`** on the merge commit
+   - Creates GitHub release with the tag
+   - Generates release notes from CHANGELOG.md
 
 6. **Sync back to dev:**
    ```bash
