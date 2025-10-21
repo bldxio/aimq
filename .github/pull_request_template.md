@@ -27,21 +27,39 @@
 **Manual Testing Details:**
 <!-- Describe manual testing performed -->
 
-## CHANGELOG.md Update
+## Conventional Commits
 
-<!-- REQUIRED: Have you updated CHANGELOG.md? -->
+<!-- CHANGELOG.md is auto-generated from git commits during release workflow -->
 
-- [ ] I have updated `CHANGELOG.md` in the `[Unreleased]` section
-- [ ] No CHANGELOG update needed (documentation/test-only changes)
+**Commit Message Format:**
+All commits MUST use conventional commit format for automatic CHANGELOG generation:
 
-**CHANGELOG Category:**
-<!-- Check the category you updated -->
-- [ ] Added
-- [ ] Changed
-- [ ] Deprecated
-- [ ] Removed
-- [ ] Fixed
-- [ ] Security
+- `feat:` → Added section (new features)
+- `fix:` → Fixed section (bug fixes)
+- `docs:` → Changed section (documentation)
+- `refactor:` → Changed section (code refactoring)
+- `perf:` → Changed section (performance improvements)
+- `security:` → Security section
+- `deprecate:` → Deprecated section
+- `remove:` → Removed section
+- `test:`, `chore:`, `ci:`, `build:` → Not included in CHANGELOG
+
+**Examples:**
+```
+feat: add batch processing for OCR jobs
+fix: resolve race condition in worker startup
+docs: update Docker deployment guide
+refactor: simplify queue provider interface
+```
+
+**Manual CHANGELOG Edits (Optional):**
+- [ ] I have manually edited `CHANGELOG.md` for additional clarity/context
+- [ ] No manual edits needed (commits are sufficient)
+
+Manual edits are optional and only needed to:
+- Add user-facing context or breaking change warnings
+- Clarify generated entries
+- Combine related commits into one entry
 
 ## Checklist
 
