@@ -26,7 +26,8 @@ def upload_document(data: dict):
 
     # Create attachment from file
     with open(file_path, "rb") as f:
-        attachment = Attachment(name=file_path.name, content=f.read(), mime_type="application/pdf")
+        attachment = Attachment(data=f.read())
+        attachment._mimetype = "application/pdf"
 
     # Create WriteFile tool with custom bucket and path
     write_file = WriteFile(bucket="documents", path="{{config.user_id}}/{{file.name}}")

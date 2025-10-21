@@ -327,22 +327,82 @@ kubectl autoscale deployment aimq-worker \
 
 ### Monitoring
 
-Add health checks and metrics:
+Add health checks using file-based probes (no additional dependencies required):
 
 ```yaml
 # In container spec
 livenessProbe:
   exec:
-    command: ["pgrep", "-f", "aimq"]
+    command:
+      - python3
+      - -c
+      - |
+        import os, time
+        probe_file = '/tmp/aimq-health'
+        if not os.path.exists(probe_file):
+            exit(1)
+        age = time.time() - os.path.getmtime(probe_file)
+        exit(0 if age < 60 else 1)  # Fail if file not updated in 60s
   initialDelaySeconds: 30
   periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
 
 readinessProbe:
   exec:
-    command: ["pgrep", "-f", "aimq"]
+    command:
+      - python3
+      - -c
+      - |
+        import os
+        exit(0 if os.path.exists('/tmp/aimq-health') else 1)
   initialDelaySeconds: 5
   periodSeconds: 5
+  timeoutSeconds: 3
+  failureThreshold: 2
 ```
+
+**Important**: Your application must manage the health probe file. Add this to your worker code:
+
+```python
+# In your tasks.py or worker setup
+import threading
+import time
+from pathlib import Path
+
+def health_check_writer():
+    """Update health check file periodically."""
+    probe_file = Path("/tmp/aimq-health")
+    while True:
+        probe_file.touch()
+        time.sleep(10)  # Update every 10 seconds
+
+# Start health check thread
+health_thread = threading.Thread(target=health_check_writer, daemon=True)
+health_thread.start()
+```
+
+**Alternative: Install procps for pgrep-based probes**
+
+If you prefer process-based checks, add to your Dockerfile:
+
+```dockerfile
+FROM python:3.12-slim
+RUN apt-get update && apt-get install -y --no-install-recommends procps && rm -rf /var/lib/apt/lists/*
+# ... rest of Dockerfile
+```
+
+Then use:
+
+```yaml
+livenessProbe:
+  exec:
+    command: ["pgrep", "-f", "aimq"]
+  initialDelaySeconds: 30
+  periodSeconds: 10
+```
+
+**Note**: The file-based probe is recommended as it's lightweight, doesn't require additional packages, and provides more granular health status.
 
 ### Resource Limits
 

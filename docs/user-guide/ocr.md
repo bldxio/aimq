@@ -152,17 +152,18 @@ processor = OCRProcessor()
 def process_stored_document(data):
     """Process document from Supabase storage."""
     # Read file from Supabase storage
-    file_data = read_file.invoke({
+    result = read_file.invoke({
         "bucket": "documents",
         "path": data["document_path"]
     })
 
-    # Process with OCR
-    result = processor.process_image(file_data)
+    # Extract attachment and process with OCR
+    attachment = result["file"]
+    ocr_result = processor.process_image(attachment.data)
 
     return {
-        "text": result["text"],
-        "detections": result["detections"]
+        "text": ocr_result["text"],
+        "detections": ocr_result["detections"]
     }
 ```
 

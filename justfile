@@ -152,7 +152,7 @@ info:
     @echo "Python: $(uv run python --version)"
     @echo "UV: $(uv --version)"
     @echo "Just: $(just --version)"
-    @uv run python -c "import aimq; print(f'AIMQ version: {aimq.__version__ if hasattr(aimq, \"__version__\") else \"0.1.0\"}')"
+    @uv run python -c "import aimq; print(f'AIMQ version: {aimq.__version__ if hasattr(aimq, \"__version__\") else \"0.1.1\"}')"
 
 # Update dependencies
 update:

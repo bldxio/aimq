@@ -16,7 +16,7 @@ worker = Worker()
 def read_records(_: dict):
     """Retrieve a user record from Supabase."""
     read_record_tool = ReadRecord(table="records", select="*")
-    picker = pick(keys=["summary"])
+    picker = pick(key=["summary"])
     return read_record_tool | picker
 
 
