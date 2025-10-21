@@ -19,12 +19,13 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 2
+          fetch-depth: 0
 
       - name: Check if version changed
         id: check
         run: |
-          if git diff HEAD^ HEAD -- pyproject.toml | grep -q '^[+-]version = '; then
+          # Use full push range (before..after) to catch version bumps across multiple commits
+          if git diff ${{ github.event.before }}..${{ github.sha }} -- pyproject.toml | grep -q '^[+-]version = '; then
             echo "changed=true" >> $GITHUB_OUTPUT
             echo "Version changed detected"
           else
