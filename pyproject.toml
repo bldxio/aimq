@@ -1,6 +1,6 @@
 [project]
 name = "aimq"
-version = "0.1.1b2"
+version = "0.1.1b3"
 description = "A robust message queue processor for Supabase pgmq with AI-powered document processing capabilities"
 authors = [{name = "AIMQ Contributors"}]
 readme = "README.md"
@@ -73,7 +73,7 @@ multi_line_output = 3
 line_length = 100
 
 [tool.pytest.ini_options]
-minversion = "8.0"
+minversion = "0.1.1b3"
 addopts = "-ra -q --cov=aimq --cov-report=term-missing"
 testpaths = ["tests"]
 

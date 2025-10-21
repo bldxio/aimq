@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.1b3] - 2025-10-20
+
+### Changed
+- Apply black formatting to test files
+
+### Fixed
+- Resolve test failures in CI environment
+- Correct pytest minversion and black formatting
+
 ## [0.1.1b2] - 2025-10-20
 
 ### Added
