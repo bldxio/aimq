@@ -110,7 +110,20 @@ jobs:
         run: |
           uv publish --token $UV_PUBLISH_TOKEN
 
+      - name: Check if tag exists
+        id: check_tag
+        run: |
+          TAG="v${{ needs.check-version.outputs.new_version }}"
+          if git ls-remote --tags origin | grep -q "refs/tags/$TAG$"; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+            echo "Tag $TAG already exists, skipping release creation"
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+            echo "Tag $TAG does not exist, will create release"
+          fi
+
       - name: Create GitHub Release
+        if: steps.check_tag.outputs.exists == 'false'
         uses: ncipollo/release-action@v1
         with:
           tag: v${{ needs.check-version.outputs.new_version }}
@@ -135,8 +148,16 @@ jobs:
       - name: Create release summary
         run: |
           VERSION="${{ needs.check-version.outputs.new_version }}"
+          TAG_EXISTS="${{ steps.check_tag.outputs.exists }}"
+
           echo "## 🚀 Production Release v$VERSION" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ "$TAG_EXISTS" = "true" ]; then
+            echo "**Note:** Git tag v$VERSION already exists, GitHub release was skipped." >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+          fi
+
           echo "Published to PyPI: https://pypi.org/project/aimq/$VERSION/" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Installation" >> $GITHUB_STEP_SUMMARY
