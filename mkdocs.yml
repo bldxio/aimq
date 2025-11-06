@@ -72,10 +72,14 @@ nav:
       - Writing Tasks: user-guide/writing-tasks.md
       - Helpers: user-guide/helpers.md
       - Worker Configuration: user-guide/worker-configuration.md
+      - LangGraph Integration: user-guide/langgraph.md
+      - Agents: user-guide/agents.md
+      - Workflows: user-guide/workflows.md
   - Docker & Kubernetes Deployment: deployment/docker-kubernetes.md
   - API Reference:
       - Overview: api/overview.md
       - Tools: api/tools.md
+      - LangGraph: api/langgraph.md
       - Reference:
           - aimq: reference/aimq/index.md
           - Job: reference/aimq/job.md

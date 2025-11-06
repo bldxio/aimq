@@ -22,13 +22,21 @@ install-prod:
 # Python Development Tasks
 # ============================================================================
 
-# Run all tests
+# Run all tests (parallel execution with xdist)
 test:
-    uv run pytest
+    uv run pytest -n auto --timeout=30
 
-# Run tests with coverage report
+# Run tests with coverage report (sequential for reliability)
 test-cov:
-    uv run pytest --cov=src/aimq
+    uv run pytest --timeout=60 --cov=src/aimq --cov-report=html --cov-report=term
+
+# Run tests without coverage (faster)
+test-fast:
+    uv run pytest -n auto --no-cov --timeout=30
+
+# Run tests sequentially (for debugging)
+test-seq:
+    uv run pytest --timeout=30
 
 # Run tests in watch mode
 test-watch:

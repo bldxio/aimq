@@ -39,6 +39,23 @@ class Config(BaseSettings):
 
     # Mistral Configuration
     mistral_api_key: str = Field(default="", alias="MISTRAL_API_KEY")
+    mistral_model: str = Field(
+        default="mistral-large-latest",
+        alias="MISTRAL_MODEL",
+        description="Default Mistral model for LangGraph agents",
+    )
+
+    # LangGraph Configuration
+    langgraph_checkpoint_enabled: bool = Field(
+        default=False,
+        alias="LANGGRAPH_CHECKPOINT_ENABLED",
+        description="Enable LangGraph checkpointing (requires schema setup)",
+    )
+    langgraph_max_iterations: int = Field(
+        default=20,
+        alias="LANGGRAPH_MAX_ITERATIONS",
+        description="Maximum iterations for agent loops (safety limit)",
+    )
 
 
 @lru_cache()
