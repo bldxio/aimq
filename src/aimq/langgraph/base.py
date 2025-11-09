@@ -40,7 +40,8 @@ class _AgentBase:
         """Build the agent's StateGraph."""
         from aimq.langgraph.states import AgentState
 
-        state_class = self.config.get("state_class", AgentState)
+        # Always use a concrete state class (AgentState if not specified)
+        state_class = self.config.get("state_class") or AgentState
         graph = StateGraph(state_class)
 
         # Call user's builder function
@@ -183,7 +184,8 @@ class _WorkflowBase:
         """Build the workflow's StateGraph."""
         from aimq.langgraph.states import WorkflowState
 
-        state_class = self.config.get("state_class", WorkflowState)
+        # Always use a concrete state class (WorkflowState if not specified)
+        state_class = self.config.get("state_class") or WorkflowState
         graph = StateGraph(state_class)
 
         return self.builder_func(graph, self.config)

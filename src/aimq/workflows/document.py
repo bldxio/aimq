@@ -76,7 +76,36 @@ class DocumentWorkflow(BaseWorkflow):
         self.storage_tool = storage_tool
         self.ocr_tool = ocr_tool
         self.pdf_tool = pdf_tool
+
+        # Validate libmagic availability
+        self._magic_available = self._check_libmagic()
+
         super().__init__(checkpointer=checkpointer)
+
+    def _check_libmagic(self) -> bool:
+        """Check if libmagic is available for MIME type detection.
+
+        Returns:
+            True if libmagic is available, False otherwise
+        """
+        try:
+            import magic
+
+            # Test if libmagic library is actually loaded
+            magic.from_buffer(b"test", mime=True)
+            logger.info("libmagic is available for MIME type detection")
+            return True
+        except Exception as e:
+            logger.warning(
+                f"libmagic is not available ({type(e).__name__}: {e}). "
+                "Falling back to filename extension detection. "
+                "To enable MIME type detection, install libmagic:\n"
+                "  macOS:   brew install libmagic\n"
+                "  Ubuntu:  apt-get install libmagic1\n"
+                "  Alpine:  apk add libmagic\n"
+                "  Windows: pip install python-magic-bin"
+            )
+            return False
 
     def _build_graph(self) -> StateGraph:
         """Build document processing graph.
@@ -138,20 +167,27 @@ class DocumentWorkflow(BaseWorkflow):
             }
 
     def _detect_type_node(self, state: DocumentState) -> DocumentState:
-        """Detect document type (Fix #11 - Logger integration).
+        """Detect document type using libmagic or filename fallback.
 
         Args:
-            state: Current document state with raw_content
+            state: Current document state with raw_content and document_path
 
         Returns:
             Updated state with document_type or error status
         """
-        import magic
-
         logger.info("Detecting document type")
 
         try:
-            mime = magic.from_buffer(state["raw_content"], mime=True)
+            if self._magic_available:
+                # Use libmagic for accurate MIME detection
+                import magic
+
+                mime = magic.from_buffer(state["raw_content"], mime=True)
+                logger.debug(f"Detected MIME type via libmagic: {mime}")
+            else:
+                # Fallback to filename extension
+                mime = self._detect_mime_from_filename(state["document_path"])
+                logger.debug(f"Detected MIME type via filename: {mime}")
 
             if mime.startswith("image/"):
                 doc_type = "image"
@@ -173,6 +209,37 @@ class DocumentWorkflow(BaseWorkflow):
                 "status": "error",
                 "metadata": {**state.get("metadata", {}), "error": str(e)},
             }
+
+    def _detect_mime_from_filename(self, filename: str) -> str:
+        """Fallback MIME type detection from filename extension.
+
+        Args:
+            filename: The filename or path to analyze
+
+        Returns:
+            MIME type string based on file extension
+        """
+        import os
+
+        _, ext = os.path.splitext(filename.lower())
+
+        mime_types = {
+            ".pdf": "application/pdf",
+            ".jpg": "image/jpeg",
+            ".jpeg": "image/jpeg",
+            ".png": "image/png",
+            ".gif": "image/gif",
+            ".bmp": "image/bmp",
+            ".tiff": "image/tiff",
+            ".tif": "image/tiff",
+            ".webp": "image/webp",
+            ".svg": "image/svg+xml",
+            ".doc": "application/msword",
+            ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            ".txt": "text/plain",
+        }
+
+        return mime_types.get(ext, "application/octet-stream")
 
     def _process_image_node(self, state: DocumentState) -> DocumentState:
         """Process image with OCR (Fix #11 - Logger integration).

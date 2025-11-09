@@ -1,3 +1,5 @@
+import signal
+import sys
 import threading
 import time
 from collections import OrderedDict
@@ -9,6 +11,7 @@ from langchain.schema.runnable import Runnable, RunnableLambda
 from pydantic import BaseModel, ConfigDict, Field
 
 from .config import config  # Import config singleton instead of Config class
+from .job import Job
 from .logger import Logger, LogLevel
 from .queue import Queue
 from .utils import load_module
@@ -28,6 +31,8 @@ class WorkerThread(threading.Thread):
         logger: Logger instance
         running: Threading event controlling execution
         idle_wait: Sleep duration when idle
+        consecutive_failures: Track consecutive failures for backoff
+        current_backoff: Current backoff duration in seconds
     """
 
     def __init__(
@@ -42,33 +47,101 @@ class WorkerThread(threading.Thread):
         self.logger = logger
         self.running = running
         self.idle_wait = idle_wait
+        # Track consecutive failures per queue for backoff
+        self.consecutive_failures: dict[str, int] = {name: 0 for name in queues.keys()}
+        self.current_backoff = idle_wait
 
-    def run(self) -> None:
-        """Start the worker thread."""
+    def run(self) -> None:  # noqa: C901
+        """Start the worker thread with resilient error handling.
+
+        Features:
+        - Catches all exceptions to prevent thread crashes
+        - Implements exponential backoff on repeated failures
+        - Tracks consecutive failures per queue
+        - Resets backoff on successful job processing
+        - Only stops on shutdown signal (KeyboardInterrupt, SystemExit)
+        """
         self.logger.info("Worker thread started")
 
         while self.running.is_set():
             try:
                 found_jobs = False
+                had_errors = False
+
                 for queue in self.queues.values():
                     if not self.running.is_set():
                         break
 
-                    # work next job in queue
+                    # Work next job in queue
                     try:
-                        found_jobs = found_jobs or bool(queue.work())
-                    except RuntimeError as e:
-                        self.logger.error(f"Runtime error in queue {queue.name}", {"error": str(e)})
+                        result = queue.work()
+                        if result is not None:
+                            found_jobs = True
+                            # Reset consecutive failures on success
+                            self.consecutive_failures[queue.name] = 0
+                            self.current_backoff = self.idle_wait
+
+                    except Exception as e:
+                        had_errors = True
+                        # Increment consecutive failure counter
+                        self.consecutive_failures[queue.name] += 1
+                        failure_count = self.consecutive_failures[queue.name]
+
+                        # Log with context (queue, job, attempt)
+                        self.logger.error(
+                            f"Error in queue {queue.name} (consecutive failures: {failure_count})",
+                            {
+                                "error": str(e),
+                                "error_type": type(e).__name__,
+                                "queue": queue.name,
+                            },
+                        )
+
+                        # Calculate exponential backoff if multiple consecutive failures
+                        if failure_count > 1:
+                            # Exponential backoff: idle_wait * (multiplier ^ (failures - 1))
+                            self.current_backoff = min(
+                                self.idle_wait
+                                * (config.queue_backoff_multiplier ** (failure_count - 1)),
+                                config.queue_max_backoff,
+                            )
+                            self.logger.info(
+                                f"Backing off for {self.current_backoff:.1f}s due to repeated failures in {queue.name}"
+                            )
 
                 if not found_jobs:
-                    self.logger.debug("No jobs found, waiting...")
-                    time.sleep(self.idle_wait)
+                    self.logger.debug(
+                        f"No jobs found, waiting {self.current_backoff:.1f}s..."
+                        + (" (backed off)" if had_errors else "")
+                    )
+
+                    # Interruptible sleep: sleep in 100ms increments, checking shutdown flag
+                    sleep_start = time.time()
+                    while (time.time() - sleep_start) < self.current_backoff:
+                        if not self.running.is_set():
+                            break
+                        time.sleep(0.1)  # Check shutdown flag every 100ms
+
+                    # Exit main loop if shutdown was requested during sleep
+                    if not self.running.is_set():
+                        break
+
+            except (KeyboardInterrupt, SystemExit):
+                # Graceful shutdown signals - stop the thread
+                self.logger.info("Received shutdown signal, stopping worker thread")
+                self.running.clear()
+                break
 
             except Exception as e:
-                self.logger.critical(
-                    "Worker thread encountered an unhandled error", {"error": str(e)}
+                # Catch-all for truly unexpected errors (shouldn't happen with queue.work() handling)
+                self.logger.error(
+                    "Unexpected error in worker loop",
+                    {
+                        "error": str(e),
+                        "error_type": type(e).__name__,
+                    },
                 )
-                self.running.clear()
+                # Don't stop the thread - continue processing
 
 
 class Worker(BaseModel):
@@ -95,6 +168,8 @@ class Worker(BaseModel):
     is_running: threading.Event = Field(default_factory=threading.Event)
     thread: Optional[WorkerThread] = None
     name: str = Field(default_factory=lambda: config.worker_name, description="Name of this worker")
+    _shutdown_count: int = 0
+    _original_termios_settings: Optional[Any] = None
 
     def assign(
         self,
@@ -104,6 +179,9 @@ class Worker(BaseModel):
         timeout: int = 300,
         delete_on_finish: bool = False,
         tags: List[str] | None = None,
+        max_retries: int | None = None,
+        dlq: str | None = None,
+        on_error: Callable[[Job, Exception], None] | None = None,
     ) -> None:
         """Register a task with a queue name and runnable instance.
 
@@ -113,6 +191,9 @@ class Worker(BaseModel):
             timeout: Maximum time in seconds for a task to complete. If 0, messages will be popped instead of read.
             delete_on_finish: Whether to delete (True) or archive (False) jobs after processing
             tags: Optional list of tags to associate with the queue
+            max_retries: Maximum retry attempts for failed jobs. None uses config default.
+            dlq: Dead-letter queue name for failed jobs exceeding max_retries
+            on_error: Optional callback for custom error handling
         """
 
         runnable.name = queue or runnable.name
@@ -124,6 +205,9 @@ class Worker(BaseModel):
             timeout=timeout,
             tags=tags or [],
             delete_on_finish=delete_on_finish,
+            max_retries=max_retries,
+            dlq=dlq,
+            on_error=on_error,
             logger=self.logger,
             worker_name=self.name,
         )
@@ -136,6 +220,9 @@ class Worker(BaseModel):
         timeout: int = 300,
         tags: List[str] | None = None,
         delete_on_finish: bool = False,
+        max_retries: int | None = None,
+        dlq: str | None = None,
+        on_error: Callable[[Job, Exception], None] | None = None,
     ) -> Callable:
         """Decorator to register a function that returns a Runnable with a queue.
 
@@ -144,6 +231,9 @@ class Worker(BaseModel):
             timeout: Maximum time in seconds for a task to complete. If 0, messages will be popped instead of read
             delete_on_finish: Whether to delete (True) or archive (False) jobs after processing
             tags: Optional list of tags to associate with the queue
+            max_retries: Maximum retry attempts for failed jobs. None uses config default.
+            dlq: Dead-letter queue name for failed jobs exceeding max_retries
+            on_error: Optional callback for custom error handling
         """
 
         def decorator(func: Callable) -> Callable:
@@ -156,6 +246,9 @@ class Worker(BaseModel):
                 timeout=timeout,
                 delete_on_finish=delete_on_finish,
                 tags=tags,
+                max_retries=max_retries,
+                dlq=dlq,
+                on_error=on_error,
             )
             return wrapper
 
@@ -179,6 +272,88 @@ class Worker(BaseModel):
         """
         return self.queues[queue].work()
 
+    def _setup_termios(self) -> None:
+        """Disable ^C echo in terminal (Unix/Linux/macOS only)."""
+        try:
+            import termios
+
+            # Only modify terminal settings if stdin is a TTY
+            if sys.stdin.isatty():
+                # Save original settings
+                self._original_termios_settings = termios.tcgetattr(sys.stdin.fileno())
+
+                # Create new settings with ECHOCTL disabled
+                new_settings = termios.tcgetattr(sys.stdin.fileno())
+                new_settings[3] = new_settings[3] & ~termios.ECHOCTL  # Disable ^C echo
+
+                # Apply new settings
+                termios.tcsetattr(sys.stdin.fileno(), termios.TCSADRAIN, new_settings)
+        except (ImportError, OSError, AttributeError):
+            # termios not available (Windows) or not a TTY - skip
+            pass
+
+    def _restore_termios(self) -> None:
+        """Restore original terminal settings."""
+        if self._original_termios_settings is not None:
+            try:
+                import termios
+
+                termios.tcsetattr(
+                    sys.stdin.fileno(), termios.TCSADRAIN, self._original_termios_settings
+                )
+                self._original_termios_settings = None
+            except (ImportError, OSError, AttributeError):
+                # Can't restore - not critical
+                pass
+
+    def _signal_handler(self, signum: int, frame: Any) -> None:
+        """Handle shutdown signals gracefully.
+
+        Args:
+            signum: Signal number
+            frame: Current stack frame
+        """
+        self._shutdown_count += 1
+
+        if self._shutdown_count == 1:
+            # First Ctrl+C: Graceful shutdown
+            print("\r", end="", flush=True)  # Clear ^C if termios didn't work
+
+            # Log shutdown message with hint about force quit
+            self.logger.info("Shutting down gracefully... (Press Ctrl+C again to force quit)")
+
+            # Stop the worker thread
+            self.stop()
+
+            # Flush any remaining logs
+            self.log(block=False)
+
+            # Stop the logger to unblock queue.get() - AFTER flushing so None isn't consumed
+            self.logger.stop()
+
+            # Restore terminal settings if they were modified
+            self._restore_termios()
+
+            # Don't call sys.exit() - let the main thread complete naturally
+            # The None sentinel will unblock logger.print(block=True) and process will exit
+            # Goodbye message will be shown after thread completes successfully
+
+        else:
+            # Second Ctrl+C: Force quit
+            try:
+                from rich.console import Console
+
+                console = Console()
+                console.print("\n[bold red]Force quitting...[/bold red]")
+            except ImportError:
+                print("\nForce quitting...")
+
+            # Restore terminal settings
+            self._restore_termios()
+
+            # Force exit immediately
+            sys.exit(1)
+
     def start(self, block: bool = True) -> None:
         """Start processing tasks in an endless loop.
 
@@ -188,6 +363,13 @@ class Worker(BaseModel):
         if self.thread and self.thread.is_alive():
             return
 
+        # Setup terminal to suppress ^C display (Unix/Linux/macOS only)
+        self._setup_termios()
+
+        # Register signal handlers for graceful shutdown
+        signal.signal(signal.SIGINT, self._signal_handler)
+        signal.signal(signal.SIGTERM, self._signal_handler)
+
         self.is_running.set()
         self.thread = WorkerThread(
             self.queues, self.logger, self.is_running, idle_wait=self.idle_wait
@@ -195,16 +377,43 @@ class Worker(BaseModel):
         self.thread.start()
 
         if block:
-            self.log(block=block)
+            try:
+                self.log(block=block)
+            finally:
+                # Restore terminal settings on normal exit
+                self._restore_termios()
 
     def stop(self) -> None:
         """Stop processing tasks and clear job history."""
         if self.is_running.is_set():
             self.is_running.clear()
             if self.thread:
-                self.thread.join()
-                self.thread = None
-            self.logger.info("Worker stopped")
+                # Wait up to 10 seconds for thread to finish
+                # (accounts for 5-second queue read timeout)
+                self.thread.join(timeout=10.0)
+
+                # Log warning if thread didn't stop in time
+                if self.thread.is_alive():
+                    self.logger.warning(
+                        "Worker thread did not stop within 10 seconds. "
+                        "Press Ctrl+C again to force quit."
+                    )
+                else:
+                    self.thread = None
+                    self.logger.info("Worker stopped")
+
+                    # Print goodbye message only if shutdown was successful
+                    if self._shutdown_count > 0:  # Only during signal-based shutdown
+                        try:
+                            from rich.console import Console
+
+                            console = Console()
+                            console.print("\n[bold blue]Goodbye! 👋[/bold blue]")
+                        except ImportError:
+                            # Fallback if Rich is not available
+                            print("\nGoodbye! 👋")
+            else:
+                self.logger.info("Worker stopped")
 
     def log(self, block: bool = True) -> None:
         """Print log events from the logger.

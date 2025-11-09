@@ -5,6 +5,8 @@ import re
 from urllib.parse import quote_plus
 
 from langgraph.checkpoint.postgres import PostgresSaver
+from psycopg.rows import dict_row
+from psycopg_pool import ConnectionPool
 
 from aimq.config import config
 from aimq.langgraph.exceptions import CheckpointerError
@@ -28,11 +30,24 @@ def get_checkpointer() -> PostgresSaver:
     if _checkpointer_instance is None:
         # Build PostgreSQL connection string from Supabase config
         conn_string = _build_connection_string()
-        # PostgresSaver.from_conn_string is a context manager, we use sync mode
-        with PostgresSaver.from_conn_string(conn_string) as saver:  # type: ignore
-            _ensure_schema()
-            # Store the saver for reuse (note: in production you'd manage lifecycle)
-            _checkpointer_instance = saver
+
+        # Create connection pool (long-lived, thread-safe)
+        # Pool stays open for application lifetime and handles connection reuse
+        pool = ConnectionPool(
+            conninfo=conn_string,
+            max_size=20,  # Maximum number of connections in pool
+            kwargs={
+                "autocommit": True,  # Required for PostgresSaver
+                "prepare_threshold": 0,  # Disable prepared statements
+                "row_factory": dict_row,  # Return rows as dictionaries
+            },
+        )
+
+        # Create PostgresSaver with connection pool (no context manager needed)
+        _checkpointer_instance = PostgresSaver(conn=pool)
+
+        # Use PostgresSaver's built-in setup() method to create tables
+        _setup_schema(_checkpointer_instance)
 
     # At this point, _checkpointer_instance is guaranteed to be PostgresSaver
     assert _checkpointer_instance is not None
@@ -40,134 +55,188 @@ def get_checkpointer() -> PostgresSaver:
 
 
 def _build_connection_string() -> str:
-    """Build PostgreSQL connection string from Supabase config (Fix #7).
+    """Build PostgreSQL connection string with flexible configuration.
+
+    Supports multiple deployment scenarios:
+    1. Direct DATABASE_URL override (highest priority)
+    2. Smart parsing of SUPABASE_URL (cloud/self-hosted/local/docker)
+    3. Manual configuration via DATABASE_HOST, DATABASE_PORT, etc.
+
+    Smart defaults for local Supabase (localhost/127.0.0.1):
+    - Port: Automatically uses 54322 (local Supabase default from `supabase start`)
+    - Password: Automatically uses "postgres" (local DB password, not the JWT token)
+    - Cloud/self-hosted use port 5432 and SUPABASE_KEY unless overridden
 
     Returns:
         PostgreSQL connection URL with encoded credentials
 
     Raises:
-        CheckpointerError: If Supabase config is invalid or missing
+        CheckpointerError: If configuration is invalid or missing
 
     Examples:
-        postgresql://postgres:encoded_pw@db.project.supabase.co:5432/postgres
+        Direct: postgresql://user:pass@host:5432/dbname
+        Cloud: postgresql://postgres:jwt_token@db.project.supabase.co:5432/postgres
+        Self-hosted: postgresql://postgres:jwt_token@supabase.company.com:5432/postgres
+        Local: postgresql://postgres:postgres@localhost:54322/postgres (auto-detected!)
+        Docker: postgresql://postgres:pw@supabase-db:5432/postgres
     """
-    url = config.supabase_url
-    password = config.supabase_key
+    # Priority 1: Direct DATABASE_URL override (escape hatch)
+    if config.database_url:
+        logger.info("Using direct DATABASE_URL configuration")
+        return config.database_url
 
-    if not url:
-        raise CheckpointerError(
-            "SUPABASE_URL required for checkpointing. " "Set environment variable or .env file."
-        )
+    # Get database connection parameters
+    user = config.database_user
+    port = config.database_port
+    db_name = config.database_name
 
-    if not password:
-        raise CheckpointerError(
-            "SUPABASE_KEY required for checkpointing. " "Set environment variable or .env file."
-        )
+    # Priority 2: Smart parse SUPABASE_URL if DATABASE_HOST not explicitly set
+    if not config.database_host:
+        if not config.supabase_url:
+            raise CheckpointerError(
+                "Database host required. Set DATABASE_HOST or SUPABASE_URL environment variable."
+            )
 
-    # Extract project reference from URL
-    match = re.search(r"https://(.+?)\.supabase\.co", url)
-    if not match:
-        raise CheckpointerError(
-            f"Invalid SUPABASE_URL format: {url}. " f"Expected format: https://PROJECT.supabase.co"
-        )
+        host = _extract_database_host(config.supabase_url)
+        logger.debug(f"Extracted database host from SUPABASE_URL: {host}")
+    else:
+        # Priority 3: Use explicit DATABASE_HOST override
+        host = config.database_host
+        logger.debug(f"Using explicit DATABASE_HOST: {host}")
 
-    project_ref = match.group(1)
-    logger.debug(f"Extracted Supabase project: {project_ref}")
+    # Smart defaults for local Supabase (via `supabase start`)
+    is_localhost = host in ("localhost", "127.0.0.1")
+
+    # Smart default: Local Supabase uses port 54322, not 5432
+    if port == 5432 and is_localhost:
+        port = 54322
+        logger.debug("Detected localhost, using port 54322 for local Supabase")
+
+    # Smart default: Local Supabase uses password "postgres", not the JWT token
+    # SUPABASE_KEY is the API key (JWT), not the database password
+    if not config.database_password and is_localhost:
+        password = "postgres"
+        logger.debug("Detected localhost, using default password 'postgres' for local Supabase")
+    else:
+        password = config.database_password or config.supabase_key
+        if not password:
+            raise CheckpointerError(
+                "Database password required. Set DATABASE_PASSWORD or SUPABASE_KEY environment variable."
+            )
 
     # URL-encode password to handle special characters (Fix #7)
     encoded_password = quote_plus(password)
 
     # Build connection string
-    conn_string = (
-        f"postgresql://postgres:{encoded_password}" f"@db.{project_ref}.supabase.co:5432/postgres"
-    )
+    conn_string = f"postgresql://{user}:{encoded_password}@{host}:{port}/{db_name}"
 
-    logger.info("Built Supabase PostgreSQL connection string")
+    logger.info(f"Built PostgreSQL connection string (host={host}, port={port}, db={db_name})")
     return conn_string
 
 
-def _ensure_schema() -> None:
-    """Ensure langgraph schema and tables exist (Fix #8).
+def _extract_database_host(supabase_url: str) -> str:
+    """Extract database hostname from SUPABASE_URL with flexible pattern matching.
 
-    WARNING: This requires database admin access. In production,
-    create the schema manually via Supabase dashboard:
+    Supports:
+    - Supabase Cloud: https://PROJECT.supabase.co → db.PROJECT.supabase.co
+    - Self-hosted: https://supabase.company.com → supabase.company.com
+    - Local HTTP: http://localhost:54321 → localhost
+    - Local HTTPS: https://localhost:54321 → localhost
+    - Docker: http://supabase:8000 → supabase
 
-    1. Go to SQL Editor in Supabase
-    2. Run the schema creation SQL (see below)
-    3. Set LANGGRAPH_CHECKPOINT_ENABLED=true
+    Args:
+        supabase_url: Supabase API URL
 
-    This function will check if schema exists and warn if it needs setup.
+    Returns:
+        Database hostname to connect to
 
     Raises:
-        CheckpointerError: If schema creation fails with unexpected error
+        CheckpointerError: If URL format is invalid
+    """
+    # Pattern 1: Supabase Cloud (https://PROJECT.supabase.co)
+    cloud_match = re.search(r"https://(.+?)\.supabase\.co", supabase_url)
+    if cloud_match:
+        project_ref = cloud_match.group(1)
+        logger.debug(f"Detected Supabase Cloud project: {project_ref}")
+        return f"db.{project_ref}.supabase.co"
+
+    # Pattern 2: Self-hosted or local (http(s)://hostname:port or http(s)://hostname)
+    url_match = re.search(r"https?://([^:/]+)", supabase_url)
+    if url_match:
+        hostname = url_match.group(1)
+        logger.debug(f"Detected self-hosted/local Supabase: {hostname}")
+
+        # Special handling for known self-hosted patterns
+        # If it's not localhost/127.0.0.1, try db. prefix (common pattern)
+        if hostname not in ("localhost", "127.0.0.1") and not hostname.startswith("db."):
+            # Check if this looks like a Supabase self-hosted domain
+            # (has 'supabase' in the name or is a docker service name)
+            if "supabase" in hostname.lower() or "." not in hostname:
+                return hostname
+            # For other domains, try db. prefix first
+            logger.debug(f"Self-hosted domain detected, using db. prefix: db.{hostname}")
+            return f"db.{hostname}"
+
+        return hostname
+
+    # If we can't parse the URL, raise an error
+    raise CheckpointerError(
+        f"Invalid SUPABASE_URL format: {supabase_url}. "
+        f"Expected format: http(s)://hostname or https://PROJECT.supabase.co"
+    )
+
+
+def _setup_schema(saver: PostgresSaver) -> None:
+    """Setup checkpoint schema using PostgresSaver's built-in setup() method.
+
+    This uses LangGraph's official schema creation that creates 4 tables:
+    - checkpoints: Main checkpoint storage
+    - checkpoint_blobs: Large binary data storage
+    - checkpoint_writes: Write operations tracking
+    - checkpoint_migrations: Schema version tracking
+
+    The setup is automatic in development but may require manual schema
+    creation in production environments with restricted database permissions.
+
+    Args:
+        saver: PostgresSaver instance to setup
+
+    Raises:
+        CheckpointerError: If schema setup fails
     """
     try:
-        from postgrest.exceptions import APIError
-
-        from aimq.clients.supabase import supabase
-    except ImportError:
-        logger.warning(
-            "Cannot verify checkpoint schema: Supabase client not available. "
-            "Ensure schema exists manually.",
-            exc_info=True,
+        # Use PostgresSaver's built-in setup method
+        # This creates all necessary tables via direct PostgreSQL connection
+        saver.setup()
+        logger.info(
+            "LangGraph checkpoint schema initialized successfully via PostgresSaver.setup()"
         )
-        return
-
-    client = supabase.client
-
-    schema_sql = """
-    -- LangGraph Checkpoint Schema
-    CREATE SCHEMA IF NOT EXISTS langgraph;
-
-    -- Checkpoints table
-    CREATE TABLE IF NOT EXISTS langgraph.checkpoints (
-        thread_id TEXT NOT NULL,
-        checkpoint_id TEXT NOT NULL,
-        parent_checkpoint_id TEXT,
-        checkpoint JSONB NOT NULL,
-        metadata JSONB,
-        created_at TIMESTAMPTZ DEFAULT NOW(),
-        PRIMARY KEY (thread_id, checkpoint_id)
-    );
-
-    -- Indexes for performance
-    CREATE INDEX IF NOT EXISTS idx_checkpoints_thread
-        ON langgraph.checkpoints(thread_id);
-    CREATE INDEX IF NOT EXISTS idx_checkpoints_created
-        ON langgraph.checkpoints(created_at);
-    CREATE INDEX IF NOT EXISTS idx_checkpoints_parent
-        ON langgraph.checkpoints(parent_checkpoint_id);
-    """
-
-    try:
-        # Attempt to create schema
-        client.rpc("exec_sql", {"sql": schema_sql}).execute()
-        logger.info("LangGraph checkpoint schema initialized successfully")
-
-    except APIError as e:
-        error_msg = str(e).lower()
-
-        # Check if error is benign (schema already exists)
-        if any(phrase in error_msg for phrase in ["already exists", "duplicate"]):
-            logger.debug("LangGraph schema already exists")
-
-        # Permission error - provide instructions
-        elif "permission denied" in error_msg or "access denied" in error_msg:
-            logger.warning(
-                "Cannot create checkpoint schema (permission denied). "
-                "Please create manually via Supabase SQL Editor. "
-                "SQL script available in docs/deployment/langgraph-schema.sql"
-            )
-
-        # Other API errors
-        else:
-            logger.error(f"Failed to create checkpoint schema: {e}")
-            raise CheckpointerError(
-                "Checkpoint schema setup failed. "
-                "Create manually via Supabase dashboard or disable checkpointing."
-            ) from e
 
     except Exception as e:
-        # Unexpected errors
-        logger.error(f"Unexpected error during schema setup: {e}", exc_info=True)
-        raise CheckpointerError(f"Failed to initialize checkpoint schema: {e}") from e
+        error_msg = str(e).lower()
+
+        # Check if tables already exist (benign error)
+        if "already exists" in error_msg or "duplicate" in error_msg:
+            logger.debug("LangGraph checkpoint tables already exist")
+            return
+
+        # Permission errors - provide helpful guidance
+        if "permission denied" in error_msg or "access denied" in error_msg:
+            logger.warning(
+                "Cannot create checkpoint schema automatically (permission denied). "
+                "For production environments, create the schema manually:\n"
+                "1. Run PostgresSaver.setup() with admin credentials once\n"
+                "2. Or use the SQL in docs/deployment/langgraph-schema.sql\n"
+                "3. Then restart with standard database user credentials"
+            )
+            raise CheckpointerError(
+                "Checkpoint schema setup failed due to permissions. "
+                "Create schema manually with database admin credentials."
+            ) from e
+
+        # Other errors
+        logger.error(f"Failed to create checkpoint schema: {e}", exc_info=True)
+        raise CheckpointerError(
+            f"Checkpoint schema setup failed: {e}. "
+            "Try creating schema manually via database admin."
+        ) from e

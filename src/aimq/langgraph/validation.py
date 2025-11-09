@@ -43,7 +43,7 @@ class ToolInputValidator:
             if hasattr(tool, "args_schema") and tool.args_schema:
                 validated = tool.args_schema(**input_data)
                 logger.debug(f"Tool '{tool_name}' input validated")
-                return validated.dict()
+                return validated.model_dump()
             else:
                 # No schema - log warning and pass through
                 logger.warning(

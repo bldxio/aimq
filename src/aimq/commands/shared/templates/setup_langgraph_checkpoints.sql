@@ -1,26 +1,16 @@
 -- LangGraph Checkpoint Schema for PostgreSQL
--- Run this in Supabase SQL Editor before enabling checkpointing
+-- Enables stateful, resumable workflows by persisting agent state
 --
--- This script sets up the necessary database schema for LangGraph checkpointing
+-- This migration creates the necessary database schema for LangGraph checkpointing
 -- using PostgresSaver (from langgraph.checkpoint.postgres).
 --
--- Checkpointing enables stateful, resumable workflows by persisting agent state.
+-- What gets created:
+--   - 4 tables: checkpoints, checkpoint_blobs, checkpoint_writes, checkpoint_migrations
+--   - Indexes for performance
+--   - Cleanup function for old checkpoints
+--   - Permissions for authenticated role
 --
--- Prerequisites:
---   - PostgreSQL database (Supabase or direct PostgreSQL)
---   - Database admin permissions (or run via Supabase SQL Editor)
---
--- Usage:
---   1. Open Supabase dashboard → SQL Editor
---   2. Copy and paste this entire script
---   3. Click "Run" to execute
---   4. Verify: SELECT * FROM checkpoints LIMIT 1;
---
--- See: docs/user-guide/checkpointing.md for full setup guide
---
--- NOTE: This SQL matches what PostgresSaver.setup() creates automatically.
--- In development, you can skip this and let .setup() create tables.
--- In production with restricted permissions, run this manually once.
+-- See: docs/user-guide/checkpointing.md for usage guide
 
 -- Migration tracking table
 CREATE TABLE IF NOT EXISTS checkpoint_migrations (
@@ -139,22 +129,3 @@ GRANT ALL ON checkpoint_migrations TO authenticated;
 --     ON checkpoint_writes
 --     FOR ALL
 --     USING (thread_id LIKE auth.uid() || '%');
-
--- Verification queries - should return 0 rows on fresh install
-SELECT COUNT(*) as checkpoint_count FROM checkpoints;
-SELECT COUNT(*) as blob_count FROM checkpoint_blobs;
-SELECT COUNT(*) as write_count FROM checkpoint_writes;
-SELECT v as migration_version FROM checkpoint_migrations ORDER BY v DESC LIMIT 1;
-
--- Success message
-DO $$
-BEGIN
-    RAISE NOTICE 'LangGraph checkpoint schema initialized successfully!';
-    RAISE NOTICE 'Created 4 tables: checkpoints, checkpoint_blobs, checkpoint_writes, checkpoint_migrations';
-    RAISE NOTICE 'Migration version: 9';
-    RAISE NOTICE '';
-    RAISE NOTICE 'Next steps:';
-    RAISE NOTICE '  1. Verify tables: SELECT COUNT(*) FROM checkpoints;';
-    RAISE NOTICE '  2. Enable in your app with checkpointer=True';
-    RAISE NOTICE '  3. See docs/user-guide/checkpointing.md for usage';
-END $$;

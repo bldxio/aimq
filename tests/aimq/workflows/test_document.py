@@ -4,6 +4,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest  # noqa: F401
 
+from aimq.worker import Worker
 from aimq.workflows.document import DocumentState, DocumentWorkflow  # noqa: F401
 
 
@@ -414,3 +415,152 @@ def test_document_workflow_with_checkpointer():
         )
 
         assert workflow._compiled is not None
+
+
+@patch("aimq.worker.Queue")
+def test_worker_assign_with_document_workflow(mock_queue_class):
+    """Test that worker.assign() accepts DocumentWorkflow instances.
+
+    This is an integration test to verify that the Queue validator
+    accepts wrapper classes that delegate to Runnables (duck typing).
+    """
+    # Create a workflow instance
+    workflow = DocumentWorkflow(
+        storage_tool=MockStorageTool(),
+        ocr_tool=MockOCRTool(),
+    )
+
+    # Set the workflow name for queue naming
+    workflow._compiled.name = "doc-pipeline"
+
+    # Create a worker
+    worker = Worker()
+
+    # This should NOT raise a validation error
+    worker.assign(workflow, queue="doc-pipeline", timeout=900)
+
+    # Verify Queue was called with the workflow
+    mock_queue_class.assert_called_once()
+    call_kwargs = mock_queue_class.call_args[1]
+    assert call_kwargs["runnable"] == workflow
+    assert call_kwargs["timeout"] == 900
+
+
+def test_document_workflow_with_thread_id():
+    """Test DocumentWorkflow invocation with thread_id in job data.
+
+    The thread_id should be extracted by the Queue and placed in config,
+    not passed as part of the workflow input state.
+    """
+    from datetime import datetime
+
+    workflow = DocumentWorkflow(
+        storage_tool=MockStorageTool(),
+        ocr_tool=MockOCRTool(),
+    )
+
+    # Job data with thread_id
+    job_data = {
+        "document_path": "test.pdf",
+        "metadata": {"source": "email"},
+        "status": "pending",
+        "thread_id": "test-session-123",
+    }
+
+    # Mock the invoke to check what inputs it receives
+    original_invoke = workflow._compiled.invoke
+
+    def mock_invoke(input_data, config=None):
+        # Verify thread_id is NOT in input_data
+        assert "thread_id" not in input_data
+        # Verify thread_id IS in config["configurable"]
+        assert config is not None
+        assert "configurable" in config
+        assert config["configurable"]["thread_id"] == "test-session-123"
+        # Verify other fields are present in input
+        assert input_data["document_path"] == "test.pdf"
+        assert input_data["status"] == "pending"
+        # Return a minimal valid response
+        return {"status": "stored", "document_path": "test.pdf", "metadata": {}}
+
+    workflow._compiled.invoke = mock_invoke
+
+    # Create Queue and run job
+    from aimq.job import Job
+    from aimq.queue import Queue
+
+    queue = Queue(runnable=workflow, timeout=300)
+
+    # Create a job with the data using proper field aliases
+    now = datetime.now()
+    job = Job(
+        msg_id=1,
+        read_ct=1,
+        enqueued_at=now,
+        vt=now,
+        message=job_data,
+    )
+
+    # Run the job - this should extract thread_id and pass it correctly
+    result = queue.run(job)
+
+    # Verify result
+    assert result["status"] == "stored"
+
+    # Restore original invoke
+    workflow._compiled.invoke = original_invoke
+
+
+def test_document_workflow_without_thread_id():
+    """Test DocumentWorkflow invocation without thread_id generates one.
+
+    When thread_id is not provided, the Queue should auto-generate one
+    based on the job ID.
+    """
+    from datetime import datetime
+
+    workflow = DocumentWorkflow(
+        storage_tool=MockStorageTool(),
+        ocr_tool=MockOCRTool(),
+    )
+
+    # Job data WITHOUT thread_id
+    job_data = {
+        "document_path": "test.pdf",
+        "metadata": {"source": "email"},
+        "status": "pending",
+    }
+
+    # Mock the invoke to check what inputs it receives
+    def mock_invoke(input_data, config=None):
+        # Verify thread_id was auto-generated
+        assert config is not None
+        assert "configurable" in config
+        assert config["configurable"]["thread_id"] == "job-42"
+        # Verify input doesn't have thread_id
+        assert "thread_id" not in input_data
+        return {"status": "stored", "document_path": "test.pdf", "metadata": {}}
+
+    workflow._compiled.invoke = mock_invoke
+
+    # Create Queue and run job
+    from aimq.job import Job
+    from aimq.queue import Queue
+
+    queue = Queue(runnable=workflow, timeout=300)
+
+    # Create a job with ID 42 using proper field aliases
+    now = datetime.now()
+    job = Job(
+        msg_id=42,
+        read_ct=1,
+        enqueued_at=now,
+        vt=now,
+        message=job_data,
+    )
+
+    # Run the job - should auto-generate thread_id as "job-42"
+    result = queue.run(job)
+
+    # Verify result
+    assert result["status"] == "stored"

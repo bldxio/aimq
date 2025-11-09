@@ -1,8 +1,10 @@
-from typing import Any, List
+from datetime import datetime
+from typing import Any, Callable, List
 
 from langchain_core.runnables import Runnable, RunnableConfig
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from .config import config
 from .job import Job
 from .logger import Logger
 from .providers import QueueProvider, SupabaseQueueProvider
@@ -19,7 +21,32 @@ class Queue(BaseModel):
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    runnable: Runnable = Field(description="Langchain runnable to process jobs")
+    runnable: Any = Field(description="Langchain runnable or runnable-like object to process jobs")
+
+    @field_validator("runnable")
+    @classmethod
+    def validate_runnable(cls, v):
+        """Validate that the runnable has the required methods (duck typing).
+
+        Accepts:
+        - Instances of langchain_core.runnables.Runnable
+        - Any object with invoke() and stream() methods (duck typing)
+
+        This allows both native Runnables and wrapper classes that delegate
+        to Runnables (like BaseAgent, BaseWorkflow, _AgentBase, _WorkflowBase).
+        """
+        # Check if it's a proper Runnable instance
+        if isinstance(v, Runnable):
+            return v
+
+        # Check for duck-typing: must have invoke() and stream() methods
+        if not (hasattr(v, "invoke") and callable(getattr(v, "invoke"))):
+            raise ValueError(f"runnable must have an 'invoke' method, got {type(v).__name__}")
+        if not (hasattr(v, "stream") and callable(getattr(v, "stream"))):
+            raise ValueError(f"runnable must have a 'stream' method, got {type(v).__name__}")
+
+        return v
+
     timeout: int = Field(
         default=300,
         description="Maximum time in seconds for a task to complete. If 0, messages will be popped instead of read.",
@@ -32,6 +59,18 @@ class Queue(BaseModel):
     delete_on_finish: bool = Field(
         default=False,
         description="Whether to delete (True) or archive (False) jobs after processing",
+    )
+    max_retries: int | None = Field(
+        default=None,
+        description="Maximum retry attempts for failed jobs. None uses config default. 0 = no retries.",
+    )
+    dlq: str | None = Field(
+        default=None,
+        description="Dead-letter queue name. Failed jobs exceeding max_retries are sent here.",
+    )
+    on_error: Callable[[Job, Exception], None] | None = Field(
+        default=None,
+        description="Optional callback for custom error handling. Called before DLQ/archive.",
     )
     provider: QueueProvider = Field(
         default_factory=SupabaseQueueProvider, description="Queue provider implementation"
@@ -87,7 +126,10 @@ class Queue(BaseModel):
             if self.timeout == 0:
                 job = self.provider.pop(self.name)
             else:
-                jobs = self.provider.read(self.name, self.timeout, 1)
+                # Cap read timeout at 5 seconds for responsive shutdown
+                # Even if user configures longer timeout, we check every 5s
+                effective_timeout = min(self.timeout, 5)
+                jobs = self.provider.read(self.name, effective_timeout, 1)
                 job = jobs[0] if jobs else None
             if job:
                 self.logger.debug(f"Retrieved job {job.id} from queue {self.name}")
@@ -99,12 +141,24 @@ class Queue(BaseModel):
     def get_runtime_config(self, job: Job) -> RunnableConfig:
         """Create a runtime configuration for the job.
 
+        Extracts LangGraph-specific configuration (thread_id) from job data
+        and places it in config["configurable"] where LangGraph expects it.
+
         Args:
             job: The job to create configuration for
 
         Returns:
             RunnableConfig: Configuration for running the job
         """
+        # Extract thread_id from job data for LangGraph checkpointing
+        # Use job-provided thread_id or generate one from job ID
+        configurable = {}
+        if "thread_id" in job.data:
+            configurable["thread_id"] = job.data["thread_id"]
+        else:
+            # Auto-generate thread_id for LangGraph workflows with checkpointing
+            configurable["thread_id"] = f"job-{job.id}"
+
         return RunnableConfig(
             metadata={
                 "worker": self.worker_name,
@@ -112,32 +166,124 @@ class Queue(BaseModel):
                 "job": job.id,
             },
             tags=self.tags,
-            configurable=job.data,
+            configurable=configurable,
         )
 
     def run(self, job: Job) -> Any:
-        """Process a  specific job using the configured runnable."""
-        runtime_config = self.get_runtime_config(job)
-        return self.runnable.invoke(job.data, runtime_config)
+        """Process a specific job using the configured runnable.
 
-    def work(self) -> Any:
-        """Process jobs in the queue using the configured runnable.
+        The thread_id is extracted from job data and placed in the runtime
+        config, so it is filtered out of the input data to avoid duplication.
+        """
+        runtime_config = self.get_runtime_config(job)
+
+        # Filter out thread_id from input data since it's now in config
+        input_data = {k: v for k, v in job.data.items() if k != "thread_id"}
+
+        return self.runnable.invoke(input_data, runtime_config)
+
+    def send_to_dlq(self, job: Job, error: Exception) -> int:
+        """Send a failed job to the dead-letter queue with error context.
+
+        Args:
+            job: The failed job
+            error: The exception that caused the failure
 
         Returns:
-            Any: Result from processing each job
+            int: The ID of the DLQ message
+
+        Raises:
+            ValueError: If no DLQ is configured for this queue
+        """
+        if not self.dlq:
+            raise ValueError(f"No DLQ configured for queue {self.name}")
+
+        dlq_data = {
+            "original_queue": self.name,
+            "original_job_id": job.id,
+            "attempt_count": job.attempt,
+            "error_type": type(error).__name__,
+            "error_message": str(error),
+            "timestamp": datetime.utcnow().isoformat(),
+            "job_data": job.data,
+        }
+
+        dlq_job_id = self.provider.send(self.dlq, dlq_data, delay=None)
+        self.logger.warning(
+            f"Sent job {job.id} to DLQ {self.dlq} after {job.attempt} attempts",
+            dlq_data,
+        )
+        return dlq_job_id
+
+    def work(self) -> Any:  # noqa: C901
+        """Process jobs in the queue using the configured runnable.
+
+        Implements retry limits and dead-letter queue handling:
+        - Checks job.read_count against max_retries
+        - Sends to DLQ if max retries exceeded
+        - Always finishes job (archive/delete) in finally block
+        - Calls on_error callback if configured
+
+        Returns:
+            Any: Result from processing each job, or None if no job or DLQ sent
         """
         job = self.next()
         if job is None:
             return None
 
-        self.logger.info(f"Processing job {job.id} in queue {self.name}", job.data)
+        # Determine effective max_retries (use queue setting or config default)
+        effective_max_retries = (
+            self.max_retries if self.max_retries is not None else config.queue_max_retries
+        )
+
+        self.logger.info(
+            f"Processing job {job.id} in queue {self.name} (attempt {job.attempt}/{effective_max_retries})",
+            job.data,
+        )
+
         try:
             result = self.run(job)
             self.logger.info(f"Job {job.id} processed successfully", result)
             self.finish(job)
             return result
+
         except Exception as e:
-            self.logger.error(f"Error processing job {job.id}: {str(e)}", job.data)
+            # Log error with context
+            self.logger.error(
+                f"Error processing job {job.id} (attempt {job.attempt}/{effective_max_retries}): {str(e)}",
+                {"job_data": job.data, "error_type": type(e).__name__},
+            )
+
+            # Call custom error handler if configured
+            if self.on_error:
+                try:
+                    self.on_error(job, e)
+                except Exception as handler_error:
+                    self.logger.error(f"Error in on_error handler: {str(handler_error)}")
+
+            # Check if max retries exceeded
+            if job.attempt >= effective_max_retries:
+                if self.dlq:
+                    # Send to dead-letter queue
+                    try:
+                        self.send_to_dlq(job, e)
+                        # Clean up original job after successful DLQ send
+                        self.finish(job)
+                        return None
+                    except Exception as dlq_error:
+                        self.logger.error(f"Failed to send job {job.id} to DLQ: {str(dlq_error)}")
+                        # Don't finish job - let it retry
+                        raise
+                else:
+                    # No DLQ configured - finish job to prevent infinite retries
+                    self.logger.warning(
+                        f"Job {job.id} exceeded max retries ({effective_max_retries}) with no DLQ configured. Archiving job.",
+                        {"job_id": job.id, "attempts": job.attempt},
+                    )
+                    self.finish(job)
+                    return None
+
+            # Haven't exceeded max retries yet - re-raise to let job retry
             raise
 
     def finish(self, job: Job) -> bool:

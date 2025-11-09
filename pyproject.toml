@@ -49,6 +49,7 @@ dependencies = [
     "langgraph-checkpoint-postgres>=3.0.0",
     "langchain-core>=0.3.79",
     "psycopg-binary>=3.2.12",
+    "python-magic>=0.4.27,<1.0.0",
 ]
 
 
@@ -99,6 +100,12 @@ markers = [
 # Default timeout for all tests (can be overridden per test)
 timeout = 30
 timeout_method = "thread"
+filterwarnings = [
+    # Ignore Mistral model parameter warnings (expected when using mistral_model)
+    "ignore:WARNING! mistral_model is not default parameter:UserWarning",
+    # Ignore psycopg_pool deprecation warning (will be fixed in future psycopg release)
+    "ignore:the default for the ConnectionPool 'open' parameter:DeprecationWarning:psycopg_pool.pool",
+]
 
 [tool.coverage.run]
 branch = true

@@ -19,12 +19,61 @@ class Config(BaseSettings):
     supabase_url: str = Field(default="", alias="SUPABASE_URL")
     supabase_key: str = Field(default="", alias="SUPABASE_KEY")
 
+    # Database Configuration (for LangGraph checkpointing and direct DB access)
+    database_url: str = Field(
+        default="",
+        alias="DATABASE_URL",
+        description="Direct PostgreSQL connection string (overrides all other database settings)",
+    )
+    database_host: str = Field(
+        default="",
+        alias="DATABASE_HOST",
+        description="Database host (overrides host extracted from SUPABASE_URL)",
+    )
+    database_port: int = Field(
+        default=5432,
+        alias="DATABASE_PORT",
+        description="Database port (5432 for direct, 6543 for connection pooler)",
+    )
+    database_name: str = Field(
+        default="postgres",
+        alias="DATABASE_NAME",
+        description="Database name",
+    )
+    database_user: str = Field(
+        default="postgres",
+        alias="DATABASE_USER",
+        description="Database user",
+    )
+    database_password: str = Field(
+        default="",
+        alias="DATABASE_PASSWORD",
+        description="Database password (falls back to SUPABASE_KEY if not set)",
+    )
+
     # Worker Configuration
     worker_name: str = Field(default="peon", alias="WORKER_NAME")
     worker_path: Path = Field(default=Path("./tasks.py"), alias="WORKER_PATH")
 
     worker_log_level: str = Field(default="info", alias="WORKER_LOG_LEVEL")
     worker_idle_wait: float = Field(default=10.0, alias="WORKER_IDLE_WAIT")
+
+    # Queue Error Handling & Retry Configuration
+    queue_max_retries: int = Field(
+        default=5,
+        alias="QUEUE_MAX_RETRIES",
+        description="Default maximum retry attempts for failed jobs",
+    )
+    queue_backoff_multiplier: float = Field(
+        default=2.0,
+        alias="QUEUE_BACKOFF_MULTIPLIER",
+        description="Multiplier for exponential backoff on repeated failures",
+    )
+    queue_max_backoff: float = Field(
+        default=300.0,
+        alias="QUEUE_MAX_BACKOFF",
+        description="Maximum backoff time in seconds (5 minutes default)",
+    )
 
     # LangChain Configuration
     langchain_tracing_v2: bool = Field(default=False, alias="LANGCHAIN_TRACING_V2")

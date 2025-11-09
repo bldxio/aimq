@@ -115,7 +115,11 @@ class TestQueue:
             queue.next()
 
     def test_get_runtime_config(self, queue):
-        """Test creation of runtime configuration."""
+        """Test creation of runtime configuration.
+
+        The thread_id should be extracted from job data and placed in
+        config["configurable"], or auto-generated if not present.
+        """
         job = create_test_job()
         config = queue.get_runtime_config(job)
 
@@ -123,15 +127,43 @@ class TestQueue:
         assert isinstance(config, dict)
         assert config["metadata"] == expected_metadata
         assert config["tags"] == queue.tags
-        assert config["configurable"] == job.data
+        # thread_id is auto-generated from job ID
+        assert config["configurable"] == {"thread_id": f"job-{job.id}"}
+
+    def test_get_runtime_config_with_thread_id(self, queue):
+        """Test runtime config when thread_id is provided in job data."""
+        job = create_test_job(data={"key": "value", "thread_id": "custom-thread-123"})
+        config = queue.get_runtime_config(job)
+
+        # thread_id should be extracted from job data
+        assert config["configurable"] == {"thread_id": "custom-thread-123"}
 
     def test_run_job(self, queue):
-        """Test running a specific job."""
+        """Test running a specific job.
+
+        The job data should be passed to the runnable, excluding thread_id
+        which is moved to the config.
+        """
         job_data = {"key": "value"}
         job = create_test_job(data=job_data)
 
         result = queue.run(job)
+        # Result should match input (MockRunnable echoes input)
         assert result == job_data
+
+    def test_run_job_with_thread_id(self, queue):
+        """Test running a job with thread_id in data.
+
+        The thread_id should be filtered out of the input data and
+        placed in the config instead.
+        """
+        job_data = {"key": "value", "thread_id": "test-123"}
+        job = create_test_job(data=job_data)
+
+        result = queue.run(job)
+        # Result should not include thread_id (it's filtered out)
+        assert result == {"key": "value"}
+        assert "thread_id" not in result
 
     def test_work_success(self, queue, mock_provider):
         """Test successful job processing."""

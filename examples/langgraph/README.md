@@ -38,21 +38,42 @@ LANGCHAIN_API_KEY=your-langsmith-api-key
 LANGCHAIN_PROJECT=aimq-examples
 ```
 
-### 3. Checkpointing Setup (Optional)
+### 3. Checkpointing Setup (Required for memory-enabled examples)
 
-For memory-enabled examples (resumable workflows):
+Many examples use `checkpointer=True` or `memory=True` for resumable workflows.
 
-**Option A: Automatic setup**
+**Recommended: Use `aimq init` to create the migration**
+
 ```bash
-# Set in .env
-LANGGRAPH_CHECKPOINT_ENABLED=true
+# For new projects with Supabase
+aimq init --supabase --langgraph
+
+# For existing projects with Supabase
+aimq init --langgraph
+
+# Then apply the migration
+supabase db reset  # or: supabase db push
 ```
 
-**Option B: Manual setup**
+This creates a migration file in `supabase/migrations/` that can be version controlled.
+
+**Alternative: Automatic Schema Creation (Development)**
+
+For local development, the schema is **created automatically** on first use:
+
 ```bash
-# Run SQL from docs/deployment/langgraph-schema.sql in Supabase SQL Editor
-# This creates the langgraph.checkpoints table
+# No setup needed! Schema auto-creates on first run
+# Just ensure you have SUPABASE_URL set in .env
+SUPABASE_URL=http://localhost:54321
+SUPABASE_KEY=your-local-key
 ```
+
+**What gets created:**
+- 4 tables: `checkpoints`, `checkpoint_blobs`, `checkpoint_writes`, `checkpoint_migrations`
+- Indexes for performance
+- Cleanup function for old checkpoints
+
+See `docs/user-guide/checkpointing.md` for troubleshooting and manual setup options.
 
 ### 4. Queue Setup
 
@@ -316,7 +337,9 @@ Each workflow type requires specific state fields:
 
 ### Resumable Workflows (Thread ID)
 
-For workflows with checkpointing enabled, add `thread_id` to resume from where you left off:
+For workflows with checkpointing enabled, add `thread_id` to resume from where you left off.
+
+**Important:** The `thread_id` is automatically extracted by AIMQ and placed in the runtime configuration where LangGraph expects it. You can include it in your job data, and AIMQ will handle it properly:
 
 ```bash
 aimq send doc-qa '{
@@ -326,6 +349,11 @@ aimq send doc-qa '{
   "iteration": 0,
   "errors": []
 }'
+
+# AIMQ automatically:
+# 1. Extracts thread_id and places it in config["configurable"]["thread_id"]
+# 2. Passes remaining data (messages, tools, etc.) as workflow input
+# 3. If thread_id is omitted, generates one automatically: "job-{job_id}"
 ```
 
 Later, send another message with the same `thread_id` to continue:
@@ -341,6 +369,8 @@ aimq send doc-qa '{
   "errors": []
 }'
 ```
+
+**Note:** If you omit `thread_id`, AIMQ generates a unique one based on the job ID (`job-{id}`), which is suitable for one-time jobs but not for resumable sessions.
 
 ### Job-Level Configuration Overrides
 

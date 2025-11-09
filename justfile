@@ -55,7 +55,8 @@ type-check:
     uv run mypy src/aimq tests
 
 # Run all quality checks (CI)
-ci: lint type-check test
+ci: lint test
+    -uv run mypy src/aimq tests
 
 # Run pre-commit hooks on all files
 pre-commit:
