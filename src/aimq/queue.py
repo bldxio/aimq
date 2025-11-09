@@ -49,7 +49,7 @@ class Queue(BaseModel):
 
     timeout: int = Field(
         default=300,
-        description="Maximum time in seconds for a task to complete. If 0, messages will be popped instead of read.",
+        description="Visibility timeout in seconds (vt). Controls how long jobs stay invisible after being read, determining retry interval for failed jobs. If 0, messages will be popped (immediately deleted) instead of read.",
     )
     tags: List[str] = Field(
         default_factory=list, description="List of tags associated with the queue"
@@ -126,10 +126,10 @@ class Queue(BaseModel):
             if self.timeout == 0:
                 job = self.provider.pop(self.name)
             else:
-                # Cap read timeout at 5 seconds for responsive shutdown
-                # Even if user configures longer timeout, we check every 5s
-                effective_timeout = min(self.timeout, 5)
-                jobs = self.provider.read(self.name, effective_timeout, 1)
+                # Use full timeout as visibility timeout (vt)
+                # pgmq's read() is non-blocking, timeout controls how long
+                # jobs stay invisible before retry (not poll interval)
+                jobs = self.provider.read(self.name, self.timeout, 1)
                 job = jobs[0] if jobs else None
             if job:
                 self.logger.debug(f"Retrieved job {job.id} from queue {self.name}")

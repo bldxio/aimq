@@ -1,3 +1,4 @@
+import os
 import signal
 import sys
 import threading
@@ -351,17 +352,37 @@ class Worker(BaseModel):
             # Restore terminal settings
             self._restore_termios()
 
-            # Force exit immediately
-            sys.exit(1)
+            # Force exit immediately without cleanup (avoids threading exceptions)
+            os._exit(1)
 
-    def start(self, block: bool = True) -> None:
+    def start(
+        self,
+        block: bool = True,
+        motd: Optional[str | bool] = None,
+        show_info: Optional[bool] = None,
+    ) -> None:
         """Start processing tasks in an endless loop.
 
         Args:
             block: If True, block until events are available
+            motd: MOTD source:
+                - None (default): Auto-detect MOTD.md or use built-in
+                - False: Disable MOTD
+                - True: Use module docstring
+                - str: Path to markdown file
+            show_info: Show queue list (default: from AIMQ_SHOW_INFO env var)
         """
         if self.thread and self.thread.is_alive():
             return
+
+        # Display MOTD and queue information
+        from aimq.motd import print_startup_info
+
+        # ENV override for show_info
+        if show_info is None:
+            show_info = os.getenv("AIMQ_SHOW_INFO", "false").lower() == "true"
+
+        print_startup_info(worker=self, motd=motd, show_info=show_info)
 
         # Setup terminal to suppress ^C display (Unix/Linux/macOS only)
         self._setup_termios()

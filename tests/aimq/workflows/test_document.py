@@ -12,10 +12,13 @@ class MockStorageTool:
     """Mock storage tool for testing."""
 
     def invoke(self, input):
+        from aimq.attachment import Attachment
+
         path = input.get("path", "")
         if "error" in path:
             raise Exception("Storage error")
-        return b"test file content"
+        # Match ReadFile's return format: {"file": Attachment(...), "metadata": ...}
+        return {"file": Attachment(data=b"test file content"), "metadata": {}}
 
 
 class MockOCRTool:
@@ -26,12 +29,21 @@ class MockOCRTool:
 
 
 class MockPDFTool:
-    """Mock PDF tool for testing."""
+    """Mock PDF tool for testing (matches PageSplitter output format)."""
 
     def invoke(self, input):
+        from aimq.attachment import Attachment
+
+        # PageSplitter returns list of dicts with "file" (Attachment) and "metadata"
         return [
-            {"text": "Page 1 content", "page_number": 1},
-            {"text": "Page 2 content", "page_number": 2},
+            {
+                "file": Attachment(data=b"page 1 image data"),
+                "metadata": {"position": 0, "width": 800, "height": 600},
+            },
+            {
+                "file": Attachment(data=b"page 2 image data"),
+                "metadata": {"position": 1, "width": 800, "height": 600},
+            },
         ]
 
 
@@ -111,7 +123,7 @@ def test_route_by_type_pdf():
 
 
 def test_route_by_type_unknown():
-    """Test routing for unknown document types."""
+    """Test routing for unknown document types raises ValueError."""
     workflow = DocumentWorkflow(
         storage_tool=MockStorageTool(),
         ocr_tool=MockOCRTool(),
@@ -123,9 +135,9 @@ def test_route_by_type_unknown():
         "metadata": {},
         "status": "",
     }
-    route = workflow._route_by_type(state)
 
-    assert route == "error"
+    with pytest.raises(ValueError, match="Unknown or unsupported document type: unknown"):
+        workflow._route_by_type(state)
 
 
 def test_fetch_node_success():
@@ -145,7 +157,7 @@ def test_fetch_node_success():
 
 
 def test_fetch_node_error():
-    """Test fetch node handles errors."""
+    """Test fetch node raises exception on storage error."""
     workflow = DocumentWorkflow(
         storage_tool=MockStorageTool(),
         ocr_tool=MockOCRTool(),
@@ -153,10 +165,8 @@ def test_fetch_node_error():
 
     state = {"document_path": "error.pdf", "metadata": {}, "status": "pending"}
 
-    result = workflow._fetch_node(state)
-
-    assert result["status"] == "error"
-    assert "error" in result["metadata"]
+    with pytest.raises(Exception, match="Storage error"):
+        workflow._fetch_node(state)
 
 
 def test_detect_type_node_image():
@@ -259,7 +269,7 @@ def test_process_image_node_success(mock_attachment_class):
 
 @patch("aimq.attachment.Attachment")
 def test_process_image_node_error(mock_attachment_class):
-    """Test image processing node handles errors."""
+    """Test image processing node raises exception on OCR error."""
     mock_attachment = MagicMock()
     mock_attachment_class.return_value = mock_attachment
 
@@ -280,18 +290,39 @@ def test_process_image_node_error(mock_attachment_class):
         "document_path": "",
     }
 
-    result = workflow._process_image_node(state)
-
-    assert result["status"] == "error"
-    assert "error" in result["metadata"]
+    with pytest.raises(Exception, match="OCR failed"):
+        workflow._process_image_node(state)
 
 
-def test_process_pdf_node_success():
-    """Test PDF processing node."""
+@patch("aimq.attachment.Attachment")
+def test_process_pdf_node_success(mock_attachment_class):
+    """Test PDF processing splits pages and runs OCR on each."""
+    # Create mock attachments for PDF and pages
+    mock_pdf_attachment = MagicMock()
+    mock_page1_attachment = MagicMock()
+    mock_page2_attachment = MagicMock()
+
+    # Mock Attachment constructor to return different instances
+    mock_attachment_class.side_effect = [mock_pdf_attachment]
+
+    # Create a mock PDF tool that returns page attachments
+    mock_pdf_tool = MagicMock()
+    mock_pdf_tool.invoke.return_value = [
+        {"file": mock_page1_attachment, "metadata": {"position": 0}},
+        {"file": mock_page2_attachment, "metadata": {"position": 1}},
+    ]
+
+    # Create a mock OCR tool that tracks calls
+    mock_ocr_tool = MagicMock()
+    mock_ocr_tool.invoke.side_effect = [
+        {"text": "Page 1 OCR text", "confidence": 0.95},
+        {"text": "Page 2 OCR text", "confidence": 0.93},
+    ]
+
     workflow = DocumentWorkflow(
         storage_tool=MockStorageTool(),
-        ocr_tool=MockOCRTool(),
-        pdf_tool=MockPDFTool(),
+        ocr_tool=mock_ocr_tool,
+        pdf_tool=mock_pdf_tool,
     )
 
     state = {
@@ -303,15 +334,27 @@ def test_process_pdf_node_success():
 
     result = workflow._process_pdf_node(state)
 
+    # Verify Attachment was created with raw_content using data= keyword
+    mock_attachment_class.assert_called_once_with(data=b"pdf data")
+
+    # Verify PDF tool was called with {"file": attachment}
+    mock_pdf_tool.invoke.assert_called_once_with({"file": mock_pdf_attachment})
+
+    # Verify OCR was called twice, once for each page
+    assert mock_ocr_tool.invoke.call_count == 2
+    mock_ocr_tool.invoke.assert_any_call({"image": mock_page1_attachment})
+    mock_ocr_tool.invoke.assert_any_call({"image": mock_page2_attachment})
+
+    # Verify result contains combined OCR text
     assert result["status"] == "processed"
     assert "text" in result
-    assert "Page 1 content" in result["text"]
-    assert "Page 2 content" in result["text"]
+    assert "Page 1 OCR text" in result["text"]
+    assert "Page 2 OCR text" in result["text"]
     assert result["metadata"]["page_count"] == 2
 
 
 def test_process_pdf_node_no_tool():
-    """Test PDF processing without PDF tool configured."""
+    """Test PDF processing raises ValueError when PDF tool not configured."""
     workflow = DocumentWorkflow(
         storage_tool=MockStorageTool(),
         ocr_tool=MockOCRTool(),
@@ -325,14 +368,15 @@ def test_process_pdf_node_no_tool():
         "document_path": "",
     }
 
-    result = workflow._process_pdf_node(state)
-
-    assert result["status"] == "error"
-    assert "No PDF tool configured" in result.get("text", "")
+    with pytest.raises(ValueError, match="PDF tool not configured"):
+        workflow._process_pdf_node(state)
 
 
-def test_process_pdf_node_error():
-    """Test PDF processing handles errors."""
+@patch("aimq.attachment.Attachment")
+def test_process_pdf_node_error(mock_attachment_class):
+    """Test PDF processing raises exception on PDF tool error."""
+    mock_attachment = MagicMock()
+    mock_attachment_class.return_value = mock_attachment
 
     class ErrorPDFTool:
         def invoke(self, input):
@@ -351,9 +395,8 @@ def test_process_pdf_node_error():
         "document_path": "",
     }
 
-    result = workflow._process_pdf_node(state)
-
-    assert result["status"] == "error"
+    with pytest.raises(Exception, match="PDF processing failed"):
+        workflow._process_pdf_node(state)
 
 
 @patch("aimq.tools.supabase.WriteRecord")
@@ -382,7 +425,7 @@ def test_store_node_success(mock_write_class):
 
 @patch("aimq.tools.supabase.WriteRecord")
 def test_store_node_error(mock_write_class):
-    """Test store node handles errors."""
+    """Test store node raises exception on storage error."""
     mock_write = MagicMock()
     mock_write.invoke.side_effect = Exception("Storage failed")
     mock_write_class.return_value = mock_write
@@ -399,10 +442,8 @@ def test_store_node_error(mock_write_class):
         "status": "processed",
     }
 
-    result = workflow._store_node(state)
-
-    assert result["status"] == "error"
-    assert "error" in result["metadata"]
+    with pytest.raises(Exception, match="Storage failed"):
+        workflow._store_node(state)
 
 
 def test_document_workflow_with_checkpointer():

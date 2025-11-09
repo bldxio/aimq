@@ -4,10 +4,13 @@ import logging
 from typing import Literal, NotRequired, TypedDict
 
 from langgraph.graph import END, StateGraph
+from rich.console import Console
+from rich.panel import Panel
 
 from aimq.workflows.base import BaseWorkflow
 
 logger = logging.getLogger(__name__)
+console = Console()
 
 
 class DocumentState(TypedDict):
@@ -96,14 +99,19 @@ class DocumentWorkflow(BaseWorkflow):
             logger.info("libmagic is available for MIME type detection")
             return True
         except Exception as e:
-            logger.warning(
-                f"libmagic is not available ({type(e).__name__}: {e}). "
-                "Falling back to filename extension detection. "
-                "To enable MIME type detection, install libmagic:\n"
-                "  macOS:   brew install libmagic\n"
-                "  Ubuntu:  apt-get install libmagic1\n"
-                "  Alpine:  apk add libmagic\n"
-                "  Windows: pip install python-magic-bin"
+            console.print(
+                Panel(
+                    f"[bold yellow]⚠️  libmagic is not available[/]\n\n"
+                    f"{type(e).__name__}: {e}\n\n"
+                    "Falling back to filename extension detection.\n"
+                    "To enable MIME type detection, install libmagic:\n\n"
+                    "[cyan]macOS:[/]   brew install libmagic\n"
+                    "[cyan]Ubuntu:[/]  apt-get install libmagic1\n"
+                    "[cyan]Alpine:[/]  apk add libmagic\n"
+                    "[cyan]Windows:[/] pip install python-magic-bin",
+                    border_style="yellow",
+                    padding=(1, 2),
+                )
             )
             return False
 
@@ -130,7 +138,6 @@ class DocumentWorkflow(BaseWorkflow):
             {
                 "process_image": "process_image",
                 "process_pdf": "process_pdf",
-                "error": END,
             },
         )
         graph.add_edge("process_image", "store")
@@ -153,18 +160,18 @@ class DocumentWorkflow(BaseWorkflow):
         logger.info(f"Fetching document: {state['document_path']}")
 
         try:
-            content = self.storage_tool.invoke({"path": state["document_path"]})
-            logger.debug(f"Document fetched: {len(content)} bytes")
+            result = self.storage_tool.invoke({"path": state["document_path"]})
+            # ReadFile returns {"file": Attachment(...), "metadata": ...}
+            # Extract the bytes from the Attachment
+            raw_bytes = result["file"].data
+            logger.debug(f"Document fetched: {len(raw_bytes)} bytes")
             return {
-                "raw_content": content,
+                "raw_content": raw_bytes,
                 "status": "fetched",
             }
-        except Exception as e:
-            logger.error(f"Fetch failed: {e}", exc_info=True)
-            return {
-                "status": "error",
-                "metadata": {**state.get("metadata", {}), "error": str(e)},
-            }
+        except Exception:
+            # Let exception propagate - Queue will handle logging
+            raise
 
     def _detect_type_node(self, state: DocumentState) -> DocumentState:
         """Detect document type using libmagic or filename fallback.
@@ -203,12 +210,9 @@ class DocumentWorkflow(BaseWorkflow):
                 "metadata": {**state.get("metadata", {}), "mime_type": mime},
                 "status": "typed",
             }
-        except Exception as e:
-            logger.error(f"Type detection failed: {e}", exc_info=True)
-            return {
-                "status": "error",
-                "metadata": {**state.get("metadata", {}), "error": str(e)},
-            }
+        except Exception:
+            # Let exception propagate - Queue will handle logging
+            raise
 
     def _detect_mime_from_filename(self, filename: str) -> str:
         """Fallback MIME type detection from filename extension.
@@ -255,7 +259,7 @@ class DocumentWorkflow(BaseWorkflow):
         logger.info("Processing image with OCR")
 
         try:
-            attachment = Attachment(state["raw_content"])
+            attachment = Attachment(data=state["raw_content"])
             result = self.ocr_tool.invoke({"image": attachment})
 
             logger.info(f"OCR complete: {len(result.get('text', ''))} characters")
@@ -268,31 +272,43 @@ class DocumentWorkflow(BaseWorkflow):
                 },
                 "status": "processed",
             }
-        except Exception as e:
-            logger.error(f"OCR processing failed: {e}", exc_info=True)
-            return {
-                "status": "error",
-                "metadata": {**state.get("metadata", {}), "error": str(e)},
-            }
+        except Exception:
+            # Let exception propagate - Queue will handle logging
+            raise
 
     def _process_pdf_node(self, state: DocumentState) -> DocumentState:
-        """Process PDF (Fix #11 - Logger integration).
+        """Process PDF by splitting into pages and running OCR.
 
         Args:
             state: Current document state with PDF content
 
         Returns:
-            Updated state with extracted text or error status
+            Updated state with extracted text
+
+        Raises:
+            ValueError: If PDF tool is not configured
         """
+        from aimq.attachment import Attachment
+
         if not self.pdf_tool:
-            logger.error("PDF tool not configured")
-            return {"status": "error", "text": "No PDF tool configured"}
+            raise ValueError("PDF tool not configured")
 
         logger.info("Processing PDF")
 
         try:
-            pages = self.pdf_tool.invoke({"pdf": state["raw_content"]})
-            text = "\n\n".join([p["text"] for p in pages])
+            # Split PDF into page images
+            attachment = Attachment(data=state["raw_content"])
+            pages = self.pdf_tool.invoke({"file": attachment})
+
+            # Run OCR on each page image to extract text
+            page_texts = []
+            for i, page in enumerate(pages):
+                logger.debug(f"Running OCR on page {i + 1}/{len(pages)}")
+                ocr_result = self.ocr_tool.invoke({"image": page["file"]})
+                page_texts.append(ocr_result.get("text", ""))
+
+            # Combine text from all pages
+            text = "\n\n".join(page_texts)
 
             logger.info(f"PDF processed: {len(pages)} pages, {len(text)} characters")
 
@@ -301,12 +317,9 @@ class DocumentWorkflow(BaseWorkflow):
                 "metadata": {**state.get("metadata", {}), "page_count": len(pages)},
                 "status": "processed",
             }
-        except Exception as e:
-            logger.error(f"PDF processing failed: {e}", exc_info=True)
-            return {
-                "status": "error",
-                "metadata": {**state.get("metadata", {}), "error": str(e)},
-            }
+        except Exception:
+            # Let exception propagate - Queue will handle logging
+            raise
 
     def _store_node(self, state: DocumentState) -> DocumentState:
         """Store results (Fix #11 - Logger integration).
@@ -331,18 +344,16 @@ class DocumentWorkflow(BaseWorkflow):
                         "text": state.get("text"),
                         "metadata": state.get("metadata"),
                     },
+                    "id": "",  # Empty string = insert new record
                 }
             )
 
             logger.info("Results stored successfully")
             return {"status": "stored"}
 
-        except Exception as e:
-            logger.error(f"Storage failed: {e}", exc_info=True)
-            return {
-                "status": "error",
-                "metadata": {**state.get("metadata", {}), "error": str(e)},
-            }
+        except Exception:
+            # Let exception propagate - Queue will handle logging
+            raise
 
     def _route_by_type(self, state: DocumentState) -> str:
         """Route based on document type.
@@ -351,7 +362,10 @@ class DocumentWorkflow(BaseWorkflow):
             state: Current document state with document_type
 
         Returns:
-            Next node name: "process_image", "process_pdf", or "error"
+            Next node name: "process_image" or "process_pdf"
+
+        Raises:
+            ValueError: If document type is unknown or unsupported
         """
         doc_type = state.get("document_type")
 
@@ -362,5 +376,5 @@ class DocumentWorkflow(BaseWorkflow):
             logger.debug("Routing to PDF processor")
             return "process_pdf"
 
-        logger.error(f"Unknown document type: {doc_type}")
-        return "error"
+        # Unknown document type - let Queue handle logging
+        raise ValueError(f"Unknown or unsupported document type: {doc_type}")

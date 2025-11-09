@@ -308,8 +308,9 @@ def test_worker_thread_critical_error(mock_logger):
     # Start thread and wait for error
     thread.start()
     error_raised.wait(timeout=1.0)
-    # Give thread time to continue running
-    time.sleep(0.1)
+    # Give thread time to continue running and make additional calls
+    # Need enough time for: error logging + loop iteration + next work() call
+    time.sleep(0.3)
     running.clear()
     thread.join(timeout=1.0)
 

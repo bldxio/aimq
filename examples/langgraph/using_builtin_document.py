@@ -25,11 +25,16 @@ Usage:
     }'
 """
 
-from aimq.tools.ocr import ImageOCR
-from aimq.tools.pdf import PageSplitter
-from aimq.tools.supabase import ReadFile
-from aimq.worker import Worker
-from aimq.workflows import DocumentWorkflow
+import warnings
+
+# Suppress PyTorch MPS warnings (harmless on macOS)
+warnings.filterwarnings("ignore", message=".*pin_memory.*")
+
+from aimq.tools.ocr import ImageOCR  # noqa: E402
+from aimq.tools.pdf import PageSplitter  # noqa: E402
+from aimq.tools.supabase import ReadFile  # noqa: E402
+from aimq.worker import Worker  # noqa: E402
+from aimq.workflows import DocumentWorkflow  # noqa: E402
 
 # Initialize worker
 worker = Worker()
@@ -48,79 +53,7 @@ workflow = DocumentWorkflow(
 worker.assign(workflow, queue="doc-pipeline", timeout=900, delete_on_finish=True)
 
 if __name__ == "__main__":
-    print("=" * 60)
-    print("Document Workflow Worker - Automated Processing")
-    print("=" * 60)
-    print("\nConfiguration:")
-    print("  Queue: doc-pipeline")
-    print("  Timeout: 900s (15 minutes)")
-    print("  Tools: ReadFile, ImageOCR, PageSplitter")
-    print("  Checkpointing: Enabled")
-
-    print("\n" + "-" * 60)
-    print("Workflow Steps")
-    print("-" * 60)
-    print("  1. Fetch   - Retrieve document from storage")
-    print("  2. Detect  - Identify document type (PDF, image, text)")
-    print("  3. Route   - Select appropriate processor")
-    print("  4. Process - Extract content using specialized tools")
-    print("  5. Store   - Save structured results to database")
-
-    print("\n" + "-" * 60)
-    print("Example Jobs")
-    print("-" * 60)
-
-    print("\n1. Process PDF document:")
-    print("   aimq send doc-pipeline '{")
-    print('     "document_path": "uploads/report.pdf",')
-    print('     "metadata": {"source": "email", "priority": "high"},')
-    print('     "status": "pending"')
-    print("   }'")
-
-    print("\n2. Process scanned image:")
-    print("   aimq send doc-pipeline '{")
-    print('     "document_path": "scans/invoice_001.jpg",')
-    print('     "metadata": {"type": "invoice", "department": "finance"},')
-    print('     "status": "pending"')
-    print("   }'")
-
-    print("\n3. Process batch of documents:")
-    print("   for file in uploads/*.pdf; do")
-    print("     aimq send doc-pipeline '{")
-    print('       "document_path": "' "$file" '",')
-    print('       "metadata": {"batch": "2024-10"},')
-    print('       "status": "pending"')
-    print("     }'")
-    print("   done")
-
-    print("\n4. Resumable processing (with thread_id):")
-    print("   aimq send doc-pipeline '{")
-    print('     "document_path": "large_docs/manual.pdf",')
-    print('     "thread_id": "batch-123-doc-456",')
-    print('     "metadata": {},')
-    print('     "status": "pending"')
-    print("   }'")
-
-    print("\n" + "-" * 60)
-    print("Document Type Support")
-    print("-" * 60)
-    print("  - PDF files (.pdf) - Splits into pages, extracts text")
-    print("  - Images (.jpg, .png) - OCR text extraction")
-    print("  - Text files (.txt, .md) - Direct content reading")
-    print("  - Scanned documents - Automatic OCR processing")
-
-    print("\n" + "-" * 60)
-    print("Conditional Routing")
-    print("-" * 60)
-    print("  The workflow automatically detects document type and routes")
-    print("  to the appropriate processor:")
-    print("    - PDFs → PageSplitter (page-by-page extraction)")
-    print("    - Images → ImageOCR (text extraction)")
-    print("    - Text → Direct reading (no transformation)")
-    print("    - Unknown → Error collection and graceful handling")
-
-    print("\n" + "=" * 60)
-    print("Starting worker... Press Ctrl+C to stop")
-    print("=" * 60 + "\n")
-
-    worker.start()
+    # MOTD auto-detects MOTD.md in this directory
+    # If not found, uses built-in MOTD from src/aimq/MOTD.md
+    # show_info=True displays registered queues with their configurations
+    worker.start(show_info=True)
