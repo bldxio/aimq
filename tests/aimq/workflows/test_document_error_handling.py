@@ -9,6 +9,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
+from aimq.attachment import Attachment
 from aimq.workflows.document import DocumentWorkflow
 
 
@@ -83,11 +84,15 @@ class TestDocumentWorkflowErrorHandling:
 
     def test_fetch_node_successful_path(self, workflow):
         """Test that _fetch_node returns correct state on success."""
-        workflow.storage_tool.invoke.return_value = b"test content"
+        test_content = b"test content"
+        workflow.storage_tool.invoke.return_value = {
+            "file": Attachment(data=test_content),
+            "metadata": {},
+        }
 
         state = {"document_path": "test.pdf", "metadata": {}, "status": "pending"}
 
         result = workflow._fetch_node(state)
 
-        assert result["raw_content"] == b"test content"
+        assert result["raw_content"] == test_content
         assert result["status"] == "fetched"

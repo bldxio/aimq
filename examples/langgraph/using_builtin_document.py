@@ -53,7 +53,7 @@ workflow = DocumentWorkflow(
 worker.assign(workflow, queue="doc-pipeline", timeout=900, delete_on_finish=True)
 
 if __name__ == "__main__":
-    # MOTD auto-detects MOTD.md in this directory
-    # If not found, uses built-in MOTD from src/aimq/MOTD.md
-    # show_info=True displays registered queues with their configurations
-    worker.start(show_info=True)
+    from pathlib import Path
+
+    motd_path = Path(__file__).parent / "using_builtin_document_MOTD.md"
+    worker.start(motd=str(motd_path), show_info=True)

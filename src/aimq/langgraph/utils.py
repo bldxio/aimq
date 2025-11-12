@@ -37,7 +37,7 @@ def get_default_llm(model: str | None = None) -> BaseChatModel:
     if cache_key not in _llm_cache:
         logger.debug(f"Creating cached LLM instance: {model_name}")
         _llm_cache[cache_key] = ChatMistralAI(
-            mistral_model=model_name,
+            model=model_name,
             api_key=SecretStr(config.mistral_api_key) if config.mistral_api_key else None,  # type: ignore
             temperature=0.1,
         )
@@ -91,7 +91,7 @@ def resolve_llm(
 
             logger.info(f"Converting string '{llm_param}' to ChatMistralAI")
             return ChatMistralAI(
-                mistral_model=llm_param,
+                model=llm_param,
                 api_key=SecretStr(config.mistral_api_key) if config.mistral_api_key else None,  # type: ignore
                 temperature=0.1,
             )

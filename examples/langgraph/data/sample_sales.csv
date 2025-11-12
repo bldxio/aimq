@@ -1,0 +1,17 @@
+date,sales_rep,product,category,quantity,unit_price,total_amount,region,customer_segment
+2024-10-05,Alice Chen,Enterprise Analytics Suite,Enterprise Software,3,7500,22500,West,Enterprise
+2024-10-12,Bob Martinez,Cloud Storage Pro,Cloud Services,5,3000,15000,East,Mid-Market
+2024-10-18,Carol Johnson,API Management Platform,Developer Tools,2,3000,6000,Central,Mid-Market
+2024-10-22,Alice Chen,Security Monitoring,Security,4,3000,12000,West,Enterprise
+2024-10-28,David Kim,Data Pipeline Tool,Developer Tools,6,1500,9000,South,SMB
+2024-11-03,Bob Martinez,Enterprise Analytics Suite,Enterprise Software,2,7500,15000,East,Enterprise
+2024-11-10,Alice Chen,Cloud Storage Pro,Cloud Services,8,3000,24000,West,Mid-Market
+2024-11-15,Carol Johnson,Security Monitoring,Security,3,3000,9000,Central,Mid-Market
+2024-11-20,David Kim,API Management Platform,Developer Tools,1,3000,3000,South,SMB
+2024-11-25,Alice Chen,Data Pipeline Tool,Developer Tools,10,1500,15000,West,SMB
+2024-12-02,Bob Martinez,Security Monitoring,Security,5,3000,15000,East,Enterprise
+2024-12-08,Carol Johnson,Enterprise Analytics Suite,Enterprise Software,1,7500,7500,Central,Enterprise
+2024-12-12,Alice Chen,Cloud Storage Pro,Cloud Services,7,3000,21000,West,Mid-Market
+2024-12-18,Bob Martinez,API Management Platform,Developer Tools,4,3000,12000,East,Mid-Market
+2024-12-22,David Kim,Data Pipeline Tool,Developer Tools,3,1500,4500,South,SMB
+2024-12-28,Alice Chen,Security Monitoring,Security,6,3000,18000,West,Enterprise

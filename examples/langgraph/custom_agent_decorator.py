@@ -33,13 +33,13 @@ from langchain_core.messages import AIMessage, HumanMessage
 from langgraph.graph import END, StateGraph
 
 from aimq.langgraph import agent
-from aimq.tools.supabase import ReadFile, WriteRecord
+from aimq.tools.supabase import WriteRecord
 from aimq.worker import Worker
 
 
 # Define custom agent using decorator
 @agent(
-    tools=[ReadFile(), WriteRecord()],
+    tools=[WriteRecord()],  # Only need WriteRecord for storing results
     system_prompt="""You are a data processing specialist.
     Your job is to analyze data files and extract key insights.
 
@@ -75,8 +75,6 @@ def data_processor_agent(graph: StateGraph, config: dict) -> StateGraph:  # noqa
 
     def read_and_analyze(state):
         """Read file and analyze data with LLM."""
-        from aimq.clients.mistral import get_mistral_client
-
         # Extract file path from user message
         messages = state.get("messages", [])
         if not messages:
@@ -85,51 +83,48 @@ def data_processor_agent(graph: StateGraph, config: dict) -> StateGraph:  # noqa
                 "iteration": state.get("iteration", 0) + 1,
             }
 
-        # Get the latest user message content
-        user_message = next(
-            (msg for msg in reversed(messages) if isinstance(msg, HumanMessage)), None
-        )
+        # Get the latest user message content (handle both dict and HumanMessage)
+        user_message = None
+        for msg in reversed(messages):
+            if isinstance(msg, HumanMessage):
+                user_message = msg.content
+                break
+            elif isinstance(msg, dict) and msg.get("role") == "user":
+                user_message = msg.get("content")
+                break
+
         if not user_message:
             return {
                 "errors": ["No user message found"],
                 "iteration": state.get("iteration", 0) + 1,
             }
 
-        file_path = user_message.content
+        file_path = user_message
 
-        # Get read tool from config
-        read_tool = next((t for t in config["tools"] if t.name == "read_file"), None)
-        if not read_tool:
-            return {
-                "errors": ["ReadFile tool not available"],
-                "iteration": state.get("iteration", 0) + 1,
-            }
-
-        # Read file
+        # Read file from local filesystem
         try:
-            content = read_tool.invoke({"path": file_path})
+            with open(file_path, "r") as f:
+                content = f.read()
+        except FileNotFoundError as e:
+            raise RuntimeError(f"File not found: {file_path}") from e
         except Exception as e:
-            return {
-                "errors": [f"Failed to read file: {str(e)}"],
-                "iteration": state.get("iteration", 0) + 1,
-            }
+            raise RuntimeError(f"Failed to read file: {str(e)}") from e
 
-        # Analyze with LLM
+        # Analyze with LLM (use the configured LangChain ChatMistralAI from config)
         try:
-            client = get_mistral_client()
-            response = client.chat.completions.create(
-                model=config["llm"],
-                messages=[
-                    {"role": "system", "content": config["system_prompt"]},
-                    {
-                        "role": "user",
-                        "content": f"Analyze this data file:\n\nPath: {file_path}\n\nContent:\n{content}",
-                    },
-                ],
-                temperature=config.get("temperature", 0.2),
-            )
+            from langchain_core.messages import HumanMessage as LCHumanMessage
+            from langchain_core.messages import SystemMessage
 
-            analysis = response.choices[0].message.content
+            llm = config["llm"]  # This is a LangChain ChatMistralAI object
+            messages = [
+                SystemMessage(content=config["system_prompt"]),
+                LCHumanMessage(
+                    content=f"Analyze this data file:\n\nPath: {file_path}\n\nContent:\n{content}"
+                ),
+            ]
+
+            response = llm.invoke(messages)
+            analysis = response.content
 
             return {
                 "messages": [AIMessage(content=analysis)],
@@ -137,40 +132,36 @@ def data_processor_agent(graph: StateGraph, config: dict) -> StateGraph:  # noqa
                 "iteration": state.get("iteration", 0) + 1,
             }
         except Exception as e:
-            return {
-                "errors": [f"LLM analysis failed: {str(e)}"],
-                "iteration": state.get("iteration", 0) + 1,
-            }
+            raise RuntimeError(f"LLM analysis failed: {str(e)}") from e
 
     def store_results(state):
         """Store analysis results in database."""
         analysis = state.get("tool_output")
         if not analysis:
-            return {
-                "errors": ["No analysis to store"],
-                "final_answer": "Analysis failed - no results to store",
-                "iteration": state.get("iteration", 0) + 1,
-            }
+            raise RuntimeError("No analysis to store - previous step failed")
 
         # Get write tool from config
         write_tool = next((t for t in config["tools"] if t.name == "write_record"), None)
         if not write_tool:
-            return {
-                "errors": ["WriteRecord tool not available"],
-                "final_answer": "Cannot store results - WriteRecord tool missing",
-                "iteration": state.get("iteration", 0) + 1,
-            }
+            raise RuntimeError("WriteRecord tool not available in config")
 
         # Store results
         try:
+            # Extract source file from first message (handle both dict and HumanMessage)
+            source_file = "unknown"
+            if state.get("messages"):
+                first_msg = state["messages"][0]
+                if isinstance(first_msg, dict):
+                    source_file = first_msg.get("content", "unknown")
+                elif hasattr(first_msg, "content"):
+                    source_file = first_msg.content
+
             write_tool.invoke(
                 {
                     "table": "analysis_results",
                     "data": {
                         "analysis": analysis,
-                        "source_file": state["messages"][0].content
-                        if state.get("messages")
-                        else "unknown",
+                        "source_file": source_file,
                         "processed_at": "NOW()",
                     },
                 }
@@ -181,11 +172,7 @@ def data_processor_agent(graph: StateGraph, config: dict) -> StateGraph:  # noqa
                 "iteration": state.get("iteration", 0) + 1,
             }
         except Exception as e:
-            return {
-                "errors": [f"Failed to store results: {str(e)}"],
-                "final_answer": f"Analysis completed but storage failed: {str(e)}",
-                "iteration": state.get("iteration", 0) + 1,
-            }
+            raise RuntimeError(f"Failed to store results: {str(e)}") from e
 
     # Build graph
     # The decorator provides a StateGraph pre-configured with AgentState
@@ -208,68 +195,7 @@ agent_instance = data_processor_agent()
 worker.assign(agent_instance, queue="data-processor", timeout=600, delete_on_finish=False)
 
 if __name__ == "__main__":
-    print("=" * 60)
-    print("Custom Agent - Data Processor")
-    print("=" * 60)
-    print("\nConfiguration:")
-    print("  Queue: data-processor")
-    print("  Timeout: 600s (10 minutes)")
-    print("  Tools: ReadFile, WriteRecord")
-    print("  LLM: mistral-large-latest")
-    print("  Memory: Enabled")
+    from pathlib import Path
 
-    print("\n" + "-" * 60)
-    print("Agent Workflow")
-    print("-" * 60)
-    print("  1. analyze - Read file and analyze with LLM")
-    print("  2. store   - Save results to analysis_results table")
-
-    print("\n" + "-" * 60)
-    print("Example Jobs")
-    print("-" * 60)
-
-    print("\n1. Analyze CSV file:")
-    print("   aimq send data-processor '{")
-    print('     "messages": [')
-    print('       {"role": "user", "content": "data/sales_2024.csv"}')
-    print("     ],")
-    print('     "tools": [],')
-    print('     "iteration": 0,')
-    print('     "errors": []')
-    print("   }'")
-
-    print("\n2. Analyze JSON data:")
-    print("   aimq send data-processor '{")
-    print('     "messages": [')
-    print('       {"role": "user", "content": "exports/user_data.json"}')
-    print("     ],")
-    print('     "tools": [],')
-    print('     "iteration": 0,')
-    print('     "errors": []')
-    print("   }'")
-
-    print("\n3. Resumable analysis:")
-    print("   aimq send data-processor '{")
-    print('     "messages": [')
-    print('       {"role": "user", "content": "large_files/yearly_report.csv"}')
-    print("     ],")
-    print('     "thread_id": "analysis-session-789",')
-    print('     "tools": [],')
-    print('     "iteration": 0,')
-    print('     "errors": []')
-    print("   }'")
-
-    print("\n" + "-" * 60)
-    print("Decorator Benefits")
-    print("-" * 60)
-    print("  - Automatic AgentState setup")
-    print("  - Tools available in config['tools']")
-    print("  - LLM settings in config['llm'], config['temperature']")
-    print("  - Memory/checkpointing handled automatically")
-    print("  - Focus on business logic, not infrastructure")
-
-    print("\n" + "=" * 60)
-    print("Starting worker... Press Ctrl+C to stop")
-    print("=" * 60 + "\n")
-
-    worker.start()
+    motd_path = Path(__file__).parent / "custom_agent_decorator_MOTD.md"
+    worker.start(motd=str(motd_path), show_info=True)
