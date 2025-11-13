@@ -2,6 +2,8 @@
 
 > Our guiding principles and non-negotiables for building together
 
+**This document defines WHO WE ARE.** For where we're going, see [VISION.md](./VISION.md).
+
 ## Core Values
 
 ### 1. Clarity Over Cleverness
@@ -23,6 +25,7 @@
 
 ### 4. Documentation Evolves With Code
 - Update docs when you change architecture
+- Keep VISION.md aligned with product evolution
 - Keep PLAN.md current as our working memory
 - Maintain .claude/ knowledge base as we learn
 - CLAUDE.md is the deep reference, agents.md is the quick guide
@@ -123,7 +126,23 @@ This constitution evolves as we work together. When you notice:
 - **Better ways of working** → Update this document
 - **Outdated rules** → Remove or revise them
 
-**Last Updated**: 2025-11-12
+**Last Updated**: 2025-11-13
+
+---
+
+## The Hierarchy
+
+```
+CONSTITUTION (who we are)
+    ↓
+VISION (where we're going)
+    ↓
+GARDEN (what we know)
+    ↓
+PLAN (what we're doing)
+```
+
+**This document anchors everything.** Our vision grows from our values. Our knowledge reflects our principles. Our plans execute our vision.
 
 ---
 

@@ -8,15 +8,16 @@ Welcome to the knowledge garden! This guide will help you (human or agent) culti
 
 ## Our Collaboration Framework
 
-We work together through three interconnected systems:
+We work together through four interconnected systems:
 
 ```
-CONSTITUTION.md          →    GARDENING.md           →    PLAN.md
-Core Principles               Long-term Memory             Working Memory
-(Who we are)                  (What we've learned)         (What we're doing)
+CONSTITUTION.md    →    VISION.md         →    GARDENING.md      →    PLAN.md
+Core Principles         The Dream              Long-term Memory       Working Memory
+(Who we are)            (Where we're going)    (What we know)         (What we're doing)
 ```
 
 **CONSTITUTION.md** - Our unchanging values and guiding principles
+**VISION.md** - Our aspirational future, the north star that guides us
 **Knowledge Garden** - Our accumulated wisdom, patterns, and lessons
 **PLAN.md** - Our current state, progress, and next steps
 
@@ -489,7 +490,13 @@ The knowledge garden is **our shared memory** - let's cultivate it together! �
 
 **Remember the hierarchy**:
 ```
-CONSTITUTION (who we are) → GARDEN (what we know) → PLAN (what we're doing)
+CONSTITUTION (who we are)
+    ↓
+VISION (where we're going)
+    ↓
+GARDEN (what we know)
+    ↓
+PLAN (what we're doing)
 ```
 
 Happy gardening! 🌱🌸🌳

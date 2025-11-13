@@ -112,7 +112,7 @@ Use these commands to cultivate the knowledge garden and manage our working memo
 
 See [GARDENING.md](./GARDENING.md) for detailed usage and examples.
 
-**The hierarchy**: `CONSTITUTION` (who we are) → `GARDEN` (what we know) → `PLAN` (what we're doing)
+**The hierarchy**: `CONSTITUTION` (who we are) → `VISION` (where we're going) → `GARDEN` (what we know) → `PLAN` (what we're doing)
 
 ### Quick Gardening Tips:
 
@@ -126,11 +126,13 @@ See [GARDENING.md](./GARDENING.md) for detailed usage and examples.
 
 ---
 
-## CONSTITUTION.md
+## VISION.md & CONSTITUTION.md
 
-Our **guiding principles and non-negotiables** live in `CONSTITUTION.md`. This is our shared value system that keeps us aligned.
+**VISION.md** - Our **north star**, the living document that describes where we're going. The vision evolves as we learn and grow, always guiding us forward.
 
-Review it regularly and suggest updates when you notice strong preferences or patterns emerging.
+**CONSTITUTION.md** - Our **guiding principles and non-negotiables**. This is our shared value system that keeps us aligned.
+
+Review both regularly. The vision shows us where we're going, the constitution keeps us true to who we are.
 
 ---
 
@@ -141,7 +143,7 @@ Review it regularly and suggest updates when you notice strong preferences or pa
 3. **Format**: `just format`
 4. **Lint**: `just lint`
 5. **Test**: `just test-cov`
-6. **Update docs**: Keep PLAN.md, .claude/, and CLAUDE.md current
+6. **Update docs**: Keep VISION.md, PLAN.md, .claude/, and CLAUDE.md current
 7. **Commit**: Use conventional commits (feat:, fix:, docs:, refactor:, etc.)
 
 ---

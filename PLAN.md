@@ -1,8 +1,11 @@
 # AIMQ Development Plan
 
-**Last Updated**: 2025-11-12
+**Last Updated**: 2025-11-13
 **Current Version**: 0.1.x
 **Target Version**: 0.2.0
+
+> **Our Vision**: See [VISION.md](./VISION.md) for where we're going
+> **Our Principles**: See [CONSTITUTION.md](./CONSTITUTION.md) for who we are
 
 ---
 
@@ -35,7 +38,7 @@
 - ✅ Error handling and edge case coverage
 - ✅ Graceful error handling in worker (no re-raising)
 
-### Knowledge Garden Enhancement (Nov 12, 2025)
+### Knowledge Garden Enhancement (Nov 12-13, 2025)
 - ✅ Created 9 helper commands for knowledge management
 - ✅ Commands are language-agnostic and agent-agnostic
 - ✅ Added `/fix` - Run tests and fix issues
@@ -52,145 +55,231 @@
 - ✅ Updated agents.md to reference GARDENING.md
 - ✅ Established hierarchy: CONSTITUTION → GARDEN → PLAN
 
+### Ideas Folder (Nov 13, 2025)
+- ✅ Created `ideas/` directory for future feature planning
+- ✅ Added comprehensive multi-agent group chat design
+- ✅ Documented RAG workflows architecture
+- ✅ Planned Zep knowledge graph integration
+- ✅ Designed Supabase Realtime streaming
+- ✅ Outlined human-in-the-loop workflows
+
 ---
 
 ## 🎯 Current Status
 
-**Overall Test Coverage**: 82% ⬆️
+**Overall Test Coverage**: 82% ⬆️ (Target: 90%+)
 
 ### Coverage by Module:
 - ✅ **Agents**: 100% (react, plan_execute, base, decorators, validation)
 - ✅ **Workflows**: 100% (document, multi_agent, base, decorators)
 - ✅ **Memory**: 100% (checkpoint)
 - ✅ **Common**: 100% (exceptions, llm resolution)
-- ❌ **Tools**: 0% (docling, mistral tools untested)
-- ⚠️ **Worker**: 75% (some edge cases untested)
-- ⚠️ **Queue**: 75% (some error paths untested)
+- ✅ **Tools**: 100% (docling, mistral OCR, upload_file) ⬆️ *Fixed!*
+- ⚠️ **Worker**: 75% (42 lines untested - shutdown, signals, error recovery)
+- ⚠️ **Queue**: ~75% (error paths untested)
 
 ---
 
 ## 📋 Recommended Next Steps
 
-### Priority 1: Testing & Quality (Target: 90%+ coverage)
+### Priority 1: Finish Quality Sprint (Target: 90%+ coverage) 🎯
 
-#### 1. Add Tests for Untested Tools
-**Impact**: High | **Effort**: Medium (2-3 hours)
+**Status**: Almost there! Only 8% away from target.
 
-Currently at 0% coverage:
-- `tools/docling/converter.py` - Document conversion tool
-- `tools/mistral/document_ocr.py` - Mistral OCR integration
-- `tools/mistral/upload_file.py` - Mistral file upload
+#### 1. Worker Edge Cases ⚠️
+**Impact**: High | **Effort**: 2-3 hours
 
-**Why**: These tools are production-ready but untested. Could have hidden bugs.
+Currently at 75% (42 lines untested):
+- Lines 130-138: Graceful shutdown scenarios
+- Lines 284-292, 299-306: Signal handling (SIGTERM, SIGINT)
+- Lines 317-356: Error recovery and retry logic
+- Lines 382-385, 409, 418, 428-437: Exit paths and cleanup
 
-#### 2. Improve Common Module Coverage
-**Impact**: Medium | **Effort**: Low (1 hour)
+**Why**: Worker is the main orchestrator - needs solid coverage.
 
-`common/llm.py` at 69% coverage:
-- Add tests for error cases in `resolve_llm()`
-- Test LLM caching behavior
-- Test fallback scenarios
+#### 2. Queue Error Paths ⚠️
+**Impact**: Medium | **Effort**: 1-2 hours
 
-#### 3. Worker & Queue Edge Cases
-**Impact**: Medium | **Effort**: Medium (2 hours)
-
-Both at 75% coverage:
-- Test graceful shutdown scenarios
-- Test error recovery paths
+Currently at ~75%:
 - Test visibility timeout edge cases
+- Test connection failures and retries
+- Test acknowledgment failures
+- Test requeue scenarios
 
-### Priority 2: Features & Enhancements
+**Why**: Queue reliability is critical for message processing.
 
-#### 4. Memory/RAG Integration
-**Impact**: High | **Effort**: High (1-2 days)
+#### 3. Minor Gaps (Optional)
+**Impact**: Low | **Effort**: 30 minutes
 
-Add vector store integration for agent memory:
-- Supabase pgvector integration
-- Memory retrieval tools for agents
-- Conversation history management
-- Document embedding and search
+Some `__init__.py` files at 71-82%:
+- `tools/mistral/__init__.py` (75%)
+- `tools/pdf/__init__.py` (71%)
+- `tools/supabase/__init__.py` (82%)
 
-**Why**: Agents currently have no long-term memory or RAG capabilities.
+**Why**: Mostly import statements, low priority.
 
-#### 5. Streaming Support
-**Impact**: Medium | **Effort**: Medium (4-6 hours)
+### Priority 2: Multi-Agent Group Chat System 🚀
 
-Enhance real-time feedback:
-- Stream agent reasoning steps
-- Stream workflow progress
-- WebSocket integration for live updates
-- Progress callbacks
+**Status**: Core vision - broken into independently buildable components
 
-**Why**: Better UX for long-running agents/workflows.
+See [VISION.md](./VISION.md) for the high-level vision and [ideas/multi-agent-group-chat.md](./ideas/multi-agent-group-chat.md) for technical architecture. Each component below can be built and shipped independently:
 
-#### 6. Agent Observability
-**Impact**: Medium | **Effort**: Medium (4-6 hours)
+#### 4. Thread Tree System
+**Impact**: High | **Effort**: 2-3 days
 
-Add tracing and monitoring:
-- LangSmith integration
-- Custom trace logging
-- Performance metrics
-- Cost tracking (token usage)
+Foundation for conversation threading:
+- Recursive thread_id calculation
+- Thread query helpers
+- Caching strategy (materialized column or metadata)
+- Tests for deep threads and branches
 
-**Why**: Production agents need observability for debugging and optimization.
+**Why**: Enables threaded conversations and context loading.
+**See**: `ideas/thread-tree-system.md`
 
-#### 7. More Built-in Tools
-**Impact**: Medium | **Effort**: Low-Medium (varies)
+#### 5. Message Ingestion Pipeline
+**Impact**: Critical | **Effort**: 2-3 days
 
-Expand tool library:
-- Web search tool (Tavily, SerpAPI)
-- Code execution tool (sandboxed)
-- API calling tool (generic HTTP)
-- Database query tool
-- Email/notification tools
+Universal entry point for all messages:
+- Worker task for message processing
+- Parallel triage + background processing
+- Error handling and retries
+- Observability
 
-**Why**: More tools = more capable agents out of the box.
+**Why**: Orchestrates all message processing.
+**See**: `ideas/message-ingestion-pipeline.md`
 
-### Priority 3: Documentation & Examples
+#### 6. Message Routing & Triage
+**Impact**: High | **Effort**: 3-4 days
 
-#### 8. Update Documentation for Refactoring
-**Impact**: Medium | **Effort**: Low (1-2 hours)
+Intelligent agent selection:
+- @mention detection
+- Reply-to-agent detection
+- Primary agent logic (keywords or LLM)
+- Routing decision workflow
 
-Current docs reference old `langgraph/` structure:
-- Update import paths in docs
-- Update examples if needed
-- Add migration guide for existing code
+**Why**: Ensures right agents respond at right time.
+**See**: `ideas/message-routing-triage.md`
 
-#### 9. Advanced Examples
-**Impact**: Low | **Effort**: Medium (3-4 hours)
+#### 7. Agent Configuration Hierarchy
+**Impact**: High | **Effort**: 2-3 days
 
-Add more sophisticated examples:
+Context-aware agent instructions:
+- Load from profiles, memberships, channels, participants
+- Merge instruction hierarchy (most specific wins)
+- Configuration caching
+- Tests for different contexts
+
+**Why**: Agents adapt behavior to context.
+**See**: `ideas/agent-configuration-hierarchy.md`
+
+### Priority 3: Supporting Features
+
+#### 8. RAG Workflows
+**Impact**: High | **Effort**: 1-2 weeks
+
+See `ideas/rag-workflows.md` for full design:
+- Document processing (PDFs, images, Office docs)
+- Embedding generation (OpenAI, Mistral)
+- Vector storage (Supabase pgvector)
+- Semantic search tools
+
+**Why**: Agents need to reference documents and past conversations.
+
+#### 9. Supabase Realtime Streaming
+**Impact**: High | **Effort**: 1 week
+
+See `ideas/supabase-realtime-streaming.md` for full design:
+- Worker job notifications (no polling)
+- Progress streaming (live updates)
+- Response chunk streaming
+- Typing indicators
+
+**Why**: Better UX and reduced latency.
+
+#### 10. Zep Knowledge Graphs
+**Impact**: Medium | **Effort**: 2-3 weeks
+
+See `ideas/zep-knowledge-graphs.md` for full design:
+- Fact extraction
+- Entity recognition
+- Relationship mapping
+- Shared memory across agents
+
+**Why**: Long-term memory and relationship awareness.
+
+#### 11. Human-in-the-Loop
+**Impact**: Medium | **Effort**: 1 week
+
+See `ideas/human-in-the-loop.md` for full design:
+- Agent questions
+- Approval workflows
+- Pause & resume with checkpointing
+- Timeout handling
+
+**Why**: Collaborative workflows and human oversight.
+
+### Priority 4: Documentation & Polish
+
+#### 12. Update Documentation
+**Impact**: Medium | **Effort**: 1-2 hours
+
+- Update import paths for new module structure
+- Add migration guide for refactoring
+- Document multi-agent group chat architecture
+- Add examples for new features
+
+#### 13. Advanced Examples
+**Impact**: Low | **Effort**: 2-3 hours
+
 - Multi-agent collaboration example
-- RAG-powered agent (when #4 is done)
-- Streaming agent example (when #5 is done)
-- Production deployment example
+- RAG-powered agent example
+- Streaming agent example
+- Human-in-the-loop example
 
 ---
 
-## 🚀 Suggested Immediate Actions
+## 🚀 Immediate Action Plan
 
-Based on the current state, here's what I'd recommend tackling first:
+**Decision**: Option A - Finish Quality Sprint, then build Multi-Agent Group Chat
 
-### Option A: Quality First (Recommended)
-1. **Add tool tests** (2-3 hours) - Get to 85%+ coverage
-2. **Improve common/llm tests** (1 hour) - Cover error cases
-3. **Update documentation** (1-2 hours) - Reflect new structure
+### Phase 1: Quality Sprint (This Week) 🎯
+**Goal**: Hit 90%+ test coverage
 
-**Total**: ~5 hours to get to a solid, well-tested state
+**Tasks**:
+1. Add worker edge case tests (2-3 hours)
+   - Shutdown scenarios
+   - Signal handling
+   - Error recovery
+2. Add queue error path tests (1-2 hours)
+   - Timeout handling
+   - Connection failures
+   - Requeue scenarios
+3. Optional: Clean up __init__.py coverage (30 min)
 
-### Option B: Feature First
-1. **Memory/RAG integration** (1-2 days) - Big capability boost
-2. **Add tests for new features** (2-3 hours)
-3. **Create RAG example** (1-2 hours)
+**Total**: ~4-5 hours
+**Result**: 90%+ coverage, rock-solid foundation
 
-**Total**: ~2-3 days for a major new feature
+### Phase 2: Multi-Agent Group Chat MVP (Next 1-2 Weeks) 🚀
+**Goal**: Basic message-based agent system
 
-### Option C: Production Ready
-1. **Add observability** (4-6 hours) - LangSmith/tracing
-2. **Streaming support** (4-6 hours) - Better UX
-3. **Add tool tests** (2-3 hours) - Quality assurance
+**Week 1: Core Infrastructure**
+1. [Thread Tree System](./ideas/thread-tree-system.md) (2-3 days)
+2. [Message Ingestion Pipeline](./ideas/message-ingestion-pipeline.md) (2-3 days)
+3. [Message Routing & Triage](./ideas/message-routing-triage.md) (3-4 days)
 
-**Total**: ~2 days for production-grade features
+**Week 2: Agent Intelligence**
+1. [Agent Configuration Hierarchy](./ideas/agent-configuration-hierarchy.md) (2-3 days)
+2. Agent Response Workflows (3-4 days)
+3. Integration tests and polish (2 days)
+
+**Result**: Agents respond to @mentions and replies with context-aware instructions
+
+### Phase 3: Enhanced Features (Future)
+See `ideas/` folder for detailed designs:
+- RAG workflows (document processing)
+- Supabase Realtime streaming
+- Zep knowledge graphs
+- Human-in-the-loop workflows
 
 ---
 
@@ -226,11 +315,50 @@ src/aimq/
 
 ---
 
-## 🤔 Questions to Consider
+## 💡 Ideas Folder
 
-1. **What's the priority?** Quality/testing vs new features?
-2. **What's the use case?** RAG? Multi-agent? Streaming?
-3. **Production timeline?** How soon do you need this in prod?
-4. **Team size?** Solo or multiple developers?
+The `ideas/` directory contains detailed designs for future features. When PLAN.md is close to completion, review these ideas and promote the most valuable ones to active development.
 
-Let me know what direction you'd like to go, and I can help plan the next phase!
+**Vision**:
+- 🎯 [VISION.md](./VISION.md) - The living north star that guides us forward
+- 🎯 [Multi-Agent Group Chat](./ideas/multi-agent-group-chat.md) - Technical architecture for the vision
+
+**Core Infrastructure** (independently buildable):
+- 🏗️ [Thread Tree System](./ideas/thread-tree-system.md) - Recursive reply threading
+- 🏗️ [Message Ingestion Pipeline](./ideas/message-ingestion-pipeline.md) - Universal message processing
+- 🏗️ [Message Routing & Triage](./ideas/message-routing-triage.md) - Intelligent agent selection
+- 🏗️ [Agent Configuration Hierarchy](./ideas/agent-configuration-hierarchy.md) - Context-aware instructions
+
+**Supporting Features**:
+- 🌱 [RAG Workflows](./ideas/rag-workflows.md) - Document processing and retrieval
+- 🌱 [Zep Knowledge Graphs](./ideas/zep-knowledge-graphs.md) - Graph-based memory
+- 🌱 [Supabase Realtime Streaming](./ideas/supabase-realtime-streaming.md) - Live updates
+- 🌱 [Human-in-the-Loop](./ideas/human-in-the-loop.md) - Pause/resume workflows
+
+See `ideas/README.md` for contribution guidelines.
+
+---
+
+## 🤔 Open Questions
+
+### Multi-Agent Group Chat
+1. **Primary agent trigger logic**: What determines if the primary agent should respond?
+   - Keywords? Sentiment? Always? ML model?
+2. **Thread_id caching**: Where to cache?
+   - Message metadata (jsonb)? Separate threads table? Redis?
+3. **Background processing**: How to handle high message volume?
+   - Queue priority? Rate limiting? Batch processing?
+
+### RAG & Memory
+4. **Embedding model**: Which to use?
+   - OpenAI (expensive, good)? Mistral (privacy)? Open-source?
+5. **Zep hosting**: Cloud or self-hosted?
+   - Cloud (easier, costs money) vs Self-hosted (control, more work)
+
+### Streaming
+6. **Fallback strategy**: Keep polling as fallback?
+   - Yes (reliable, redundant) vs No (simpler, trust Realtime)
+
+---
+
+**Next Steps**: Finish quality sprint, then start on multi-agent group chat MVP! 🚀
