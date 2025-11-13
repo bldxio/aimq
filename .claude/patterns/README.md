@@ -1,0 +1,35 @@
+# Patterns
+
+Established patterns for consistency across the AIMQ codebase.
+
+> 📖 **See [INDEX.md](../INDEX.md) for complete knowledge base navigation**
+
+## Available Patterns
+
+- **[module-organization.md](module-organization.md)** - How to organize code into modules (agents, workflows, common, memory)
+- **[error-handling.md](error-handling.md)** - Error handling patterns and best practices
+
+## Guidelines
+
+When documenting a new pattern:
+
+1. **Identify the pattern**: What problem does it solve?
+2. **Show examples**: Good and bad examples
+3. **Explain benefits**: Why use this pattern?
+4. **Keep it actionable**: Focus on "how-to"
+5. **Keep it concise**: Under 400 lines
+6. **Link to related docs**: Cross-reference other files
+
+## When to Add a Pattern
+
+Add a pattern when:
+- You've solved the same problem multiple times
+- A convention has emerged naturally
+- You want to ensure consistency going forward
+- New team members need guidance
+
+## Related
+
+- See `standards/` for best practices
+- See `architecture/` for system design
+- See `CONSTITUTION.md` for non-negotiable patterns

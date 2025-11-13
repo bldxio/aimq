@@ -5,22 +5,33 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-# Mock langgraph.checkpoint.postgres before importing checkpoint module
-sys.modules["langgraph.checkpoint"] = MagicMock()
-sys.modules["langgraph.checkpoint.postgres"] = MagicMock()
+# Mock langgraph.checkpoint modules before any imports
+mock_checkpoint = MagicMock()
+mock_checkpoint.base = MagicMock()
+mock_checkpoint.postgres = MagicMock()
+mock_checkpoint.serde = MagicMock()
+mock_checkpoint.serde.base = MagicMock()
+mock_checkpoint.serde.jsonplus = MagicMock()
+
+sys.modules["langgraph.checkpoint"] = mock_checkpoint
+sys.modules["langgraph.checkpoint.base"] = mock_checkpoint.base
+sys.modules["langgraph.checkpoint.postgres"] = mock_checkpoint.postgres
+sys.modules["langgraph.checkpoint.serde"] = mock_checkpoint.serde
+sys.modules["langgraph.checkpoint.serde.base"] = mock_checkpoint.serde.base
+sys.modules["langgraph.checkpoint.serde.jsonplus"] = mock_checkpoint.serde.jsonplus
 
 # isort: off
-from aimq.langgraph.checkpoint import (  # noqa: E402
+from aimq.common.exceptions import CheckpointerError  # noqa: E402
+from aimq.memory.checkpoint import (  # noqa: E402
     _build_connection_string,
     _extract_database_host,
     get_checkpointer,
 )
-from aimq.langgraph.exceptions import CheckpointerError  # noqa: E402
 
 # isort: on
 
 
-@patch("aimq.langgraph.checkpoint.config")
+@patch("aimq.memory.checkpoint.config")
 def test_build_connection_string_success(mock_config):
     """Test connection string building with valid cloud config."""
     mock_config.database_url = ""
@@ -40,7 +51,7 @@ def test_build_connection_string_success(mock_config):
     assert "@db.test-project.supabase.co:5432/postgres" in conn_str
 
 
-@patch("aimq.langgraph.checkpoint.config")
+@patch("aimq.memory.checkpoint.config")
 def test_build_connection_string_url_encoding(mock_config):
     """Test password URL encoding for special characters."""
     mock_config.database_url = ""
@@ -59,7 +70,7 @@ def test_build_connection_string_url_encoding(mock_config):
     assert "!@#$%" not in conn_str  # Raw special chars shouldn't appear
 
 
-@patch("aimq.langgraph.checkpoint.config")
+@patch("aimq.memory.checkpoint.config")
 def test_build_connection_string_missing_url(mock_config):
     """Test error when both SUPABASE_URL and DATABASE_HOST missing."""
     mock_config.database_url = ""
@@ -75,7 +86,7 @@ def test_build_connection_string_missing_url(mock_config):
         _build_connection_string()
 
 
-@patch("aimq.langgraph.checkpoint.config")
+@patch("aimq.memory.checkpoint.config")
 def test_build_connection_string_missing_password(mock_config):
     """Test error when both passwords missing."""
     mock_config.database_url = ""
@@ -91,7 +102,7 @@ def test_build_connection_string_missing_password(mock_config):
         _build_connection_string()
 
 
-@patch("aimq.langgraph.checkpoint.config")
+@patch("aimq.memory.checkpoint.config")
 def test_build_connection_string_invalid_url(mock_config):
     """Test error with invalid URL format."""
     mock_config.database_url = ""
@@ -107,7 +118,7 @@ def test_build_connection_string_invalid_url(mock_config):
         _build_connection_string()
 
 
-@patch("aimq.langgraph.checkpoint.config")
+@patch("aimq.memory.checkpoint.config")
 def test_build_connection_string_extracts_project_ref(mock_config):
     """Test project reference extraction from URL."""
     mock_config.database_url = ""
@@ -125,10 +136,10 @@ def test_build_connection_string_extracts_project_ref(mock_config):
     assert "db.my-awesome-project.supabase.co" in conn_str
 
 
-@patch("aimq.langgraph.checkpoint.ConnectionPool")
-@patch("aimq.langgraph.checkpoint.PostgresSaver")
-@patch("aimq.langgraph.checkpoint._build_connection_string")
-@patch("aimq.langgraph.checkpoint._setup_schema")
+@patch("aimq.memory.checkpoint.ConnectionPool")
+@patch("aimq.memory.checkpoint.PostgresSaver")
+@patch("aimq.memory.checkpoint._build_connection_string")
+@patch("aimq.memory.checkpoint._setup_schema")
 def test_get_checkpointer_singleton(mock_setup, mock_build, mock_saver_class, mock_pool_class):
     """Test checkpointer singleton pattern.
 
@@ -143,7 +154,7 @@ def test_get_checkpointer_singleton(mock_setup, mock_build, mock_saver_class, mo
     mock_saver_class.return_value = mock_saver_instance
 
     # Reset singleton
-    import aimq.langgraph.checkpoint as checkpoint_module
+    import aimq.memory.checkpoint as checkpoint_module
 
     checkpoint_module._checkpointer_instance = None
 
@@ -163,7 +174,7 @@ def test_get_checkpointer_singleton(mock_setup, mock_build, mock_saver_class, mo
     assert mock_saver_class.call_count == 1
 
 
-@patch("aimq.langgraph.checkpoint.config")
+@patch("aimq.memory.checkpoint.config")
 def test_build_connection_string_with_trailing_slash(mock_config):
     """Test URL with trailing slash is handled correctly."""
     mock_config.database_url = ""
@@ -181,10 +192,10 @@ def test_build_connection_string_with_trailing_slash(mock_config):
     assert "postgresql://" in conn_str
 
 
-@patch("aimq.langgraph.checkpoint.ConnectionPool")
-@patch("aimq.langgraph.checkpoint._setup_schema")
-@patch("aimq.langgraph.checkpoint._build_connection_string")
-@patch("aimq.langgraph.checkpoint.PostgresSaver")
+@patch("aimq.memory.checkpoint.ConnectionPool")
+@patch("aimq.memory.checkpoint._setup_schema")
+@patch("aimq.memory.checkpoint._build_connection_string")
+@patch("aimq.memory.checkpoint.PostgresSaver")
 def test_get_checkpointer_calls_setup_schema(
     mock_saver_class, mock_build, mock_setup, mock_pool_class
 ):
@@ -201,7 +212,7 @@ def test_get_checkpointer_calls_setup_schema(
     mock_saver_class.return_value = mock_saver_instance
 
     # Reset singleton
-    import aimq.langgraph.checkpoint as checkpoint_module
+    import aimq.memory.checkpoint as checkpoint_module
 
     checkpoint_module._checkpointer_instance = None
 
@@ -211,7 +222,7 @@ def test_get_checkpointer_calls_setup_schema(
     mock_setup.assert_called_once_with(mock_saver_instance)
 
 
-@patch("aimq.langgraph.checkpoint.config")
+@patch("aimq.memory.checkpoint.config")
 def test_build_connection_string_password_encoding_preserves_alphanumeric(mock_config):
     """Test password encoding preserves alphanumeric characters."""
     mock_config.database_url = ""
@@ -233,7 +244,7 @@ def test_build_connection_string_password_encoding_preserves_alphanumeric(mock_c
 # ===== New flexible configuration tests =====
 
 
-@patch("aimq.langgraph.checkpoint.config")
+@patch("aimq.memory.checkpoint.config")
 def test_build_connection_string_database_url_override(mock_config):
     """Test DATABASE_URL takes highest priority."""
     mock_config.database_url = "postgresql://custom:pass@custom-host:5433/custom_db"
@@ -249,7 +260,7 @@ def test_build_connection_string_database_url_override(mock_config):
     assert conn_str == "postgresql://custom:pass@custom-host:5433/custom_db"
 
 
-@patch("aimq.langgraph.checkpoint.config")
+@patch("aimq.memory.checkpoint.config")
 def test_build_connection_string_localhost(mock_config):
     """Test local development with localhost auto-detects port 54322 and password."""
     mock_config.database_url = ""
@@ -267,7 +278,7 @@ def test_build_connection_string_localhost(mock_config):
     assert conn_str == "postgresql://postgres:postgres@localhost:54322/postgres"
 
 
-@patch("aimq.langgraph.checkpoint.config")
+@patch("aimq.memory.checkpoint.config")
 def test_build_connection_string_docker_service(mock_config):
     """Test Docker Compose with service name."""
     mock_config.database_url = ""
@@ -285,7 +296,7 @@ def test_build_connection_string_docker_service(mock_config):
     assert "@supabase:5432/postgres" in conn_str
 
 
-@patch("aimq.langgraph.checkpoint.config")
+@patch("aimq.memory.checkpoint.config")
 def test_build_connection_string_self_hosted(mock_config):
     """Test self-hosted Supabase on custom domain."""
     mock_config.database_url = ""
@@ -304,7 +315,7 @@ def test_build_connection_string_self_hosted(mock_config):
     assert "@supabase.company.com:5432/postgres" in conn_str
 
 
-@patch("aimq.langgraph.checkpoint.config")
+@patch("aimq.memory.checkpoint.config")
 def test_build_connection_string_pooler_port(mock_config):
     """Test connection pooler port configuration."""
     mock_config.database_url = ""
@@ -321,7 +332,7 @@ def test_build_connection_string_pooler_port(mock_config):
     assert "@db.test-project.supabase.co:6543/postgres" in conn_str
 
 
-@patch("aimq.langgraph.checkpoint.config")
+@patch("aimq.memory.checkpoint.config")
 def test_build_connection_string_explicit_host_override(mock_config):
     """Test DATABASE_HOST overrides SUPABASE_URL parsing."""
     mock_config.database_url = ""
@@ -340,7 +351,7 @@ def test_build_connection_string_explicit_host_override(mock_config):
     assert "explicit-password" in conn_str
 
 
-@patch("aimq.langgraph.checkpoint.config")
+@patch("aimq.memory.checkpoint.config")
 def test_build_connection_string_database_password_fallback(mock_config):
     """Test DATABASE_PASSWORD falls back to SUPABASE_KEY."""
     mock_config.database_url = ""
@@ -358,7 +369,7 @@ def test_build_connection_string_database_password_fallback(mock_config):
     assert "fallback-key" in conn_str
 
 
-@patch("aimq.langgraph.checkpoint.config")
+@patch("aimq.memory.checkpoint.config")
 def test_build_connection_string_custom_db_name(mock_config):
     """Test custom database name configuration."""
     mock_config.database_url = ""
@@ -375,7 +386,7 @@ def test_build_connection_string_custom_db_name(mock_config):
     assert "@db.example.com:5432/my_custom_db" in conn_str
 
 
-@patch("aimq.langgraph.checkpoint.config")
+@patch("aimq.memory.checkpoint.config")
 def test_build_connection_string_custom_user(mock_config):
     """Test custom database user configuration."""
     mock_config.database_url = ""
@@ -467,7 +478,7 @@ def test_extract_database_host_no_protocol():
 # ===== Tests for localhost port auto-detection =====
 
 
-@patch("aimq.langgraph.checkpoint.config")
+@patch("aimq.memory.checkpoint.config")
 def test_build_connection_string_localhost_127_0_0_1(mock_config):
     """Test 127.0.0.1 also auto-detects port 54322 and password."""
     mock_config.database_url = ""
@@ -485,7 +496,7 @@ def test_build_connection_string_localhost_127_0_0_1(mock_config):
     assert conn_str == "postgresql://postgres:postgres@127.0.0.1:54322/postgres"
 
 
-@patch("aimq.langgraph.checkpoint.config")
+@patch("aimq.memory.checkpoint.config")
 def test_build_connection_string_localhost_password_override(mock_config):
     """Test explicit DATABASE_PASSWORD overrides smart default."""
     mock_config.database_url = ""
@@ -503,7 +514,7 @@ def test_build_connection_string_localhost_password_override(mock_config):
     assert conn_str == "postgresql://postgres:custom-password@localhost:54322/postgres"
 
 
-@patch("aimq.langgraph.checkpoint.config")
+@patch("aimq.memory.checkpoint.config")
 def test_build_connection_string_localhost_custom_port(mock_config):
     """Test explicit custom port on localhost (not 5432 or 54322)."""
     mock_config.database_url = ""
@@ -521,7 +532,7 @@ def test_build_connection_string_localhost_custom_port(mock_config):
     assert "@localhost:5433/postgres" in conn_str
 
 
-@patch("aimq.langgraph.checkpoint.config")
+@patch("aimq.memory.checkpoint.config")
 def test_build_connection_string_explicit_localhost_host(mock_config):
     """Test explicit DATABASE_HOST=localhost also gets smart port and password."""
     mock_config.database_url = ""

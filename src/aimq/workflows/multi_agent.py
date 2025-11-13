@@ -5,7 +5,7 @@ from typing import Callable, Dict
 
 from langgraph.graph import END, StateGraph
 
-from aimq.langgraph.states import AgentState
+from aimq.agents.states import AgentState
 from aimq.workflows.base import BaseWorkflow
 
 logger = logging.getLogger(__name__)

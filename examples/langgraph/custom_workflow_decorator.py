@@ -31,7 +31,7 @@ from typing import Annotated, NotRequired, TypedDict
 
 from langgraph.graph import END, StateGraph
 
-from aimq.langgraph import workflow
+from aimq import workflow
 from aimq.tools.supabase import ReadFile, WriteRecord
 from aimq.worker import Worker
 

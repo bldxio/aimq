@@ -3,7 +3,7 @@
 from langchain.tools import BaseTool
 from langgraph.graph import StateGraph
 
-from aimq.langgraph.checkpoint import get_checkpointer
+from aimq.memory.checkpoint import get_checkpointer
 
 
 class BaseAgent:

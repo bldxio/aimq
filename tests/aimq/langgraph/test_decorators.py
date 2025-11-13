@@ -7,8 +7,9 @@ from langchain.tools import BaseTool
 from langchain_core.language_models import BaseChatModel
 from langgraph.graph import END
 
-from aimq.langgraph import agent, workflow
-from aimq.langgraph.states import AgentState, WorkflowState  # noqa: F401
+from aimq import agent, workflow
+from aimq.agents.states import AgentState  # noqa: F401
+from aimq.workflows.states import WorkflowState  # noqa: F401
 
 
 class DummyTool(BaseTool):
@@ -137,7 +138,7 @@ def test_agent_decorator_with_all_options():
     assert instance is not None
 
 
-@patch("aimq.langgraph.utils.get_default_llm")
+@patch("aimq.common.llm.get_default_llm")
 def test_agent_decorator_llm_string_resolution(mock_get_default):
     """Test LLM parameter resolution with string model name."""
     mock_llm_instance = MagicMock(spec=BaseChatModel)

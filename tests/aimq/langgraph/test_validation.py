@@ -6,8 +6,8 @@ import pytest
 from langchain.tools import BaseTool
 from pydantic import BaseModel, Field, ValidationError  # noqa: F401
 
-from aimq.langgraph.exceptions import ToolValidationError
-from aimq.langgraph.validation import ToolInputValidator
+from aimq.agents.validation import ToolInputValidator
+from aimq.common.exceptions import ToolValidationError
 
 
 class MockToolSchema(BaseModel):

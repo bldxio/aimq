@@ -32,7 +32,7 @@ Usage:
 from langchain_core.messages import AIMessage, HumanMessage
 from langgraph.graph import END, StateGraph
 
-from aimq.langgraph import agent
+from aimq import agent
 from aimq.tools.supabase import WriteRecord
 from aimq.worker import Worker
 

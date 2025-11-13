@@ -6,7 +6,7 @@ import pytest  # noqa: F401
 from langchain.tools import BaseTool
 
 from aimq.agents.react import ReActAgent
-from aimq.langgraph.states import AgentState  # noqa: F401
+from aimq.agents.states import AgentState  # noqa: F401
 
 
 class MockTool(BaseTool):
