@@ -27,17 +27,42 @@
 - ✅ Split decorators by domain (agents vs workflows)
 - ✅ Improved code organization and maintainability
 
+### Testing & Stability (Nov 12, 2025)
+- ✅ Added comprehensive test suite (40 new tests)
+- ✅ Achieved 82% overall test coverage (up from 79%)
+- ✅ 4 modules now at 100% coverage (workflows, agents)
+- ✅ Mock-based testing for external dependencies
+- ✅ Error handling and edge case coverage
+- ✅ Graceful error handling in worker (no re-raising)
+
+### Knowledge Garden Enhancement (Nov 12, 2025)
+- ✅ Created 9 helper commands for knowledge management
+- ✅ Commands are language-agnostic and agent-agnostic
+- ✅ Added `/fix` - Run tests and fix issues
+- ✅ Added `/debug` - Troubleshoot build/test issues
+- ✅ Added `/test` - Suggest or write tests
+- ✅ Added `/plan` - Review and update PLAN.md (working memory)
+- ✅ Added `/remember` - Record patterns in knowledge garden
+- ✅ Added `/learn` - Extract lessons from history
+- ✅ Added `/focus` - Explore knowledge garden topics
+- ✅ Added `/levelup` - Research and add new knowledge
+- ✅ Added `/cultivate` - Maintain and organize knowledge garden
+- ✅ Updated `/commit` to remind about PLAN.md updates
+- ✅ Created GARDENING.md - Crash course guide with collaboration framework
+- ✅ Updated agents.md to reference GARDENING.md
+- ✅ Established hierarchy: CONSTITUTION → GARDEN → PLAN
+
 ---
 
 ## 🎯 Current Status
 
-**Overall Test Coverage**: 79%
+**Overall Test Coverage**: 82% ⬆️
 
 ### Coverage by Module:
-- ✅ **Agents**: 90%+ (react, plan_execute, base)
-- ✅ **Workflows**: 91-100% (document, multi_agent, base)
-- ✅ **Memory**: 81% (checkpoint)
-- ⚠️ **Common**: 69% (llm resolution needs more tests)
+- ✅ **Agents**: 100% (react, plan_execute, base, decorators, validation)
+- ✅ **Workflows**: 100% (document, multi_agent, base, decorators)
+- ✅ **Memory**: 100% (checkpoint)
+- ✅ **Common**: 100% (exceptions, llm resolution)
 - ❌ **Tools**: 0% (docling, mistral tools untested)
 - ⚠️ **Worker**: 75% (some edge cases untested)
 - ⚠️ **Queue**: 75% (some error paths untested)

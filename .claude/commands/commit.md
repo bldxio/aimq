@@ -230,6 +230,7 @@ After committing:
 1. Show the commit hash: `git log -1 --oneline`
 2. Confirm: "✓ Committed successfully"
 3. Remind: "Run `git push` when ready to push to remote"
+4. **Important**: Ask: "Should we update PLAN.md to reflect these changes?"
 
 ## Error Handling
 

@@ -82,37 +82,47 @@ Think of it as our team's north star—always pointing to where we're going next
 
 ---
 
-## Knowledge Base: .claude/
+## Knowledge Garden: .claude/
 
-The `.claude/` directory is our **internal knowledge base**—patterns, standards, architecture, and quick references that help us work in perfect sync.
+The `.claude/` directory is our **knowledge garden**—a living, breathing knowledge system that grows with every lesson learned. It contains patterns, standards, architecture decisions, and quick references that help us work in perfect sync.
+
+> 🌱 **New to gardening?** See [GARDENING.md](./GARDENING.md) for a complete crash course on cultivating our shared knowledge!
 
 ### Structure:
 
 ```
 .claude/
-├── patterns/           # Established patterns for consistency
-├── standards/          # Best practices (coding, testing, git, etc.)
-├── architecture/       # System design and library references
-├── quick-references/   # Common task guidance
-└── commands/           # Custom /commands for workflows
+├── patterns/           # Reusable solutions to common problems
+├── standards/          # Team conventions and best practices
+├── architecture/       # System design and decisions
+├── quick-references/   # How-to guides and checklists
+└── commands/           # Helper commands for workflows
 ```
 
-### Maintenance Guidelines:
+### Gardening Commands:
 
-1. **Keep files small**: Under 400 lines per file
-2. **One topic per file**: Split large topics into multiple files
-3. **Use links heavily**: Cross-reference between files to build a knowledge graph
-4. **Update as you code**: When you learn something new or establish a pattern, document it
-5. **Stay shallow**: No nested directories—just markdown files in each folder
-6. **Make it actionable**: Focus on "how-to" over "what is"
+Use these commands to cultivate the knowledge garden and manage our working memory:
 
-### When to Update:
+- **`/remember`** - Capture insights and patterns from conversation
+- **`/learn`** - Extract lessons from conversation and git history
+- **`/focus`** - Explore topics in the knowledge garden
+- **`/levelup`** - Research new topics and add to the garden
+- **`/plan`** - Review progress and update PLAN.md (working memory)
+- **`/cultivate`** - Maintain and organize the garden (weekly)
 
-- **After refactoring**: Document new patterns in `patterns/`
-- **Establishing conventions**: Add to `standards/`
-- **Integrating new libraries**: Update `architecture/`
-- **Solving common problems**: Add to `quick-references/`
-- **Creating workflows**: Add new commands to `commands/`
+See [GARDENING.md](./GARDENING.md) for detailed usage and examples.
+
+**The hierarchy**: `CONSTITUTION` (who we are) → `GARDEN` (what we know) → `PLAN` (what we're doing)
+
+### Quick Gardening Tips:
+
+1. **Capture while fresh**: Use `/remember` when you solve problems
+2. **Learn from history**: Run `/learn` after completing work
+3. **Explore before building**: Use `/focus` when you need guidance
+4. **Research new topics**: Try `/levelup` to expand knowledge
+5. **Cultivate regularly**: Run `/cultivate` weekly to keep it healthy
+6. **Keep files small**: Under 400 lines per file
+7. **Link everything**: Build a knowledge graph with cross-references
 
 ---
 
