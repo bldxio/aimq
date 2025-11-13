@@ -152,9 +152,7 @@ Create a commit message following this format:
 
 <optional body>
 
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
-
-Co-Authored-By: Claude <noreply@anthropic.com>
+🤖 [Agent: Add your signature and a fun comment here!]
 ```
 
 **Subject Line Rules** (first line):
@@ -217,14 +215,14 @@ Use the HEREDOC format to ensure proper multi-line handling:
 git commit -m "$(cat <<'EOF'
 <commit-message-here>
 
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
-
-Co-Authored-By: Claude <noreply@anthropic.com>
+🤖 [Agent: Add your signature and a fun comment here!]
 EOF
 )"
 ```
 
-**Important**: Replace `<commit-message-here>` with the actual commit message (type, scope, description, and optional body).
+**Important**:
+- Replace `<commit-message-here>` with the actual commit message (type, scope, description, and optional body)
+- Replace the agent placeholder with your own signature and a fun comment about the work!
 
 ### 10. Confirm Success
 
@@ -266,9 +264,8 @@ After committing:
 ```
 feat(ocr): add PDF text extraction support
 
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
-
-Co-Authored-By: Claude <noreply@anthropic.com>
+🤖 Crafted by Friday - Your friendly AI pair programmer!
+   Tests are green, coverage is up, let's ship it! 🚀
 ```
 
 ### Example 2: Bug Fix
@@ -277,9 +274,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 ```
 fix(auth): handle token expiration gracefully
 
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
-
-Co-Authored-By: Claude <noreply@anthropic.com>
+🤖 Squashed by Friday - No bugs shall pass! 🐛🔨
 ```
 
 ### Example 3: Documentation
@@ -288,9 +283,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 ```
 docs: update installation instructions for uv
 
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
-
-Co-Authored-By: Claude <noreply@anthropic.com>
+🤖 Documented by Friday - Making the README shine! ✨📚
 ```
 
 ### Example 4: Multiple Areas
@@ -299,9 +292,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 ```
 refactor: simplify error handling across codebase
 
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
-
-Co-Authored-By: Claude <noreply@anthropic.com>
+🤖 Refactored by Friday - Cleaner code, happier devs! 🧹💫
 ```
 
 ## Important Notes
@@ -313,8 +304,8 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 - **Do** validate the final message format
 - **Do NOT** skip the validation step
 - **Do** use the HEREDOC format for commits to handle multi-line messages
-- **Do** include the Claude Code attribution footer
+- **Do** add your own agent signature and fun comment to make it personal!
 
 ## Reusability
 
-This command is designed to work in any git repository and doesn't require project-specific tools or configurations. The only project-specific element is the "Co-Authored-By: Claude" footer, which can be kept or modified when using in other projects.
+This command is designed to work in any git repository and doesn't require project-specific tools or configurations. Each agent can add their own personality to the commit footer - make it fun and unique to you!
