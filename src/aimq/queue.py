@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Callable, List
 
 from langchain_core.runnables import Runnable, RunnableConfig
@@ -204,7 +204,7 @@ class Queue(BaseModel):
             "attempt_count": job.attempt,
             "error_type": type(error).__name__,
             "error_message": str(error),
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
             "job_data": job.data,
         }
 

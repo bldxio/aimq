@@ -1,3 +1,4 @@
+import signal
 import threading
 import time
 from collections import OrderedDict
@@ -395,3 +396,72 @@ def test_worker_thread_error_handling():
     last_call = error_calls[-1]
     assert "Error in queue test_queue" in str(last_call)
     assert "Test error" in str(last_call)
+
+
+def test_worker_thread_handles_keyboard_interrupt(mock_logger):
+    """Test WorkerThread handles KeyboardInterrupt gracefully"""
+    running = threading.Event()
+    running.set()
+    queues = OrderedDict()
+
+    queue_mock = Mock(spec=Queue)
+    queue_mock.name = "test_queue"
+    queue_mock.work.side_effect = KeyboardInterrupt()
+    queues["test_queue"] = queue_mock
+
+    thread = WorkerThread(queues, mock_logger, running, idle_wait=0.01)
+
+    thread.start()
+    thread.join(timeout=1.0)
+
+    assert not running.is_set()
+    mock_logger.info.assert_any_call("Received shutdown signal, stopping worker thread")
+
+
+def test_worker_thread_handles_system_exit(mock_logger):
+    """Test WorkerThread handles SystemExit gracefully"""
+    running = threading.Event()
+    running.set()
+    queues = OrderedDict()
+
+    queue_mock = Mock(spec=Queue)
+    queue_mock.name = "test_queue"
+    queue_mock.work.side_effect = SystemExit()
+    queues["test_queue"] = queue_mock
+
+    thread = WorkerThread(queues, mock_logger, running, idle_wait=0.01)
+
+    thread.start()
+    thread.join(timeout=1.0)
+
+    assert not running.is_set()
+    mock_logger.info.assert_any_call("Received shutdown signal, stopping worker thread")
+
+
+def test_worker_signal_handler_graceful_shutdown(worker):
+    """Test signal handler performs graceful shutdown on first signal"""
+    with patch.object(Worker, "stop") as mock_stop:
+        with patch.object(Worker, "log") as mock_log:
+            with patch.object(worker.logger, "stop") as mock_logger_stop:
+                with patch.object(Worker, "_restore_termios") as mock_restore:
+                    with patch("builtins.print"):
+                        worker._signal_handler(signal.SIGINT, None)
+
+                        assert worker._shutdown_count == 1
+                        mock_stop.assert_called_once()
+                        mock_log.assert_called_once_with(block=False)
+                        mock_logger_stop.assert_called_once()
+                        mock_restore.assert_called_once()
+
+
+def test_worker_signal_handler_force_quit(worker):
+    """Test signal handler forces quit on second signal"""
+    worker._shutdown_count = 1
+
+    with patch.object(worker, "_restore_termios") as mock_restore:
+        with patch("os._exit") as mock_exit:
+            worker._signal_handler(signal.SIGINT, None)
+
+            assert worker._shutdown_count == 2
+            mock_restore.assert_called_once()
+            mock_exit.assert_called_once_with(1)
