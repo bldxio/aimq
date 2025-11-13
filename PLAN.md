@@ -88,6 +88,18 @@
 - ✅ Updated 5 existing documents with new insights
 - ✅ Updated all README files with new content
 
+### Message Agent Lessons (Nov 13, 2025)
+- ✅ Extracted lessons from message agent development using `/learn`
+- ✅ Created 3 new knowledge documents:
+  - `patterns/composable-tools.md` - Build small, focused tools that compose
+  - `patterns/demo-driven-development.md` - Use demo deadlines to focus
+  - `quick-references/llm-api-differences.md` - LLM provider API compatibility
+- ✅ Updated `quick-references/common-pitfalls.md` with 3 new sections:
+  - Message serialization for queues (LangChain objects)
+  - Regex edge cases (email addresses in @mentions)
+  - pgmq function signatures
+- ✅ Updated pattern and quick-reference README files
+
 ---
 
 ## 🎯 Current Status
@@ -102,6 +114,26 @@
 - ✅ **Tools**: 100% (docling, mistral OCR, upload_file)
 - ✅ **Queue**: 93% (core functionality well-tested) ⬆️
 - ⚠️ **Worker**: 84% (some edge cases remain) ⬆️
+
+### 🚀 Active Sprint: Message Agent MVP (Nov 13, 2025)
+**Goal**: Demo-ready message processing in ~2 hours
+**Status**: ✅ Complete!
+
+Built core message agent functionality:
+1. ✅ Message ingestion worker task with routing workflow
+2. ✅ Simple @mention routing (supports -assistant, _assistant, -bot, _bot)
+3. ✅ Agent response generation (default-assistant, react-assistant)
+4. ✅ Demo script and queue clearing utility
+5. ✅ Comprehensive tests (39 tests, all passing)
+6. ✅ Fixed Mistral API compatibility issue
+
+**Deliverables**:
+- 3 composable routing tools (DetectMentions, ResolveQueue, LookupProfile)
+- MessageRoutingWorkflow for intelligent routing
+- Working demo with 2 agents
+- Full documentation and examples
+
+**Note**: Thread tree deferred (client-side handling)
 
 ---
 

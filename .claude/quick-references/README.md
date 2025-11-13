@@ -17,6 +17,7 @@ Fast guidance for common tasks in AIMQ.
 
 ### Troubleshooting
 - **[common-pitfalls.md](common-pitfalls.md)** - Common mistakes and how to avoid them
+- **[llm-api-differences.md](llm-api-differences.md)** - LLM provider API compatibility guide
 
 ## Guidelines
 

@@ -105,7 +105,7 @@ class ReActAgent(BaseAgent):
 
         try:
             # Get LLM decision
-            response = client.chat.completions.create(
+            response = client.chat.complete(
                 model=self.llm,
                 messages=[{"role": "user", "content": prompt}],
                 temperature=self.temperature,
@@ -130,7 +130,6 @@ class ReActAgent(BaseAgent):
             }
 
         except Exception as e:
-            logger.error(f"Reasoning failed: {e}", exc_info=True)  # Fix #11
             return {
                 "errors": [f"Reasoning error: {str(e)}"],
                 "iteration": state["iteration"] + 1,
@@ -148,7 +147,6 @@ class ReActAgent(BaseAgent):
 
         if not tool:
             error_msg = f"Unknown tool: {tool_name}"
-            logger.error(error_msg)  # Fix #11
             return {
                 "messages": [{"role": "system", "content": error_msg}],
                 "tool_output": error_msg,
@@ -160,7 +158,6 @@ class ReActAgent(BaseAgent):
             validated_input = self.validator.validate(tool, tool_input)
             logger.debug(f"Tool input validated: {validated_input}")  # Fix #11
         except ToolValidationError as e:
-            logger.error(f"Tool validation failed: {e}")  # Fix #11
             return {
                 "messages": [{"role": "system", "content": str(e)}],
                 "tool_output": str(e),
@@ -177,7 +174,6 @@ class ReActAgent(BaseAgent):
             }
         except Exception as e:
             error_msg = f"Tool execution failed: {str(e)}"
-            logger.error(error_msg, exc_info=True)  # Fix #11
             return {
                 "messages": [{"role": "system", "content": error_msg}],
                 "tool_output": error_msg,
