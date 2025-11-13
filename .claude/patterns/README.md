@@ -6,8 +6,16 @@ Established patterns for consistency across the AIMQ codebase.
 
 ## Available Patterns
 
+### Code Organization
 - **[module-organization.md](module-organization.md)** - How to organize code into modules (agents, workflows, common, memory)
-- **[error-handling.md](error-handling.md)** - Error handling patterns and best practices
+
+### Error Handling
+- **[error-handling.md](error-handling.md)** - General error handling patterns and best practices
+- **[worker-error-handling.md](worker-error-handling.md)** - Worker-specific error handling (never crash on job errors)
+- **[queue-error-handling.md](queue-error-handling.md)** - Queue error handling with DLQ and retry logic
+
+### Testing
+- **[testing-strategy.md](testing-strategy.md)** - Systematic testing approach for maximum coverage
 
 ## Guidelines
 

@@ -149,7 +149,11 @@ When refactoring code into modules:
 5. **Update tests** to mirror the new structure
 6. **Update documentation** (CLAUDE.md, agents.md)
 
-## Example: Refactoring langgraph/
+## Real-World Example: Refactoring langgraph/
+
+From commit c28cc52 (2025-11-12):
+
+**Problem**: Monolithic `langgraph/` module with mixed concerns
 
 **Before**:
 ```
@@ -185,6 +189,13 @@ src/aimq/
 └── memory/
     └── checkpoint.py  # From langgraph/memory.py
 ```
+
+**Result**:
+- Clearer module boundaries
+- Easier to find code
+- Better test organization
+- Reduced coupling
+- Easier to extend
 
 ## Benefits
 

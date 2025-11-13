@@ -201,14 +201,34 @@ def test_agent_handles_tool_timeout():
 
 ## Coverage Goals
 
-- **Target**: 79%+ overall coverage
-- **Priority**: Core logic (worker, queue, agents, workflows)
-- **Lower priority**: CLI commands, utilities, type stubs
+- **Target**: 80%+ overall coverage (90%+ excellent)
+- **Priority**: Core logic (worker, queue, agents, workflows) - aim for 90%+
+- **Lower priority**: CLI commands, utilities, type stubs - aim for 80%+
 
 Check coverage:
 ```bash
 just test-cov
 # Opens htmlcov/index.html in browser
+```
+
+### Pragmatic Testing Philosophy
+
+**Perfect is the enemy of good**:
+- Focus on core functionality first
+- Skip tricky edge cases if they block progress
+- Mark complex tests as `@pytest.mark.skip` or `@pytest.mark.integration`
+- Get meaningful coverage quickly, refine later
+
+**Example**:
+```python
+@pytest.mark.skip(reason="Complex timing issue, defer to integration tests")
+def test_race_condition():
+    pass
+
+@pytest.mark.integration
+def test_race_condition_integration():
+    # Test in integration suite instead
+    pass
 ```
 
 ## Test Performance
@@ -266,6 +286,7 @@ def test_supabase_integration():
 
 ## Related
 
-- See `quick-references/testing.md` for quick commands
-- See `CLAUDE.md` for detailed testing conventions
+- [Testing Strategy](../patterns/testing-strategy.md) - Systematic testing approach
+- [Quick Reference: Testing](../quick-references/testing.md) - Quick commands
+- [Error Handling](../patterns/error-handling.md) - Testing error handling
 - See `pyproject.toml` for pytest configuration

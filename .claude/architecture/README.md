@@ -6,10 +6,15 @@ System design and library references for AIMQ.
 
 ## Available Documentation
 
+### System Architecture
 - **[aimq-overview.md](aimq-overview.md)** - High-level architecture overview
 - **[key-libraries.md](key-libraries.md)** - Reference for main libraries and frameworks
 - **[langchain-integration.md](langchain-integration.md)** - LangChain Runnable patterns
 - **[langgraph-integration.md](langgraph-integration.md)** - LangGraph workflow patterns
+
+### Development Approach
+- **[vision-driven-development.md](vision-driven-development.md)** - Separating vision from tactical execution
+- **[knowledge-systems.md](knowledge-systems.md)** - Building and maintaining a knowledge garden
 
 ## Guidelines
 

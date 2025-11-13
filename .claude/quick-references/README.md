@@ -6,11 +6,17 @@ Fast guidance for common tasks in AIMQ.
 
 ## Available References
 
+### Development Tasks
+- **[common-tasks.md](common-tasks.md)** - Common development tasks
 - **[testing.md](testing.md)** - Quick testing commands and patterns
 - **[linting.md](linting.md)** - Quick linting and formatting commands
-- **[common-tasks.md](common-tasks.md)** - Common development tasks
-- **[git-commands.md](git-commands.md)** - Git command reference
 - **[dependency-management.md](dependency-management.md)** - uv dependency management
+
+### Version Control
+- **[git-commands.md](git-commands.md)** - Git command reference
+
+### Troubleshooting
+- **[common-pitfalls.md](common-pitfalls.md)** - Common mistakes and how to avoid them
 
 ## Guidelines
 

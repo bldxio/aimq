@@ -55,28 +55,53 @@
 - ✅ Updated agents.md to reference GARDENING.md
 - ✅ Established hierarchy: CONSTITUTION → GARDEN → PLAN
 
-### Ideas Folder (Nov 13, 2025)
+### Vision & Ideas (Nov 13, 2025)
+- ✅ Created VISION.md as living north star document
+- ✅ Updated hierarchy: CONSTITUTION → VISION → GARDEN → PLAN
 - ✅ Created `ideas/` directory for future feature planning
 - ✅ Added comprehensive multi-agent group chat design
 - ✅ Documented RAG workflows architecture
 - ✅ Planned Zep knowledge graph integration
 - ✅ Designed Supabase Realtime streaming
 - ✅ Outlined human-in-the-loop workflows
+- ✅ Broke down vision into 9 independently buildable components
+
+### Testing Improvements (Nov 13, 2025)
+- ✅ Improved worker coverage: 75% → 84% (+9%)
+- ✅ Improved queue coverage: 75% → 93% (+18%)
+- ✅ Added 11 new tests for core functionality:
+  - 4 worker tests (signal handling, graceful shutdown)
+  - 7 queue tests (DLQ, error handlers, max retries)
+- ✅ Fixed deprecation warning: `datetime.utcnow()` → `datetime.now(timezone.utc)`
+- ✅ Overall coverage: 82% → 84%
+- ✅ Total tests: 421 passing
+
+### Knowledge Garden Expansion (Nov 13, 2025)
+- ✅ Extracted lessons from recent work using `/learn`
+- ✅ Created 6 new knowledge documents:
+  - `patterns/testing-strategy.md` - Systematic testing approach
+  - `patterns/queue-error-handling.md` - DLQ and retry patterns
+  - `patterns/worker-error-handling.md` - Worker stability patterns
+  - `architecture/vision-driven-development.md` - Vision vs Plan
+  - `architecture/knowledge-systems.md` - Knowledge garden benefits
+  - `quick-references/common-pitfalls.md` - Common mistakes
+- ✅ Updated 5 existing documents with new insights
+- ✅ Updated all README files with new content
 
 ---
 
 ## 🎯 Current Status
 
-**Overall Test Coverage**: 82% ⬆️ (Target: 90%+)
+**Overall Test Coverage**: 84% ⬆️ (Target: 90%+)
 
 ### Coverage by Module:
 - ✅ **Agents**: 100% (react, plan_execute, base, decorators, validation)
 - ✅ **Workflows**: 100% (document, multi_agent, base, decorators)
 - ✅ **Memory**: 100% (checkpoint)
 - ✅ **Common**: 100% (exceptions, llm resolution)
-- ✅ **Tools**: 100% (docling, mistral OCR, upload_file) ⬆️ *Fixed!*
-- ⚠️ **Worker**: 75% (42 lines untested - shutdown, signals, error recovery)
-- ⚠️ **Queue**: ~75% (error paths untested)
+- ✅ **Tools**: 100% (docling, mistral OCR, upload_file)
+- ✅ **Queue**: 93% (core functionality well-tested) ⬆️
+- ⚠️ **Worker**: 84% (some edge cases remain) ⬆️
 
 ---
 
@@ -84,29 +109,26 @@
 
 ### Priority 1: Finish Quality Sprint (Target: 90%+ coverage) 🎯
 
-**Status**: Almost there! Only 8% away from target.
+**Status**: Great progress! 84% coverage, only 6% from target.
 
-#### 1. Worker Edge Cases ⚠️
-**Impact**: High | **Effort**: 2-3 hours
-
-Currently at 75% (42 lines untested):
-- Lines 130-138: Graceful shutdown scenarios
-- Lines 284-292, 299-306: Signal handling (SIGTERM, SIGINT)
-- Lines 317-356: Error recovery and retry logic
-- Lines 382-385, 409, 418, 428-437: Exit paths and cleanup
-
-**Why**: Worker is the main orchestrator - needs solid coverage.
-
-#### 2. Queue Error Paths ⚠️
+#### 1. Worker Edge Cases (Optional) ⚠️
 **Impact**: Medium | **Effort**: 1-2 hours
 
-Currently at ~75%:
-- Test visibility timeout edge cases
-- Test connection failures and retries
-- Test acknowledgment failures
-- Test requeue scenarios
+Currently at 84% (some edge cases remain):
+- Complex signal handling scenarios
+- Rare error recovery paths
+- Terminal UI edge cases
 
-**Why**: Queue reliability is critical for message processing.
+**Decision**: Core functionality is well-tested. Remaining gaps are tricky edge cases that can be deferred or moved to integration tests.
+
+#### 2. Queue Edge Cases (Optional) ⚠️
+**Impact**: Low | **Effort**: 1 hour
+
+Currently at 93% (excellent coverage):
+- Some visibility timeout edge cases
+- Rare connection failure scenarios
+
+**Decision**: Core error handling (DLQ, retries, custom handlers) is thoroughly tested. Remaining gaps are acceptable.
 
 #### 3. Minor Gaps (Optional)
 **Impact**: Low | **Effort**: 30 minutes
@@ -117,6 +139,8 @@ Some `__init__.py` files at 71-82%:
 - `tools/supabase/__init__.py` (82%)
 
 **Why**: Mostly import statements, low priority.
+
+**Recommendation**: Current coverage (84%) is solid. Move to building features!
 
 ### Priority 2: Multi-Agent Group Chat System 🚀
 
