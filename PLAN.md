@@ -100,6 +100,28 @@
   - pgmq function signatures
 - ✅ Updated pattern and quick-reference README files
 
+### Message Agent MVP (Nov 13, 2025)
+- ✅ Built composable message routing system in ~2 hours
+- ✅ Created 3 routing tools:
+  - `DetectMentions` - Extract @mentions from text
+  - `ResolveQueue` - Map mentions to queue names
+  - `LookupProfile` - Query Supabase profiles (ready for future)
+- ✅ Implemented `MessageRoutingWorkflow` for intelligent routing
+- ✅ Created working demo with 3 queues:
+  - `incoming-messages` - Entry point for all messages
+  - `default-assistant` - General questions handler
+  - `react-assistant` - Complex queries with tools
+- ✅ Added 39 comprehensive tests (all passing)
+- ✅ Fixed bugs:
+  - Mutable default arguments in tools
+  - Noisy logging in routing workflow
+  - Mistral API compatibility (`chat.complete` vs `chat.completions.create`)
+  - Message serialization for queue compatibility
+  - Email detection in @mention regex
+- ✅ Created demo script and queue clearing utility
+- ✅ Full documentation in `examples/message_agent/`
+- ✅ Committed: feat(routing): add composable message routing system (17f7204)
+
 ---
 
 ## 🎯 Current Status
@@ -115,29 +137,39 @@
 - ✅ **Queue**: 93% (core functionality well-tested) ⬆️
 - ⚠️ **Worker**: 84% (some edge cases remain) ⬆️
 
-### 🚀 Active Sprint: Message Agent MVP (Nov 13, 2025)
-**Goal**: Demo-ready message processing in ~2 hours
-**Status**: ✅ Complete!
+### 🐛 Known Issues (Nov 13, 2025)
 
-Built core message agent functionality:
-1. ✅ Message ingestion worker task with routing workflow
-2. ✅ Simple @mention routing (supports -assistant, _assistant, -bot, _bot)
-3. ✅ Agent response generation (default-assistant, react-assistant)
-4. ✅ Demo script and queue clearing utility
-5. ✅ Comprehensive tests (39 tests, all passing)
-6. ✅ Fixed Mistral API compatibility issue
+**Runtime Issues** (discovered during demo):
+1. **Tool validation errors**: `read_file` tool receiving empty dict instead of proper input
+   - Error: `'path' field required` with `input_value={}`
+   - Root cause: Agent not providing proper tool arguments
+   - Impact: Medium - affects file operations in react-assistant
 
-**Deliverables**:
-- 3 composable routing tools (DetectMentions, ResolveQueue, LookupProfile)
-- MessageRoutingWorkflow for intelligent routing
-- Working demo with 2 agents
-- Full documentation and examples
+2. **Unknown tool errors**: Agent attempting to use `browse_web` tool
+   - Error: Tool not registered in available tools
+   - Root cause: Agent hallucinating tool names or outdated training
+   - Impact: Low - agent should gracefully handle missing tools
 
-**Note**: Thread tree deferred (client-side handling)
+3. **Metadata None errors**: `read_file` tool failing when metadata is None
+   - Error: `unsupported operand type(s) for |: 'NoneType' and 'dict'`
+   - Root cause: Tool expects metadata dict, receives None
+   - Impact: Medium - needs defensive None checking
+
+**Next Steps**: Debug and fix these issues before production use
 
 ---
 
 ## 📋 Recommended Next Steps
+
+### Priority 0: Fix Message Agent Runtime Issues 🐛
+**Impact**: High | **Effort**: 1-2 hours
+
+Fix the runtime issues discovered during demo:
+1. **Tool validation errors** - Debug why agent sends empty dict to tools
+2. **Unknown tool handling** - Add graceful fallback for missing tools
+3. **Metadata None checks** - Add defensive None handling in tools
+
+**Why**: Demo is working but has rough edges that need smoothing.
 
 ### Priority 1: Finish Quality Sprint (Target: 90%+ coverage) 🎯
 
@@ -296,20 +328,34 @@ See `ideas/human-in-the-loop.md` for full design:
 
 ## 🚀 Immediate Action Plan
 
-**Decision**: Option A - Finish Quality Sprint, then build Multi-Agent Group Chat
+**Decision**: Fix runtime issues, then continue with Multi-Agent Group Chat
 
-### Phase 1: Quality Sprint (This Week) 🎯
-**Goal**: Hit 90%+ test coverage
+### Phase 0: Fix Message Agent Issues (Today) 🐛
+**Goal**: Smooth out runtime issues from demo
 
 **Tasks**:
+1. Debug tool validation errors (30-45 min)
+   - Why is agent sending empty dict?
+   - Add better error messages
+   - Test with various inputs
+2. Add unknown tool handling (15-30 min)
+   - Graceful fallback when tool not found
+   - Log warning instead of crashing
+3. Fix metadata None checks (15-30 min)
+   - Add defensive None handling in read_file
+   - Check other tools for similar issues
+
+**Total**: ~1-2 hours
+**Result**: Demo runs smoothly without errors
+
+### Phase 1: Quality Sprint (Optional) 🎯
+**Goal**: Hit 90%+ test coverage
+
+**Status**: Current coverage (84%) is solid. Can defer to focus on features.
+
+**Tasks** (if pursuing):
 1. Add worker edge case tests (2-3 hours)
-   - Shutdown scenarios
-   - Signal handling
-   - Error recovery
 2. Add queue error path tests (1-2 hours)
-   - Timeout handling
-   - Connection failures
-   - Requeue scenarios
 3. Optional: Clean up __init__.py coverage (30 min)
 
 **Total**: ~4-5 hours
@@ -417,4 +463,4 @@ See `ideas/README.md` for contribution guidelines.
 
 ---
 
-**Next Steps**: Finish quality sprint, then start on multi-agent group chat MVP! 🚀
+**Next Steps**: Fix runtime issues, then continue building multi-agent group chat MVP! 🚀

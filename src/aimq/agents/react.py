@@ -202,10 +202,16 @@ class ReActAgent(BaseAgent):
 You have access to these tools:
 {self._format_tools()}
 
-Respond in this format:
+Respond in this EXACT format:
 THOUGHT: <your reasoning>
 ACTION: <tool_name>
-INPUT: <tool input as JSON>
+INPUT: {{"param1": "value1", "param2": "value2"}}
+
+IMPORTANT: INPUT must be valid JSON on a single line with double quotes.
+
+Examples:
+- For weather tool: INPUT: {{"location": "San Francisco"}}
+- For query_table tool: INPUT: {{"table": "competitors", "filters": "sport_code:eq:basketball"}}
 
 OR if you have the final answer:
 THOUGHT: <your reasoning>
@@ -234,9 +240,12 @@ ANSWER: <final answer>
             if line.startswith("ACTION:"):
                 action["tool"] = line.replace("ACTION:", "").strip()
             elif line.startswith("INPUT:"):
+                input_str = line.replace("INPUT:", "").strip()
                 try:
-                    action["input"] = json.loads(line.replace("INPUT:", "").strip())
-                except json.JSONDecodeError:
+                    action["input"] = json.loads(input_str)
+                except json.JSONDecodeError as e:
+                    logger.warning(f"Failed to parse tool input JSON: {input_str}")
+                    logger.warning(f"JSON error: {e}")
                     action["input"] = {}
             elif line.startswith("ANSWER:"):
                 action["answer"] = line.replace("ANSWER:", "").strip()

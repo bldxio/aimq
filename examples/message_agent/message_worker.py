@@ -36,13 +36,56 @@ Usage:
     }'
 """
 
+from langchain_core.runnables import RunnableLambda
+
 from aimq.agents import ReActAgent
+from aimq.clients.supabase import supabase
 from aimq.tools.ocr import ImageOCR
-from aimq.tools.supabase import ReadFile, ReadRecord
+from aimq.tools.supabase import QueryTable, ReadFile, ReadRecord
+from aimq.tools.weather import Weather
 from aimq.worker import Worker
 from aimq.workflows import MessageRoutingWorkflow
 
 worker = Worker()
+
+OUTBOUND_QUEUE = "outgoing-messages"
+
+
+def create_agent_with_outbound(agent):
+    """Wrap an agent to send responses to the outbound queue.
+
+    Args:
+        agent: The agent to wrap
+
+    Returns:
+        A runnable that processes messages and sends responses to outbound queue
+    """
+
+    def process_and_respond(state: dict) -> dict:
+        result = agent.invoke(state)
+
+        outbound_payload = {
+            "message_id": state.get("metadata", {}).get("message_id"),
+            "sender": state.get("metadata", {}).get("sender"),
+            "workspace_id": state.get("metadata", {}).get("workspace_id"),
+            "channel_id": state.get("metadata", {}).get("channel_id"),
+            "thread_id": state.get("metadata", {}).get("thread_id"),
+            "agent_response": result,
+            "metadata": state.get("metadata", {}),
+        }
+
+        supabase.client.schema("pgmq_public").rpc(
+            "send", {"queue_name": OUTBOUND_QUEUE, "message": outbound_payload}
+        ).execute()
+
+        worker.logger.info(
+            f"Sent response for message {outbound_payload['message_id']} to {OUTBOUND_QUEUE}",
+            {"message_id": outbound_payload["message_id"], "queue": OUTBOUND_QUEUE},
+        )
+
+        return result
+
+    return RunnableLambda(process_and_respond)
 
 
 @worker.task(queue="incoming-messages", timeout=60)
@@ -103,32 +146,40 @@ default_agent = ReActAgent(
     max_iterations=5,
 )
 
-# Assign agent directly to queue - it handles message conversion automatically
-worker.assign(default_agent, queue="default-assistant", timeout=300)
+worker.assign(create_agent_with_outbound(default_agent), queue="default-assistant", timeout=300)
 
 
 react_agent = ReActAgent(
     tools=[
+        Weather(),
+        QueryTable(),
         ReadFile(),
         ReadRecord(),
         ImageOCR(),
     ],
     system_prompt="""You are a helpful ReAct assistant with access to tools.
-    You can read files, extract text from images, and query databases.
+    You can get weather information, query sports databases, read files, extract text from images, and more.
     Use your tools to gather information and provide accurate, helpful responses.
+
+    Available tools:
+    - weather: Get current weather for any location (accepts natural language)
+    - query_table: Query the competitors table (teams, players, sports data)
+    - read_file: Read files from Supabase storage
+    - read_record: Read database records
+    - image_ocr: Extract text from images
 
     When using tools:
     - Be thorough but efficient
     - Explain what you're doing
-    - Provide clear, actionable answers""",
+    - Provide clear, actionable answers
+    - Format sports data in a readable way""",
     llm="mistral-large-latest",
     temperature=0.1,
     memory=False,
     max_iterations=10,
 )
 
-# Assign agent directly to queue - it handles message conversion automatically
-worker.assign(react_agent, queue="react-assistant", timeout=600)
+worker.assign(create_agent_with_outbound(react_agent), queue="react-assistant", timeout=600)
 
 
 if __name__ == "__main__":

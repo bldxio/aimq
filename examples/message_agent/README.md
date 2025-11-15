@@ -20,17 +20,73 @@ MessageRoutingWorkflow
 Agent Queues
     ├─ default-assistant (general responses)
     └─ react-assistant (tool-powered responses)
+    ↓
+outgoing-messages queue
+    ↓
+Client (CLI/API) polls and archives
 ```
 
-## 🔧 Composable Tools
+**Flow:**
+1. Client sends message to `incoming-messages`
+2. Worker routes to appropriate agent queue
+3. Agent processes and sends response to `outgoing-messages`
+4. Client polls `outgoing-messages` by message_id
+5. Client archives message after reading
 
-All tools are reusable and can be composed into custom workflows:
+## 🔧 Tools
+
+### Routing Tools (Composable)
+
+All routing tools are reusable and can be composed into custom workflows:
 
 - **DetectMentions** - Extracts @mentions from text using regex
 - **ResolveQueue** - Maps mentions to queue names (supports `-assistant`, `_assistant`, `-bot`, `_bot`)
 - **LookupProfile** - Queries Supabase profiles table (optional, for future use)
 
+### Agent Tools (react-assistant)
+
+The react-assistant has access to powerful tools:
+
+- **Weather** 🌤️ - Get current weather for any location (natural language supported)
+- **QueryTable** 🗄️ - Query Supabase competitors table (teams, players, sports data)
+- **ReadFile** 📄 - Read files from Supabase storage
+- **ReadRecord** 📊 - Read database records
+- **ImageOCR** 🖼️ - Extract text from images
+
 ## 🚀 Quick Start
+
+### Option 1: Interactive Chat (Recommended!) 🎨
+
+The easiest and most impressive way to demo:
+
+```bash
+# Terminal 1: Start the worker
+uv run python examples/message_agent/message_worker.py
+
+# Terminal 2: Start the interactive chat
+uv run python examples/message_agent/chat_cli.py
+```
+
+Then chat naturally:
+- `What's the weather in San Francisco?`
+- `@react-assistant Show me NBA teams`
+- `@react-assistant Find basketball players`
+
+See [CHAT_DEMO.md](./CHAT_DEMO.md) for full guide!
+
+### Option 2: Programmatic Demo
+
+Run the automated demo script:
+
+```bash
+# Terminal 1: Start the worker
+uv run python examples/message_agent/message_worker.py
+
+# Terminal 2: Run demo
+uv run python examples/message_agent/demo.py
+```
+
+### Option 3: Manual Queue Messages
 
 ### 1. Start the Worker
 
