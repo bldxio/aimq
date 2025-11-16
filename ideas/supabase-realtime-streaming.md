@@ -1,191 +1,348 @@
 # Supabase Realtime Streaming
 
-**Status**: 🌱 Future Feature
-**Priority**: High - Needed for great UX
+**Status**: 🚧 In Progress (Worker Wake-up + Presence)
+**Priority**: Critical - Needed for responsive UX
 **Complexity**: Medium
-**Estimated Effort**: 1 week
+**Estimated Effort**: 1 week total (Phase 1: 4-5 hours, Phase 2: 2-3 hours)
 
 ---
 
 ## What
 
 Integration with Supabase Realtime for bidirectional streaming between workers and clients. This enables:
-- Workers receive instant notifications of new jobs (no polling)
-- Workers stream progress updates to clients (no database writes)
-- Clients see live agent responses as they're generated
+- Workers receive instant notifications of new jobs (no polling delays)
+- Workers report presence/status for observability
+- Workers stream progress updates to clients (future)
+- Clients see live agent responses as they're generated (future)
 
 ### Key Features
 
-- **Worker Job Notifications**: Instant notification when new message arrives
-- **Progress Streaming**: Stream agent reasoning steps to clients
+#### ✅ Phase 1: Worker Wake-up + Presence (Current)
+- **Instant Job Notifications**: Workers wake immediately when jobs enqueued
+- **Worker Presence**: Track which workers are online, idle/busy status
+- **Graceful Fallback**: Polling continues if realtime fails
+- **Auto-enable**: Realtime on by default when Supabase configured
+
+#### 🔮 Phase 2: DB Triggers (Next)
+- **PostgreSQL Triggers**: Emit realtime events from pgmq operations
+- **Decoupled Architecture**: Works even if jobs enqueued outside AIMQ
+- **Migration Helpers**: Easy setup for new deployments
+
+#### 🔮 Phase 3: Progress Streaming (Future)
 - **Typing Indicators**: Show when agents are "thinking"
-- **Partial Responses**: Stream response chunks as they're generated
+- **Reasoning Steps**: Stream agent thought process
+- **Partial Responses**: Stream response chunks as generated
 - **Error Notifications**: Real-time error updates
-- **Presence**: Track which agents are active
 
 ---
 
 ## Why
 
 ### Business Value
-- **Better UX**: Users see progress in real-time
-- **Reduced Latency**: No polling delays
+- **Better UX**: Sub-second response times instead of 1-60s polling delays
+- **Observability**: Real-time worker status for monitoring/debugging
 - **Lower Costs**: Fewer database reads/writes
-- **Transparency**: Users see what agents are doing
+- **Transparency**: Users see what agents are doing (future)
 
 ### Technical Value
 - **Efficient**: WebSocket-based, low overhead
 - **Scalable**: Supabase handles connection management
 - **Simple**: Built into Supabase, no extra infrastructure
 - **Reliable**: Automatic reconnection and error handling
+- **Decoupled**: DB triggers work regardless of client implementation
 
 ---
 
 ## Architecture
 
+### Architecture Decisions (Nov 15, 2025)
+
+**Key Decisions**:
+1. **Single Broadcast Channel**: All workers share one `worker-wakeup` channel
+   - Simpler than per-queue channels
+   - pgmq handles job deduplication
+   - Workers check all their queues on wake-up
+
+2. **Minimal Job Info in Payload**:
+   ```json
+   {
+     "queue": "incoming-messages",
+     "job_id": 12345
+   }
+   ```
+   - Workers can prioritize/filter but still check all queues
+   - Keeps payload small and fast
+
+3. **DB Triggers for Emit** (Phase 2):
+   - PostgreSQL trigger on pgmq operations
+   - Completely decoupled from Python code
+   - Works even if jobs enqueued outside AIMQ
+   - More reliable and consistent
+
+4. **Auto-enable by Default**:
+   - If Supabase configured, realtime is enabled
+   - No opt-in flag needed
+   - Graceful fallback to polling if realtime fails
+
+5. **Presence for Observability**:
+   - Workers report status via Realtime Presence
+   - Track: worker name, queues, status (idle/busy), current job
+   - Foundation for future queue dashboard
+
+6. **Error Handling Strategy**:
+   - Realtime failures don't stop workers
+   - Continue polling normally (existing behavior)
+   - Reconnect with exponential backoff
+   - Log errors for debugging
+
 ### Current Flow (Polling)
 
 ```
-User sends message
+Job enqueued to pgmq
     ↓
-Frontend writes to DB
+Worker polls every 1-60s ⏰ (exponential backoff)
     ↓
-Worker polls DB every N seconds ⏰
+Worker finds job and processes
     ↓
-Worker processes message
-    ↓
-Worker writes response to DB
-    ↓
-Frontend polls DB for updates ⏰
-    ↓
-User sees response
+Response written to DB
 ```
 
 **Problems**:
-- Polling delay (N seconds)
-- Unnecessary DB queries
-- No progress updates
+- Polling delay (1-60 seconds)
+- Unnecessary DB queries when idle
+- No visibility into worker status
 - Wasteful
 
-### New Flow (Realtime)
+### New Flow (Phase 1: Worker Wake-up + Presence)
 
 ```
-User sends message
+Job enqueued to pgmq
     ↓
-Frontend writes to DB
+[Future: DB trigger] → Realtime broadcast → All workers 🚀
     ↓
-DB trigger → Realtime notification → Worker 🚀
+Workers wake instantly, check queues
     ↓
-Worker processes message
-    ├─ Stream progress → Realtime channel → Frontend 🚀
-    ├─ Stream reasoning → Realtime channel → Frontend 🚀
-    └─ Stream response chunks → Realtime channel → Frontend 🚀
+First worker gets job (pgmq deduplication)
     ↓
-Worker writes final response to DB
+Worker updates presence: busy, current_job_id
     ↓
-User sees response (already streamed!)
+Worker processes job
+    ↓
+Worker updates presence: idle
+    ↓
+Response written to DB
 ```
 
 **Benefits**:
-- Instant notification
-- Live progress updates
-- No polling
-- Efficient
+- Sub-second wake-up (vs 1-60s polling)
+- Real-time worker status visibility
+- Polling continues as fallback
+- Foundation for future streaming
+
+### Future Flow (Phase 3: Progress Streaming)
+
+```
+Job enqueued → DB trigger → Workers wake 🚀
+    ↓
+Worker processes job
+    ├─ Stream progress → Realtime → Clients 🚀
+    ├─ Stream reasoning → Realtime → Clients 🚀
+    └─ Stream response chunks → Realtime → Clients 🚀
+    ↓
+Worker writes final response to DB
+    ↓
+Clients see response (already streamed!)
+```
 
 ---
 
 ## Technical Design
 
-### Realtime Channels
+### Phase 1: Worker Wake-up + Presence (Current Implementation)
 
-Supabase Realtime uses channels for pub/sub messaging:
+#### RealtimeWakeupService
 
-```typescript
-// Frontend subscribes to channel
-const channel = supabase.channel(`workspace:${workspaceId}:channel:${channelId}`)
+New service class that manages async realtime connection in a dedicated thread:
 
-// Listen for agent updates
-channel.on('broadcast', { event: 'agent_update' }, (payload) => {
-  console.log('Agent update:', payload)
-})
+```python
+class RealtimeWakeupService:
+    """Manages Supabase Realtime connection for worker wake-up and presence.
 
-// Subscribe
-channel.subscribe()
+    Features:
+    - Runs in dedicated daemon thread with asyncio event loop
+    - Subscribes to broadcast channel for job notifications
+    - Reports worker presence (online/offline, idle/busy)
+    - Thread-safe wake-up signaling to worker threads
+    - Graceful reconnection with exponential backoff
+    - No-op when Supabase not configured
+    """
+
+    def __init__(self, url: str, key: str, worker_name: str, queues: list[str]):
+        self._url = url
+        self._key = key
+        self._worker_name = worker_name
+        self._queues = queues
+        self._channel_name = "worker-wakeup"
+        self._loop = asyncio.new_event_loop()
+        self._thread = threading.Thread(target=self._run_loop, daemon=True)
+        self._shutdown = threading.Event()
+        self._worker_events: set[threading.Event] = set()
+        self._lock = threading.Lock()
+        self._client: AsyncClient | None = None
+        self._channel = None
+
+    async def _connect(self):
+        """Connect to Supabase Realtime and subscribe to channels."""
+        self._client = await acreate_client(self._url, self._key)
+        self._channel = self._client.channel(self._channel_name)
+
+        # Subscribe to broadcast events (job notifications)
+        self._channel.on(
+            "broadcast",
+            {"event": "job_enqueued"},
+            self._handle_job_notification,
+        )
+
+        # Track presence (worker status)
+        await self._channel.track({
+            "worker": self._worker_name,
+            "queues": self._queues,
+            "status": "idle",
+            "current_job": None,
+        })
+
+        await self._channel.subscribe()
+
+    def _handle_job_notification(self, payload):
+        """Handle job notification broadcast."""
+        # Payload: {"queue": "incoming-messages", "job_id": 12345}
+        # Wake all registered worker threads
+        with self._lock:
+            for event in self._worker_events:
+                event.set()
+
+    async def update_presence(self, status: str, current_job: int | None = None):
+        """Update worker presence status."""
+        if self._channel:
+            await self._channel.track({
+                "worker": self._worker_name,
+                "queues": self._queues,
+                "status": status,  # "idle" or "busy"
+                "current_job": current_job,
+            })
 ```
 
-### Worker Job Notifications
+#### Worker Thread Integration
 
-**Option 1: Database Triggers + Realtime**
+```python
+class WorkerThread(threading.Thread):
+    def __init__(self, ..., realtime_service: RealtimeWakeupService | None = None):
+        super().__init__()
+        self.realtime_service = realtime_service
+        self.wakeup_event = threading.Event()
+
+        if self.realtime_service:
+            self.realtime_service.register_worker(self.wakeup_event)
+
+    def run(self):
+        while self.running.is_set():
+            found_jobs = False
+
+            for queue in self.queues.values():
+                if not self.running.is_set():
+                    break
+
+                # Update presence: busy
+                if self.realtime_service:
+                    asyncio.run_coroutine_threadsafe(
+                        self.realtime_service.update_presence("busy"),
+                        self.realtime_service._loop
+                    )
+
+                result = queue.work()
+
+                if result is not None:
+                    found_jobs = True
+                    self.current_backoff = self.idle_wait
+
+            # Update presence: idle
+            if self.realtime_service:
+                asyncio.run_coroutine_threadsafe(
+                    self.realtime_service.update_presence("idle"),
+                    self.realtime_service._loop
+                )
+
+            if not found_jobs:
+                # Interruptible sleep with realtime wake-up
+                sleep_start = time.time()
+                self.wakeup_event.clear()
+
+                while (time.time() - sleep_start) < self.current_backoff:
+                    if not self.running.is_set():
+                        break
+                    if self.wakeup_event.is_set():
+                        # Woken by realtime notification!
+                        self.current_backoff = self.idle_wait
+                        break
+                    time.sleep(0.1)
+```
+
+#### Configuration
+
+```python
+# config.py
+SUPABASE_REALTIME_CHANNEL: str = env.str("SUPABASE_REALTIME_CHANNEL", default="worker-wakeup")
+SUPABASE_REALTIME_EVENT: str = env.str("SUPABASE_REALTIME_EVENT", default="job_enqueued")
+
+# Auto-enable if Supabase configured
+@property
+def supabase_realtime_enabled(self) -> bool:
+    return bool(self.supabase_url and self.supabase_key)
+```
+
+### Phase 2: DB Triggers (Future Implementation)
+
+PostgreSQL trigger to emit realtime events on pgmq operations:
 
 ```sql
--- Trigger on new message
-CREATE OR REPLACE FUNCTION notify_new_message()
+-- Function to emit realtime notification
+CREATE OR REPLACE FUNCTION pgmq_notify_job_enqueued()
 RETURNS TRIGGER AS $$
 BEGIN
-  -- Notify via pg_notify (picked up by Realtime)
+  -- Emit to Supabase Realtime via pg_notify
   PERFORM pg_notify(
-    'new_message',
+    'realtime:worker-wakeup',
     json_build_object(
-      'message_id', NEW.id,
-      'workspace_id', NEW.workspace_id,
-      'channel_id', NEW.channel_id,
-      'author_id', NEW.author_id
+      'type', 'broadcast',
+      'event', 'job_enqueued',
+      'payload', json_build_object(
+        'queue', TG_TABLE_NAME,
+        'job_id', NEW.msg_id
+      )
     )::text
   );
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER new_message_trigger
-AFTER INSERT ON messages
+-- Trigger on pgmq queue inserts
+-- Note: This is a template, actual trigger creation will be per-queue
+CREATE TRIGGER notify_job_enqueued
+AFTER INSERT ON pgmq_public.q_{queue_name}
 FOR EACH ROW
-EXECUTE FUNCTION notify_new_message();
+EXECUTE FUNCTION pgmq_notify_job_enqueued();
 ```
 
-```python
-# Worker subscribes to notifications
-from supabase import create_client
-
-supabase = create_client(url, key)
-
-# Subscribe to new message notifications
-channel = supabase.channel('new_messages')
-
-@channel.on_postgres_changes(
-    event='INSERT',
-    schema='public',
-    table='messages',
-    callback=handle_new_message
-)
-async def handle_new_message(payload):
-    """Handle new message notification"""
-    message_id = payload['record']['id']
-    await process_message(message_id)
-
-# Subscribe
-await channel.subscribe()
-```
-
-**Option 2: Broadcast Channel**
+**Migration Helper** (Python):
 
 ```python
-# Frontend broadcasts new message
-await supabase.channel('worker_jobs').send({
-    'type': 'broadcast',
-    'event': 'new_message',
-    'payload': {
-        'message_id': message_id,
-        'workspace_id': workspace_id,
-        'channel_id': channel_id
-    }
-})
-
-# Worker listens
-channel = supabase.channel('worker_jobs')
-
-@channel.on_broadcast(event='new_message')
-async def handle_new_message(payload):
-    await process_message(payload['message_id'])
+def setup_realtime_triggers(queue_name: str):
+    """Set up realtime triggers for a pgmq queue."""
+    supabase.client.rpc("create_pgmq_realtime_trigger", {
+        "queue_name": queue_name,
+        "channel": "worker-wakeup",
+        "event": "job_enqueued"
+    }).execute()
 ```
 
 ### Progress Streaming
@@ -371,54 +528,102 @@ agent = ReActAgent(
 
 ## Implementation Phases
 
-### Phase 1: Worker Notifications (Week 1)
-- [ ] Set up Supabase Realtime
-- [ ] Create database triggers for new messages
-- [ ] Implement worker Realtime listener
-- [ ] Test instant job notifications
-- [ ] Remove polling (or keep as fallback)
+### Phase 1: Worker Wake-up + Presence (Current - 4-5 hours)
+**Branch**: `feature/supabase-realtime-wake`
 
-### Phase 2: Progress Streaming (Week 1)
+- [ ] Add configuration (auto-enable, channel name, event name)
+- [ ] Create `RealtimeWakeupService` class
+  - [ ] Async client connection in dedicated thread
+  - [ ] Subscribe to broadcast channel
+  - [ ] Handle job notifications
+  - [ ] Track worker presence
+  - [ ] Reconnection with exponential backoff
+- [ ] Integrate with `WorkerThread`
+  - [ ] Register wake-up events
+  - [ ] Check event during idle sleep
+  - [ ] Update presence on status changes
+- [ ] Add tests
+  - [ ] Service connection/reconnection
+  - [ ] Worker wake-up on broadcast
+  - [ ] Presence tracking
+  - [ ] Graceful fallback when realtime fails
+- [ ] Documentation
+  - [ ] Configuration options
+  - [ ] Architecture overview
+  - [ ] Troubleshooting guide
+
+**Success Criteria**:
+- Workers wake within 1 second of job enqueue (manual broadcast test)
+- Presence accurately reflects worker status
+- Polling continues if realtime fails
+- No crashes or hangs
+
+### Phase 2: DB Triggers (Next - 2-3 hours)
+**Branch**: `feature/pgmq-realtime-triggers`
+
+- [ ] Design trigger function for pgmq queues
+- [ ] Create PostgreSQL migration
+  - [ ] Trigger function
+  - [ ] Per-queue trigger creation
+- [ ] Add Python migration helpers
+  - [ ] `setup_realtime_triggers(queue_name)`
+  - [ ] Auto-setup on queue creation (optional)
+- [ ] Test trigger emissions
+  - [ ] Verify payload structure
+  - [ ] Test with multiple queues
+  - [ ] Load testing
+- [ ] Documentation
+  - [ ] Migration guide
+  - [ ] Manual setup instructions
+  - [ ] Troubleshooting
+
+**Success Criteria**:
+- Triggers emit on every pgmq send
+- Workers wake instantly (<1s)
+- Works with jobs enqueued outside AIMQ
+- No performance impact on pgmq
+
+### Phase 3: Progress Streaming (Future - 1 week)
+**Status**: Deferred until Phase 1 & 2 complete
+
 - [ ] Create streaming callback handler
 - [ ] Implement progress events (typing, reasoning, chunks)
 - [ ] Add frontend Realtime subscription
 - [ ] Test streaming in UI
 - [ ] Handle reconnection and errors
-
-### Phase 3: Polish (Week 1)
 - [ ] Add typing indicators
-- [ ] Add presence tracking
 - [ ] Optimize channel management
-- [ ] Add error handling
 - [ ] Load testing
 
 ---
 
 ## Open Questions
 
-1. **Channel Strategy**: One channel per workspace or per channel?
-   - Per workspace: Fewer connections, more filtering
-   - Per channel: More connections, less filtering
-   - Hybrid: Workspace for workers, channel for clients
+### Resolved (Nov 15, 2025)
 
-2. **Fallback**: Keep polling as fallback?
-   - Yes: More reliable, redundant
-   - No: Simpler, trust Realtime
+1. ✅ **Channel Strategy**: Single `worker-wakeup` channel for all workers
+2. ✅ **Fallback**: Keep polling as fallback (graceful degradation)
+3. ✅ **Payload**: Include minimal job info (queue, job_id)
+4. ✅ **Emit Strategy**: DB triggers (Phase 2) for reliability
+5. ✅ **Auto-enable**: Enabled by default when Supabase configured
+6. ✅ **Presence**: Track worker status for observability
 
-3. **Message Persistence**: When to write to DB?
-   - Stream only: Fast, but lost if client disconnects
-   - Stream + final write: Best UX, redundant
-   - Write only: Simple, no streaming
+### Future Considerations
 
-4. **Error Handling**: What if streaming fails?
-   - Retry streaming
-   - Fall back to polling
-   - Write to DB and notify
-
-5. **Rate Limiting**: How to handle high-frequency updates?
+1. **Rate Limiting**: How to handle high-frequency updates in Phase 3?
    - Throttle streaming (e.g., max 10 updates/sec)
    - Batch chunks
    - Debounce updates
+
+2. **Multi-tenancy**: Do we need per-tenant isolation?
+   - Current: Single channel for all workers
+   - Future: May need tenant-specific channels
+
+3. **Metrics**: What observability do we need?
+   - Reconnection counts
+   - Wake-up latency
+   - Presence accuracy
+   - Channel health
 
 ---
 
@@ -447,5 +652,6 @@ agent = ReActAgent(
 
 ---
 
-**Last Updated**: 2025-11-13
-**Status**: Planning - high priority for UX
+**Last Updated**: 2025-11-15
+**Status**: In Progress - Phase 1 (Worker Wake-up + Presence)
+**Branch**: `feature/supabase-realtime-wake`

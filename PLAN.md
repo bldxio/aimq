@@ -182,54 +182,72 @@
 ## 📋 Recommended Next Steps
 
 ### Priority 0: Supabase Realtime for Worker Wake-up 🚀
-**Impact**: Critical | **Effort**: 4-6 hours | **Status**: Architecture Planning
+**Impact**: Critical | **Effort**: 4-5 hours (Phase 1) + 2-3 hours (Phase 2) | **Status**: ✅ Architecture Finalized, Starting Implementation
+
+**Branch**: `feature/supabase-realtime-wake`
 
 **Goal**: Eliminate polling latency by using Supabase realtime to wake idle workers instantly
 
-**Architecture** (under discussion):
-- Focus on worker performance (CLI was just for demo)
-- Keep existing polling mechanism exactly as-is
-- Add realtime channel listener that workers subscribe to
-- When job enqueued → emit realtime event → all idle workers wake and check
-- Workers don't need job details, just a signal to check their queues
-- pgmq ensures only one worker gets each job (existing behavior)
-- Result: Idle workers respond instantly, busy workers continue normally
+**Architecture** (finalized Nov 15, 2025):
+- Single broadcast channel (`worker-wakeup`) shared by all workers
+- Minimal job info in payload: `{"queue": "name", "job_id": 123}`
+- Workers subscribe to channel and wake on broadcast
+- Workers report presence (online/offline, idle/busy status)
+- Keep existing polling as fallback (graceful degradation)
+- DB triggers emit events (Phase 2) for reliability
+- Auto-enabled when Supabase configured
 
 **Key Design Decisions**:
-- ✅ Keep polling as fallback/baseline (no changes to existing logic)
-- ✅ Realtime is an optimization layer on top
-- ✅ Multiple workers can respond to same signal (pgmq handles deduplication)
-- ✅ Simple signal: "check your queues" (no job details in realtime event)
-- ⚠️ Architecture still being finalized
+- ✅ Single channel for all workers (simpler, pgmq handles deduplication)
+- ✅ Broadcast channel for job notifications
+- ✅ Presence tracking for worker observability
+- ✅ Keep polling as fallback (no changes to existing logic)
+- ✅ Auto-enable by default (no opt-in flag)
+- ✅ DB triggers for emit (Phase 2, decoupled from Python)
+- ✅ Graceful error handling (realtime failures don't stop workers)
 
-**Tasks** (tentative):
-1. Design realtime channel schema (30 min)
-   - Channel topic: `jobs:enqueued` or similar
-   - Minimal payload: just a wake-up signal
-   - Security model: who can publish/subscribe?
+**Phase 1: Worker Wake-up + Presence** (4-5 hours):
+1. Add configuration (30 min)
+   - `SUPABASE_REALTIME_CHANNEL` (default: "worker-wakeup")
+   - `SUPABASE_REALTIME_EVENT` (default: "job_enqueued")
+   - Auto-enable when Supabase configured
 
-2. Implement realtime listener in worker (2-3 hours)
-   - Subscribe to realtime channel on worker startup
-   - On event received: interrupt sleep, trigger immediate poll
-   - Handle connection drops/reconnects gracefully
-   - Ensure thread-safe integration with existing poll loop
+2. Create `RealtimeWakeupService` (2-3 hours)
+   - Async client in dedicated daemon thread
+   - Subscribe to broadcast channel
+   - Handle job notifications (wake workers)
+   - Track worker presence (idle/busy)
+   - Reconnection with exponential backoff
+   - Thread-safe wake-up signaling
 
-3. Emit realtime events on job enqueue (1-2 hours)
-   - Modify queue enqueue to emit realtime event
-   - Use Supabase service key for publishing
-   - Handle failures gracefully (don't block enqueue)
+3. Integrate with `WorkerThread` (1 hour)
+   - Register wake-up events
+   - Check event during idle sleep
+   - Update presence on status changes
+   - Graceful fallback if realtime unavailable
 
-4. Configuration & testing (1-2 hours)
-   - Add Supabase realtime config to environment
-   - Integration tests: enqueue → workers wake instantly
-   - Load testing: multiple workers, multiple queues
-   - Measure latency improvement
+4. Tests & documentation (1 hour)
+   - Service connection/reconnection
+   - Worker wake-up on broadcast
+   - Presence tracking
+   - Graceful fallback
+   - Configuration guide
 
-**Open Questions**:
-- Which Supabase Python client library supports realtime?
-- Should we use a single channel or per-queue channels?
-- How to handle realtime connection failures?
-- Should we emit on every enqueue or batch signals?
+**Phase 2: DB Triggers** (2-3 hours, separate branch):
+1. Design PostgreSQL trigger function
+2. Create migration for pgmq queues
+3. Add Python migration helpers
+4. Test trigger emissions
+5. Documentation
+
+**Success Criteria**:
+- ✅ Workers wake within 1 second of job enqueue
+- ✅ Presence accurately reflects worker status
+- ✅ Polling continues if realtime fails
+- ✅ No crashes or hangs
+- ✅ Works with multiple workers
+
+**Documentation**: See `ideas/supabase-realtime-streaming.md` for full architecture
 
 ### Priority 1: Weather API Reliability 🌤️
 **Impact**: High | **Effort**: 1-2 hours | **Status**: Planning
