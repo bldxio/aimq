@@ -49,7 +49,7 @@ class ReadFile(BaseTool):
         self,
         path: Optional[str] = None,
         bucket: Optional[str] = None,
-        metadata: Dict[str, Any] = {},
+        metadata: Optional[Dict[str, Any]] = None,
         config: RunnableConfig = RunnableConfig(),
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> dict:
@@ -61,6 +61,9 @@ class ReadFile(BaseTool):
             metadata: Optional metadata to attach to the file
         """
         try:
+            if metadata is None:
+                metadata = {}
+
             template_args = metadata | {
                 "path": path,
                 "bucket": bucket,

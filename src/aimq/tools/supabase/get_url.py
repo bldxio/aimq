@@ -47,7 +47,7 @@ class GetUrl(BaseTool):
         self,
         path: str,
         bucket: Optional[str] = None,
-        metadata: Dict[str, Any] = {},
+        metadata: Optional[Dict[str, Any]] = None,
         config: RunnableConfig = RunnableConfig(),
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> dict:
@@ -59,6 +59,9 @@ class GetUrl(BaseTool):
             metadata: Optional metadata to attach to the file
         """
         try:
+            if metadata is None:
+                metadata = {}
+
             template_args = metadata | {
                 "path": path,
                 "bucket": bucket,

@@ -88,6 +88,49 @@
 - ✅ Updated 5 existing documents with new insights
 - ✅ Updated all README files with new content
 
+### Message Agent Lessons (Nov 13, 2025)
+- ✅ Extracted lessons from message agent development using `/learn`
+- ✅ Created 3 new knowledge documents:
+  - `patterns/composable-tools.md` - Build small, focused tools that compose
+  - `patterns/demo-driven-development.md` - Use demo deadlines to focus
+  - `quick-references/llm-api-differences.md` - LLM provider API compatibility
+- ✅ Updated `quick-references/common-pitfalls.md` with 3 new sections:
+  - Message serialization for queues (LangChain objects)
+  - Regex edge cases (email addresses in @mentions)
+  - pgmq function signatures
+- ✅ Updated pattern and quick-reference README files
+
+### Message Agent MVP (Nov 13, 2025)
+- ✅ Built composable message routing system in ~2 hours
+- ✅ Created 3 routing tools:
+  - `DetectMentions` - Extract @mentions from text
+  - `ResolveQueue` - Map mentions to queue names
+  - `LookupProfile` - Query Supabase profiles (ready for future)
+- ✅ Implemented `MessageRoutingWorkflow` for intelligent routing
+- ✅ Created working demo with 3 queues:
+  - `incoming-messages` - Entry point for all messages
+  - `default-assistant` - General questions handler
+  - `react-assistant` - Complex queries with tools
+- ✅ Added 39 comprehensive tests (all passing)
+- ✅ Fixed bugs:
+  - Mutable default arguments in tools
+  - Noisy logging in routing workflow
+  - Mistral API compatibility (`chat.complete` vs `chat.completions.create`)
+  - Message serialization for queue compatibility
+  - Email detection in @mention regex
+- ✅ Created demo script and queue clearing utility
+- ✅ Full documentation in `examples/message_agent/`
+- ✅ Committed: feat(routing): add composable message routing system (17f7204)
+
+### Interactive Chat CLI (Nov 15, 2025)
+- ✅ Built beautiful Rich-based CLI for demoing the system
+- ✅ Added Weather tool (Open-Meteo API)
+- ✅ Added QueryTable tool for Supabase database queries
+- ✅ Implemented outbound message queue handling
+- ✅ Full markdown rendering, syntax highlighting, spinners
+- ✅ Successfully demoed in meeting - exposed performance bottlenecks
+- ✅ Committed: feat(message-agent): add interactive chat CLI with weather and database tools (99d4773)
+
 ---
 
 ## 🎯 Current Status
@@ -103,11 +146,124 @@
 - ✅ **Queue**: 93% (core functionality well-tested) ⬆️
 - ⚠️ **Worker**: 84% (some edge cases remain) ⬆️
 
+### 🐛 Known Issues (Nov 15, 2025)
+
+**Performance Issues** (discovered during demo meeting):
+1. **Sluggish polling performance**: Critical UX issue
+   - AIMQ worker polling with exponential backoff
+   - Chat CLI polling response queue
+   - Combined effect: system feels very unresponsive
+   - Impact: Critical - poor user experience
+   - Solution: Implement Supabase realtime to wake idle workers instantly
+
+2. **Weather API unreliability**: Open-Meteo API times out intermittently
+   - Impact: High - affects demo reliability
+   - Solution: Switch to API-keyed provider (WeatherAPI, OpenWeather, etc.)
+   - Requires: Environment variable for API key
+
+**Runtime Issues** (from earlier testing):
+3. **Tool validation errors**: `read_file` tool receiving empty dict instead of proper input
+   - Error: `'path' field required` with `input_value={}`
+   - Root cause: Agent not providing proper tool arguments
+   - Impact: Medium - affects file operations in react-assistant
+
+4. **Unknown tool errors**: Agent attempting to use `browse_web` tool
+   - Error: Tool not registered in available tools
+   - Root cause: Agent hallucinating tool names or outdated training
+   - Impact: Low - agent should gracefully handle missing tools
+
+5. **Metadata None errors**: `read_file` tool failing when metadata is None
+   - Error: `unsupported operand type(s) for |: 'NoneType' and 'dict'`
+   - Root cause: Tool expects metadata dict, receives None
+   - Impact: Medium - needs defensive None checking
+
 ---
 
 ## 📋 Recommended Next Steps
 
-### Priority 1: Finish Quality Sprint (Target: 90%+ coverage) 🎯
+### Priority 0: Supabase Realtime for Worker Wake-up 🚀
+**Impact**: Critical | **Effort**: 4-6 hours | **Status**: Architecture Planning
+
+**Goal**: Eliminate polling latency by using Supabase realtime to wake idle workers instantly
+
+**Architecture** (under discussion):
+- Focus on worker performance (CLI was just for demo)
+- Keep existing polling mechanism exactly as-is
+- Add realtime channel listener that workers subscribe to
+- When job enqueued → emit realtime event → all idle workers wake and check
+- Workers don't need job details, just a signal to check their queues
+- pgmq ensures only one worker gets each job (existing behavior)
+- Result: Idle workers respond instantly, busy workers continue normally
+
+**Key Design Decisions**:
+- ✅ Keep polling as fallback/baseline (no changes to existing logic)
+- ✅ Realtime is an optimization layer on top
+- ✅ Multiple workers can respond to same signal (pgmq handles deduplication)
+- ✅ Simple signal: "check your queues" (no job details in realtime event)
+- ⚠️ Architecture still being finalized
+
+**Tasks** (tentative):
+1. Design realtime channel schema (30 min)
+   - Channel topic: `jobs:enqueued` or similar
+   - Minimal payload: just a wake-up signal
+   - Security model: who can publish/subscribe?
+
+2. Implement realtime listener in worker (2-3 hours)
+   - Subscribe to realtime channel on worker startup
+   - On event received: interrupt sleep, trigger immediate poll
+   - Handle connection drops/reconnects gracefully
+   - Ensure thread-safe integration with existing poll loop
+
+3. Emit realtime events on job enqueue (1-2 hours)
+   - Modify queue enqueue to emit realtime event
+   - Use Supabase service key for publishing
+   - Handle failures gracefully (don't block enqueue)
+
+4. Configuration & testing (1-2 hours)
+   - Add Supabase realtime config to environment
+   - Integration tests: enqueue → workers wake instantly
+   - Load testing: multiple workers, multiple queues
+   - Measure latency improvement
+
+**Open Questions**:
+- Which Supabase Python client library supports realtime?
+- Should we use a single channel or per-queue channels?
+- How to handle realtime connection failures?
+- Should we emit on every enqueue or batch signals?
+
+### Priority 1: Weather API Reliability 🌤️
+**Impact**: High | **Effort**: 1-2 hours | **Status**: Planning
+
+**Goal**: Replace unreliable Open-Meteo with a production-grade weather API
+
+**Tasks**:
+1. Evaluate weather API providers (30 min)
+   - WeatherAPI.com (free tier: 1M calls/month)
+   - OpenWeather (free tier: 1K calls/day, 60 calls/min)
+   - Compare: reliability, features, rate limits, pricing
+
+2. Implement new weather tool (1 hour)
+   - Add `WEATHER_API_KEY` to environment variables
+   - Update Weather tool to use new provider
+   - Maintain same interface for agents
+   - Add error handling and rate limit awareness
+
+3. Update documentation (30 min)
+   - Add API key setup to README
+   - Update CHAT_DEMO.md with new provider info
+   - Update .env.example
+
+### Priority 2: Fix Message Agent Runtime Issues 🐛
+**Impact**: Medium | **Effort**: 1-2 hours
+
+Fix the runtime issues discovered during earlier testing:
+1. **Tool validation errors** - Debug why agent sends empty dict to tools
+2. **Unknown tool handling** - Add graceful fallback for missing tools
+3. **Metadata None checks** - Add defensive None handling in tools
+
+**Result**: Tools work reliably in all scenarios
+
+### Priority 3: Finish Quality Sprint (Target: 90%+ coverage) 🎯
 
 **Status**: Great progress! 84% coverage, only 6% from target.
 
@@ -264,20 +420,34 @@ See `ideas/human-in-the-loop.md` for full design:
 
 ## 🚀 Immediate Action Plan
 
-**Decision**: Option A - Finish Quality Sprint, then build Multi-Agent Group Chat
+**Decision**: Fix runtime issues, then continue with Multi-Agent Group Chat
 
-### Phase 1: Quality Sprint (This Week) 🎯
-**Goal**: Hit 90%+ test coverage
+### Phase 0: Fix Message Agent Issues (Today) 🐛
+**Goal**: Smooth out runtime issues from demo
 
 **Tasks**:
+1. Debug tool validation errors (30-45 min)
+   - Why is agent sending empty dict?
+   - Add better error messages
+   - Test with various inputs
+2. Add unknown tool handling (15-30 min)
+   - Graceful fallback when tool not found
+   - Log warning instead of crashing
+3. Fix metadata None checks (15-30 min)
+   - Add defensive None handling in read_file
+   - Check other tools for similar issues
+
+**Total**: ~1-2 hours
+**Result**: Demo runs smoothly without errors
+
+### Phase 1: Quality Sprint (Optional) 🎯
+**Goal**: Hit 90%+ test coverage
+
+**Status**: Current coverage (84%) is solid. Can defer to focus on features.
+
+**Tasks** (if pursuing):
 1. Add worker edge case tests (2-3 hours)
-   - Shutdown scenarios
-   - Signal handling
-   - Error recovery
 2. Add queue error path tests (1-2 hours)
-   - Timeout handling
-   - Connection failures
-   - Requeue scenarios
 3. Optional: Clean up __init__.py coverage (30 min)
 
 **Total**: ~4-5 hours
@@ -385,4 +555,4 @@ See `ideas/README.md` for contribution guidelines.
 
 ---
 
-**Next Steps**: Finish quality sprint, then start on multi-agent group chat MVP! 🚀
+**Next Steps**: Fix runtime issues, then continue building multi-agent group chat MVP! 🚀

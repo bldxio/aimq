@@ -105,7 +105,7 @@ class ReActAgent(BaseAgent):
 
         try:
             # Get LLM decision
-            response = client.chat.completions.create(
+            response = client.chat.complete(
                 model=self.llm,
                 messages=[{"role": "user", "content": prompt}],
                 temperature=self.temperature,
@@ -130,7 +130,6 @@ class ReActAgent(BaseAgent):
             }
 
         except Exception as e:
-            logger.error(f"Reasoning failed: {e}", exc_info=True)  # Fix #11
             return {
                 "errors": [f"Reasoning error: {str(e)}"],
                 "iteration": state["iteration"] + 1,
@@ -148,7 +147,6 @@ class ReActAgent(BaseAgent):
 
         if not tool:
             error_msg = f"Unknown tool: {tool_name}"
-            logger.error(error_msg)  # Fix #11
             return {
                 "messages": [{"role": "system", "content": error_msg}],
                 "tool_output": error_msg,
@@ -160,7 +158,6 @@ class ReActAgent(BaseAgent):
             validated_input = self.validator.validate(tool, tool_input)
             logger.debug(f"Tool input validated: {validated_input}")  # Fix #11
         except ToolValidationError as e:
-            logger.error(f"Tool validation failed: {e}")  # Fix #11
             return {
                 "messages": [{"role": "system", "content": str(e)}],
                 "tool_output": str(e),
@@ -177,7 +174,6 @@ class ReActAgent(BaseAgent):
             }
         except Exception as e:
             error_msg = f"Tool execution failed: {str(e)}"
-            logger.error(error_msg, exc_info=True)  # Fix #11
             return {
                 "messages": [{"role": "system", "content": error_msg}],
                 "tool_output": error_msg,
@@ -206,10 +202,16 @@ class ReActAgent(BaseAgent):
 You have access to these tools:
 {self._format_tools()}
 
-Respond in this format:
+Respond in this EXACT format:
 THOUGHT: <your reasoning>
 ACTION: <tool_name>
-INPUT: <tool input as JSON>
+INPUT: {{"param1": "value1", "param2": "value2"}}
+
+IMPORTANT: INPUT must be valid JSON on a single line with double quotes.
+
+Examples:
+- For weather tool: INPUT: {{"location": "San Francisco"}}
+- For query_table tool: INPUT: {{"table": "competitors", "filters": "sport_code:eq:basketball"}}
 
 OR if you have the final answer:
 THOUGHT: <your reasoning>
@@ -238,9 +240,12 @@ ANSWER: <final answer>
             if line.startswith("ACTION:"):
                 action["tool"] = line.replace("ACTION:", "").strip()
             elif line.startswith("INPUT:"):
+                input_str = line.replace("INPUT:", "").strip()
                 try:
-                    action["input"] = json.loads(line.replace("INPUT:", "").strip())
-                except json.JSONDecodeError:
+                    action["input"] = json.loads(input_str)
+                except json.JSONDecodeError as e:
+                    logger.warning(f"Failed to parse tool input JSON: {input_str}")
+                    logger.warning(f"JSON error: {e}")
                     action["input"] = {}
             elif line.startswith("ANSWER:"):
                 action["answer"] = line.replace("ANSWER:", "").strip()
