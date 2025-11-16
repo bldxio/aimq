@@ -131,6 +131,19 @@
 - ✅ Successfully demoed in meeting - exposed performance bottlenecks
 - ✅ Committed: feat(message-agent): add interactive chat CLI with weather and database tools (99d4773)
 
+### Supabase Realtime Worker Wake-up - Phase 1 (Nov 16, 2025)
+- ✅ Added configuration for realtime service
+- ✅ Created `RealtimeWakeupService` with async client in daemon thread
+- ✅ Implemented broadcast channel subscription for job notifications
+- ✅ Added worker presence tracking (idle/busy status)
+- ✅ Implemented reconnection with exponential backoff
+- ✅ Integrated with `WorkerThread` for wake-up signaling
+- ✅ Added comprehensive tests (connection, wake-up, presence)
+- ✅ Fixed graceful shutdown bug (removed `loop.stop()` call)
+- ✅ Workers now wake within 1 second of job enqueue
+- ✅ Polling continues as fallback if realtime unavailable
+- ✅ Clean shutdown on Ctrl+C (no pending task errors)
+
 ---
 
 ## 🎯 Current Status
@@ -182,70 +195,31 @@
 ## 📋 Recommended Next Steps
 
 ### Priority 0: Supabase Realtime for Worker Wake-up 🚀
-**Impact**: Critical | **Effort**: 4-5 hours (Phase 1) + 2-3 hours (Phase 2) | **Status**: ✅ Architecture Finalized, Starting Implementation
+**Impact**: Critical | **Effort**: 2-3 hours (Phase 2 remaining) | **Status**: ✅ Phase 1 Complete!
 
 **Branch**: `feature/supabase-realtime-wake`
 
 **Goal**: Eliminate polling latency by using Supabase realtime to wake idle workers instantly
 
-**Architecture** (finalized Nov 15, 2025):
-- Single broadcast channel (`worker-wakeup`) shared by all workers
-- Minimal job info in payload: `{"queue": "name", "job_id": 123}`
-- Workers subscribe to channel and wake on broadcast
-- Workers report presence (online/offline, idle/busy status)
-- Keep existing polling as fallback (graceful degradation)
-- DB triggers emit events (Phase 2) for reliability
-- Auto-enabled when Supabase configured
+**Phase 1: Worker Wake-up + Presence** ✅ COMPLETE (Nov 16, 2025):
+- ✅ Configuration added and auto-enabled
+- ✅ `RealtimeWakeupService` implemented with async client
+- ✅ Broadcast channel subscription working
+- ✅ Worker presence tracking (idle/busy)
+- ✅ Reconnection with exponential backoff
+- ✅ Integration with `WorkerThread` complete
+- ✅ Comprehensive tests passing
+- ✅ Graceful shutdown fixed (no pending task errors)
+- ✅ All success criteria met!
 
-**Key Design Decisions**:
-- ✅ Single channel for all workers (simpler, pgmq handles deduplication)
-- ✅ Broadcast channel for job notifications
-- ✅ Presence tracking for worker observability
-- ✅ Keep polling as fallback (no changes to existing logic)
-- ✅ Auto-enable by default (no opt-in flag)
-- ✅ DB triggers for emit (Phase 2, decoupled from Python)
-- ✅ Graceful error handling (realtime failures don't stop workers)
-
-**Phase 1: Worker Wake-up + Presence** (4-5 hours):
-1. Add configuration (30 min)
-   - `SUPABASE_REALTIME_CHANNEL` (default: "worker-wakeup")
-   - `SUPABASE_REALTIME_EVENT` (default: "job_enqueued")
-   - Auto-enable when Supabase configured
-
-2. Create `RealtimeWakeupService` (2-3 hours)
-   - Async client in dedicated daemon thread
-   - Subscribe to broadcast channel
-   - Handle job notifications (wake workers)
-   - Track worker presence (idle/busy)
-   - Reconnection with exponential backoff
-   - Thread-safe wake-up signaling
-
-3. Integrate with `WorkerThread` (1 hour)
-   - Register wake-up events
-   - Check event during idle sleep
-   - Update presence on status changes
-   - Graceful fallback if realtime unavailable
-
-4. Tests & documentation (1 hour)
-   - Service connection/reconnection
-   - Worker wake-up on broadcast
-   - Presence tracking
-   - Graceful fallback
-   - Configuration guide
-
-**Phase 2: DB Triggers** (2-3 hours, separate branch):
+**Phase 2: DB Triggers** (2-3 hours, next step):
 1. Design PostgreSQL trigger function
 2. Create migration for pgmq queues
 3. Add Python migration helpers
 4. Test trigger emissions
 5. Documentation
 
-**Success Criteria**:
-- ✅ Workers wake within 1 second of job enqueue
-- ✅ Presence accurately reflects worker status
-- ✅ Polling continues if realtime fails
-- ✅ No crashes or hangs
-- ✅ Works with multiple workers
+**Why Phase 2**: Currently, job notifications must be sent manually via Python. DB triggers will automatically emit realtime events when jobs are enqueued, making the system fully automatic and reliable.
 
 **Documentation**: See `ideas/supabase-realtime-streaming.md` for full architecture
 

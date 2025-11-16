@@ -15,6 +15,7 @@ from .config import config  # Import config singleton instead of Config class
 from .job import Job
 from .logger import Logger, LogLevel
 from .queue import Queue
+from .realtime import RealtimeWakeupService
 from .utils import load_module
 
 
@@ -26,6 +27,7 @@ class WorkerThread(threading.Thread):
         logger: Logger instance for recording worker activities
         running: Threading event to control the worker's execution
         idle_wait: Time in seconds to wait when no jobs are found
+        realtime_service: Optional realtime service for instant wake-up
 
     Attributes:
         queues: The queues to process jobs from
@@ -34,6 +36,8 @@ class WorkerThread(threading.Thread):
         idle_wait: Sleep duration when idle
         consecutive_failures: Track consecutive failures for backoff
         current_backoff: Current backoff duration in seconds
+        realtime_service: Realtime service for instant wake-up
+        wakeup_event: Event set by realtime service to wake this thread
     """
 
     def __init__(
@@ -42,15 +46,21 @@ class WorkerThread(threading.Thread):
         logger: Logger,
         running: threading.Event,
         idle_wait: float = 1.0,
+        realtime_service: Optional[RealtimeWakeupService] = None,
     ):
         super().__init__()
         self.queues = queues
         self.logger = logger
         self.running = running
         self.idle_wait = idle_wait
+        self.realtime_service = realtime_service
         # Track consecutive failures per queue for backoff
         self.consecutive_failures: dict[str, int] = {name: 0 for name in queues.keys()}
         self.current_backoff = idle_wait
+
+        self.wakeup_event = threading.Event()
+        if self.realtime_service:
+            self.realtime_service.register_worker(self.wakeup_event)
 
     def run(self) -> None:  # noqa: C901
         """Start the worker thread with resilient error handling.
@@ -75,12 +85,21 @@ class WorkerThread(threading.Thread):
 
                     # Work next job in queue
                     try:
+                        # Track job start time for presence
+                        job_start = time.time()
                         result = queue.work()
+
                         if result is not None:
                             found_jobs = True
                             # Reset consecutive failures on success
                             self.consecutive_failures[queue.name] = 0
                             self.current_backoff = self.idle_wait
+
+                            # Update presence: busy with job timing
+                            if self.realtime_service and hasattr(result, "id"):
+                                self.realtime_service.update_presence(
+                                    "busy", {result.id: job_start}
+                                )
 
                     except Exception as e:
                         had_errors = True
@@ -110,18 +129,31 @@ class WorkerThread(threading.Thread):
                                 f"Backing off for {self.current_backoff:.1f}s due to repeated failures in {queue.name}"
                             )
 
+                # Update presence: idle (if realtime enabled and no jobs found)
+                if not found_jobs and self.realtime_service:
+                    self.realtime_service.update_presence("idle", {})
+
                 if not found_jobs:
                     self.logger.debug(
                         f"No jobs found, waiting {self.current_backoff:.1f}s..."
                         + (" (backed off)" if had_errors else "")
                     )
 
-                    # Interruptible sleep: sleep in 100ms increments, checking shutdown flag
+                    # Interruptible sleep: check shutdown flag and realtime wake-up event
                     sleep_start = time.time()
+                    self.wakeup_event.clear()  # Clear before sleeping
+
                     while (time.time() - sleep_start) < self.current_backoff:
                         if not self.running.is_set():
                             break
-                        time.sleep(0.1)  # Check shutdown flag every 100ms
+
+                        # Check if woken by realtime notification
+                        if self.wakeup_event.is_set():
+                            self.logger.debug("Woken by realtime notification")
+                            self.current_backoff = self.idle_wait  # Reset backoff
+                            break
+
+                        time.sleep(0.1)  # Check every 100ms
 
                     # Exit main loop if shutdown was requested during sleep
                     if not self.running.is_set():
@@ -143,6 +175,11 @@ class WorkerThread(threading.Thread):
                     },
                 )
                 # Don't stop the thread - continue processing
+
+        # Cleanup: unregister from realtime service
+        if self.realtime_service:
+            self.realtime_service.unregister_worker(self.wakeup_event)
+            self.logger.debug("Unregistered from realtime service")
 
 
 class Worker(BaseModel):
@@ -169,6 +206,7 @@ class Worker(BaseModel):
     is_running: threading.Event = Field(default_factory=threading.Event)
     thread: Optional[WorkerThread] = None
     name: str = Field(default_factory=lambda: config.worker_name, description="Name of this worker")
+    realtime_service: Optional[RealtimeWakeupService] = None
     _shutdown_count: int = 0
     _original_termios_settings: Optional[Any] = None
 
@@ -391,9 +429,33 @@ class Worker(BaseModel):
         signal.signal(signal.SIGINT, self._signal_handler)
         signal.signal(signal.SIGTERM, self._signal_handler)
 
+        # Start realtime service if enabled
+        if config.supabase_realtime_enabled and not self.realtime_service:
+            try:
+                queue_names = list(self.queues.keys())
+                self.realtime_service = RealtimeWakeupService(
+                    url=config.supabase_url,
+                    key=config.supabase_key,
+                    worker_name=self.name,
+                    queues=queue_names,
+                    logger=self.logger,
+                )
+                self.realtime_service.start()
+                self.logger.info("Realtime wake-up service enabled")
+            except Exception as e:
+                self.logger.warning(
+                    f"Failed to start realtime service: {e}. Falling back to polling.",
+                    {"error_type": type(e).__name__},
+                )
+                self.realtime_service = None
+
         self.is_running.set()
         self.thread = WorkerThread(
-            self.queues, self.logger, self.is_running, idle_wait=self.idle_wait
+            self.queues,
+            self.logger,
+            self.is_running,
+            idle_wait=self.idle_wait,
+            realtime_service=self.realtime_service,
         )
         self.thread.start()
 
@@ -408,6 +470,13 @@ class Worker(BaseModel):
         """Stop processing tasks and clear job history."""
         if self.is_running.is_set():
             self.is_running.clear()
+
+            # Stop realtime service first
+            if self.realtime_service:
+                self.logger.info("Stopping realtime service...")
+                self.realtime_service.stop()
+                self.realtime_service = None
+
             if self.thread:
                 # Wait up to 10 seconds for thread to finish
                 # (accounts for 5-second queue read timeout)

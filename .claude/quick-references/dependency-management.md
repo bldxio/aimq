@@ -256,6 +256,7 @@ uv sync --group dev
 4. **Test after updates**: Run `just ci` after updating dependencies
 5. **Keep dependencies minimal**: Only add what you need
 6. **Use dev groups**: Keep dev dependencies separate
+7. **Consistent messaging**: Error messages should say "uv add" not "pip install"
 
 ## Migration from pip/poetry
 

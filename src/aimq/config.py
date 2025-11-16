@@ -19,6 +19,18 @@ class Config(BaseSettings):
     supabase_url: str = Field(default="", alias="SUPABASE_URL")
     supabase_key: str = Field(default="", alias="SUPABASE_KEY")
 
+    # Supabase Realtime Configuration
+    supabase_realtime_channel: str = Field(
+        default="worker-wakeup",
+        alias="SUPABASE_REALTIME_CHANNEL",
+        description="Realtime channel name for worker notifications",
+    )
+    supabase_realtime_event: str = Field(
+        default="job_enqueued",
+        alias="SUPABASE_REALTIME_EVENT",
+        description="Realtime event name for job notifications",
+    )
+
     # Database Configuration (for LangGraph checkpointing and direct DB access)
     database_url: str = Field(
         default="",
@@ -105,6 +117,14 @@ class Config(BaseSettings):
         alias="LANGGRAPH_MAX_ITERATIONS",
         description="Maximum iterations for agent loops (safety limit)",
     )
+
+    @property
+    def supabase_realtime_enabled(self) -> bool:
+        """Check if Supabase Realtime should be enabled.
+
+        Realtime is auto-enabled when Supabase is properly configured.
+        """
+        return bool(self.supabase_url and self.supabase_key)
 
 
 @lru_cache()

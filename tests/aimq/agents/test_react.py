@@ -195,7 +195,7 @@ def test_react_agent_reasoning_node(mock_client_func):
     mock_response.choices = [MagicMock(message=MagicMock(content="THOUGHT: Test\nANSWER: Done"))]
 
     mock_client = MagicMock()
-    mock_client.chat.completions.create.return_value = mock_response
+    mock_client.chat.complete.return_value = mock_response
     mock_client_func.return_value = mock_client
 
     agent = ReActAgent(tools=[MockTool()], system_prompt="Test")
@@ -227,7 +227,7 @@ def test_react_agent_reasoning_node_with_tool(mock_client_func):
     ]
 
     mock_client = MagicMock()
-    mock_client.chat.completions.create.return_value = mock_response
+    mock_client.chat.complete.return_value = mock_response
     mock_client_func.return_value = mock_client
 
     agent = ReActAgent(tools=[MockTool()], system_prompt="Test")
@@ -249,7 +249,7 @@ def test_react_agent_reasoning_node_with_tool(mock_client_func):
 def test_react_agent_reasoning_node_error_handling(mock_client_func):
     """Test reasoning node handles errors."""
     mock_client = MagicMock()
-    mock_client.chat.completions.create.side_effect = Exception("API Error")
+    mock_client.chat.complete.side_effect = Exception("API Error")
     mock_client_func.return_value = mock_client
 
     agent = ReActAgent(tools=[MockTool()], system_prompt="Test")

@@ -95,6 +95,12 @@ Integration with Supabase Realtime for bidirectional streaming between workers a
    - Reconnect with exponential backoff
    - Log errors for debugging
 
+7. **Queue Filtering**:
+   - Workers only wake for queues they monitor
+   - Prevents unnecessary wake-ups in multi-worker scenarios
+   - More efficient resource usage
+   - Better for multi-tenant deployments
+
 ### Current Flow (Polling)
 
 ```
@@ -208,7 +214,8 @@ class RealtimeWakeupService:
             "worker": self._worker_name,
             "queues": self._queues,
             "status": "idle",
-            "current_job": None,
+            "current_jobs": {},  # Dict of job_id -> start_timestamp
+            "job_count": 0,
         })
 
         await self._channel.subscribe()
@@ -216,19 +223,32 @@ class RealtimeWakeupService:
     def _handle_job_notification(self, payload):
         """Handle job notification broadcast."""
         # Payload: {"queue": "incoming-messages", "job_id": 12345}
+        queue = payload.get("queue")
+
+        # Only wake if this worker monitors the queue
+        if queue not in self._queues:
+            return  # Ignore notifications for unmonitored queues
+
         # Wake all registered worker threads
         with self._lock:
             for event in self._worker_events:
                 event.set()
 
-    async def update_presence(self, status: str, current_job: int | None = None):
-        """Update worker presence status."""
+    async def update_presence(self, status: str, current_jobs: dict[int, float] | None = None):
+        """Update worker presence status.
+
+        Args:
+            status: Worker status ("idle" or "busy")
+            current_jobs: Dict of job_id -> start_timestamp for jobs in progress
+        """
         if self._channel:
+            jobs = current_jobs or {}
             await self._channel.track({
                 "worker": self._worker_name,
                 "queues": self._queues,
                 "status": status,  # "idle" or "busy"
-                "current_job": current_job,
+                "current_jobs": jobs,  # {job_id: timestamp, ...}
+                "job_count": len(jobs),
             })
 ```
 
