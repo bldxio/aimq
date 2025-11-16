@@ -122,6 +122,15 @@
 - ✅ Full documentation in `examples/message_agent/`
 - ✅ Committed: feat(routing): add composable message routing system (17f7204)
 
+### Interactive Chat CLI (Nov 15, 2025)
+- ✅ Built beautiful Rich-based CLI for demoing the system
+- ✅ Added Weather tool (Open-Meteo API)
+- ✅ Added QueryTable tool for Supabase database queries
+- ✅ Implemented outbound message queue handling
+- ✅ Full markdown rendering, syntax highlighting, spinners
+- ✅ Successfully demoed in meeting - exposed performance bottlenecks
+- ✅ Committed: feat(message-agent): add interactive chat CLI with weather and database tools (99d4773)
+
 ---
 
 ## 🎯 Current Status
@@ -137,41 +146,124 @@
 - ✅ **Queue**: 93% (core functionality well-tested) ⬆️
 - ⚠️ **Worker**: 84% (some edge cases remain) ⬆️
 
-### 🐛 Known Issues (Nov 13, 2025)
+### 🐛 Known Issues (Nov 15, 2025)
 
-**Runtime Issues** (discovered during demo):
-1. **Tool validation errors**: `read_file` tool receiving empty dict instead of proper input
+**Performance Issues** (discovered during demo meeting):
+1. **Sluggish polling performance**: Critical UX issue
+   - AIMQ worker polling with exponential backoff
+   - Chat CLI polling response queue
+   - Combined effect: system feels very unresponsive
+   - Impact: Critical - poor user experience
+   - Solution: Implement Supabase realtime to wake idle workers instantly
+
+2. **Weather API unreliability**: Open-Meteo API times out intermittently
+   - Impact: High - affects demo reliability
+   - Solution: Switch to API-keyed provider (WeatherAPI, OpenWeather, etc.)
+   - Requires: Environment variable for API key
+
+**Runtime Issues** (from earlier testing):
+3. **Tool validation errors**: `read_file` tool receiving empty dict instead of proper input
    - Error: `'path' field required` with `input_value={}`
    - Root cause: Agent not providing proper tool arguments
    - Impact: Medium - affects file operations in react-assistant
 
-2. **Unknown tool errors**: Agent attempting to use `browse_web` tool
+4. **Unknown tool errors**: Agent attempting to use `browse_web` tool
    - Error: Tool not registered in available tools
    - Root cause: Agent hallucinating tool names or outdated training
    - Impact: Low - agent should gracefully handle missing tools
 
-3. **Metadata None errors**: `read_file` tool failing when metadata is None
+5. **Metadata None errors**: `read_file` tool failing when metadata is None
    - Error: `unsupported operand type(s) for |: 'NoneType' and 'dict'`
    - Root cause: Tool expects metadata dict, receives None
    - Impact: Medium - needs defensive None checking
-
-**Next Steps**: Debug and fix these issues before production use
 
 ---
 
 ## 📋 Recommended Next Steps
 
-### Priority 0: Fix Message Agent Runtime Issues 🐛
-**Impact**: High | **Effort**: 1-2 hours
+### Priority 0: Supabase Realtime for Worker Wake-up 🚀
+**Impact**: Critical | **Effort**: 4-6 hours | **Status**: Architecture Planning
 
-Fix the runtime issues discovered during demo:
+**Goal**: Eliminate polling latency by using Supabase realtime to wake idle workers instantly
+
+**Architecture** (under discussion):
+- Focus on worker performance (CLI was just for demo)
+- Keep existing polling mechanism exactly as-is
+- Add realtime channel listener that workers subscribe to
+- When job enqueued → emit realtime event → all idle workers wake and check
+- Workers don't need job details, just a signal to check their queues
+- pgmq ensures only one worker gets each job (existing behavior)
+- Result: Idle workers respond instantly, busy workers continue normally
+
+**Key Design Decisions**:
+- ✅ Keep polling as fallback/baseline (no changes to existing logic)
+- ✅ Realtime is an optimization layer on top
+- ✅ Multiple workers can respond to same signal (pgmq handles deduplication)
+- ✅ Simple signal: "check your queues" (no job details in realtime event)
+- ⚠️ Architecture still being finalized
+
+**Tasks** (tentative):
+1. Design realtime channel schema (30 min)
+   - Channel topic: `jobs:enqueued` or similar
+   - Minimal payload: just a wake-up signal
+   - Security model: who can publish/subscribe?
+
+2. Implement realtime listener in worker (2-3 hours)
+   - Subscribe to realtime channel on worker startup
+   - On event received: interrupt sleep, trigger immediate poll
+   - Handle connection drops/reconnects gracefully
+   - Ensure thread-safe integration with existing poll loop
+
+3. Emit realtime events on job enqueue (1-2 hours)
+   - Modify queue enqueue to emit realtime event
+   - Use Supabase service key for publishing
+   - Handle failures gracefully (don't block enqueue)
+
+4. Configuration & testing (1-2 hours)
+   - Add Supabase realtime config to environment
+   - Integration tests: enqueue → workers wake instantly
+   - Load testing: multiple workers, multiple queues
+   - Measure latency improvement
+
+**Open Questions**:
+- Which Supabase Python client library supports realtime?
+- Should we use a single channel or per-queue channels?
+- How to handle realtime connection failures?
+- Should we emit on every enqueue or batch signals?
+
+### Priority 1: Weather API Reliability 🌤️
+**Impact**: High | **Effort**: 1-2 hours | **Status**: Planning
+
+**Goal**: Replace unreliable Open-Meteo with a production-grade weather API
+
+**Tasks**:
+1. Evaluate weather API providers (30 min)
+   - WeatherAPI.com (free tier: 1M calls/month)
+   - OpenWeather (free tier: 1K calls/day, 60 calls/min)
+   - Compare: reliability, features, rate limits, pricing
+
+2. Implement new weather tool (1 hour)
+   - Add `WEATHER_API_KEY` to environment variables
+   - Update Weather tool to use new provider
+   - Maintain same interface for agents
+   - Add error handling and rate limit awareness
+
+3. Update documentation (30 min)
+   - Add API key setup to README
+   - Update CHAT_DEMO.md with new provider info
+   - Update .env.example
+
+### Priority 2: Fix Message Agent Runtime Issues 🐛
+**Impact**: Medium | **Effort**: 1-2 hours
+
+Fix the runtime issues discovered during earlier testing:
 1. **Tool validation errors** - Debug why agent sends empty dict to tools
 2. **Unknown tool handling** - Add graceful fallback for missing tools
 3. **Metadata None checks** - Add defensive None handling in tools
 
-**Why**: Demo is working but has rough edges that need smoothing.
+**Result**: Tools work reliably in all scenarios
 
-### Priority 1: Finish Quality Sprint (Target: 90%+ coverage) 🎯
+### Priority 3: Finish Quality Sprint (Target: 90%+ coverage) 🎯
 
 **Status**: Great progress! 84% coverage, only 6% from target.
 
