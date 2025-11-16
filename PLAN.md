@@ -138,11 +138,14 @@
 - ✅ Added worker presence tracking (idle/busy status)
 - ✅ Implemented reconnection with exponential backoff
 - ✅ Integrated with `WorkerThread` for wake-up signaling
-- ✅ Added comprehensive tests (connection, wake-up, presence)
-- ✅ Fixed graceful shutdown bug (removed `loop.stop()` call)
+- ✅ Added comprehensive tests (9 tests, all passing)
+- ✅ Fixed graceful shutdown bug (proper task cancellation)
+- ✅ Fixed test issues (ReAct agent mocks, realtime mock setup)
 - ✅ Workers now wake within 1 second of job enqueue
 - ✅ Polling continues as fallback if realtime unavailable
-- ✅ Clean shutdown on Ctrl+C (no pending task errors)
+- ✅ Clean shutdown on Ctrl+C (no pending task errors, no warnings)
+- ✅ All 469 tests passing with zero warnings
+- ✅ Committed: feat(realtime): add Supabase Realtime wake-up service (0166213)
 
 ---
 
@@ -162,12 +165,14 @@
 ### 🐛 Known Issues (Nov 15, 2025)
 
 **Performance Issues** (discovered during demo meeting):
-1. **Sluggish polling performance**: Critical UX issue
-   - AIMQ worker polling with exponential backoff
-   - Chat CLI polling response queue
-   - Combined effect: system feels very unresponsive
-   - Impact: Critical - poor user experience
-   - Solution: Implement Supabase realtime to wake idle workers instantly
+1. ~~**Sluggish polling performance**: Critical UX issue~~ ✅ FIXED (Nov 16, 2025)
+   - ~~AIMQ worker polling with exponential backoff~~
+   - ~~Chat CLI polling response queue~~
+   - ~~Combined effect: system feels very unresponsive~~
+   - ~~Impact: Critical - poor user experience~~
+   - ✅ Solution implemented: Supabase Realtime wake-up service
+   - Workers now wake within 1 second of job enqueue
+   - Phase 2 (DB triggers) will make it fully automatic
 
 2. **Weather API unreliability**: Open-Meteo API times out intermittently
    - Impact: High - affects demo reliability
