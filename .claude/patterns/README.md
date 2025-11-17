@@ -21,6 +21,12 @@ Established patterns for consistency across the AIMQ codebase.
 ### Development Process
 - **[demo-driven-development.md](demo-driven-development.md)** - Use demo deadlines to focus and deliver quickly
 
+### Documentation & Commands
+- **[documentation-as-interface.md](documentation-as-interface.md)** - Structure commands as interfaces, not reference docs
+- **[progressive-disclosure.md](progressive-disclosure.md)** - Reveal information progressively (action → steps → context)
+- **[portable-commands.md](portable-commands.md)** - Keep commands generic and portable across projects
+- **[command-composition.md](command-composition.md)** - Compose commands through suggestion, not automation
+
 ## Guidelines
 
 When documenting a new pattern:

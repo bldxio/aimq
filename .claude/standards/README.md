@@ -6,10 +6,17 @@ Best practices for coding, testing, git workflow, and more.
 
 ## Available Standards
 
+### Development Workflow
 - **[conventional-commits.md](conventional-commits.md)** - Commit message format and CHANGELOG generation
+- **[git-workflow.md](git-workflow.md)** - Git branching and workflow
+- **[precommit-workflow.md](precommit-workflow.md)** - Run quality checks before committing
+
+### Code Quality
 - **[testing.md](testing.md)** - Testing standards, patterns, and best practices
 - **[code-style.md](code-style.md)** - Code formatting, naming conventions, and style guide
-- **[git-workflow.md](git-workflow.md)** - Git branching and workflow
+
+### Documentation
+- **[command-structure.md](command-structure.md)** - Standard structure for command files
 
 ## Guidelines
 

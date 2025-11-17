@@ -1,4 +1,5 @@
 """Test module-level import."""
+
 import sys
 
 # This happens during collection
