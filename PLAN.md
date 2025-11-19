@@ -1,6 +1,6 @@
 # AIMQ Development Plan
 
-**Last Updated**: 2025-11-13
+**Last Updated**: 2025-11-16
 **Current Version**: 0.1.x
 **Target Version**: 0.2.0
 
@@ -146,6 +146,32 @@
 - ✅ Clean shutdown on Ctrl+C (no pending task errors, no warnings)
 - ✅ All 469 tests passing with zero warnings
 - ✅ Committed: feat(realtime): add Supabase Realtime wake-up service (0166213)
+
+### Knowledge Garden Refactoring (Nov 16, 2025)
+- ✅ Refactored all 12 command files for clarity and conciseness (83% reduction)
+- ✅ Standardized command structure with 🎯 ACTION headers
+- ✅ Adopted @ syntax for file references (Claude-compatible)
+- ✅ Removed project-specific tooling for portability
+- ✅ Split 5 oversized files into 17 focused files (<400 lines each):
+  - `knowledge-systems.md` → 3 files (overview, templates, workflow)
+  - `langgraph-integration.md` → 3 files (basics, advanced, aimq)
+  - `demo-driven-development.md` → 2 files (core, practices)
+  - `common-pitfalls.md` → 3 files (aimq, development, python)
+  - `llm-api-differences.md` → 2 files (differences, provider APIs)
+- ✅ Created 4 new patterns:
+  - `command-composition.md` - Composable command design
+  - `documentation-as-interface.md` - Docs as AI-human interface
+  - `portable-commands.md` - Generic, reusable commands
+  - `progressive-disclosure.md` - Layered information architecture
+- ✅ Created 2 new standards:
+  - `command-structure.md` - Standard command format
+  - `precommit-workflow.md` - Pre-commit best practices
+- ✅ Created garden health check script in `.claude/hooks/`
+- ✅ Consolidated INDEX.md into `.claude/INDEX.md`
+- ✅ Renamed `/setup-knowledge-system` to `/seed`
+- ✅ Added cross-links to all command files for better navigation
+- ✅ Net reduction: 2,247 lines removed! 🌱
+- ✅ Committed: refactor(knowledge): streamline commands and organize garden (806a3b1)
 
 ---
 
