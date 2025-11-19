@@ -51,12 +51,14 @@ See @CLAUDE.md for complete release workflow documentation and @CONSTITUTION.md 
 
 ## 🔗 Follow-up Commands
 
+- `/tidyup` - Archive old work before release
 - `/commit` - If manual changes needed
 - `/test` - Run tests before release
 - `/plan` - Update plan after release
 
 ## Related
 
+- [@.claude/commands/tidyup.md](./tidyup.md) - Archive completed work
 - [@.claude/commands/test.md](./test.md) - Run test suite
 - [@.claude/commands/commit.md](./commit.md) - Commit changes
 - [@.claude/commands/plan.md](./plan.md) - Update project plan

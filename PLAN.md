@@ -11,16 +11,6 @@
 
 ## ✅ Completed Work
 
-### Phase 1-3: Core LangGraph Integration (Oct-Nov 2025)
-- ✅ Added LangGraph, LangChain, and Mistral AI dependencies
-- ✅ Implemented `@agent` and `@workflow` decorators
-- ✅ Built-in agents: ReActAgent, PlanExecuteAgent
-- ✅ Built-in workflows: DocumentWorkflow, MultiAgentWorkflow
-- ✅ Supabase-backed checkpointing for stateful workflows
-- ✅ Security features: LLM whitelisting, prompt controls, tool validation
-- ✅ Comprehensive examples in `examples/langgraph/`
-- ✅ User documentation in `docs/user-guide/`
-
 ### Module Refactoring (Nov 12, 2025)
 - ✅ Reorganized from monolithic `langgraph/` to modular structure:
   - `agents/` - Agent implementations, decorators, states, validation

@@ -61,6 +61,7 @@ See @CONSTITUTION.md for project-specific planning conventions and @VISION.md fo
 
 ## 🔗 Follow-up Commands
 
+- `/tidyup` - Archive old work if plan is getting long
 - `/commit` - Commit plan updates
 - `/learn` - Extract lessons from recent work
 - `/focus` - Explore specific topics before planning
@@ -70,6 +71,7 @@ See @CONSTITUTION.md for project-specific planning conventions and @VISION.md fo
 - [@PLAN.md](../../PLAN.md) - Project plan (working memory)
 - [@VISION.md](../../VISION.md) - Project vision
 - [@CONSTITUTION.md](../../CONSTITUTION.md) - Guiding principles
+- [@.claude/commands/tidyup.md](./tidyup.md) - Archive completed work
 - [@.claude/commands/learn.md](./learn.md) - Extract lessons
 - [@.claude/commands/commit.md](./commit.md) - Commit changes
 - [@.claude/INDEX.md](../INDEX.md) - Command directory

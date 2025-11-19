@@ -59,6 +59,7 @@ Custom workflow commands for development, planning, and knowledge management.
 
 #### Planning & Documentation
 - **[/plan](commands/plan.md)** - Review progress and update the project plan
+- **[/tidyup](commands/tidyup.md)** - Archive completed work to CHANGELOG.md
 - **[/remember](commands/remember.md)** - Capture insights and patterns from conversation
 - **[/learn](commands/learn.md)** - Extract lessons from conversation and git history
 
