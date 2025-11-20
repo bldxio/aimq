@@ -181,8 +181,160 @@ supabase.rpc("pgmq_delete", {
 - Fixed by checking pgmq documentation
 - Added error handling for missing functions
 
+## Supabase & PostgreSQL Pitfalls
+
+### SQL Identifier Quoting for Special Characters
+
+**Problem**: Queue names with hyphens or special characters cause SQL syntax errors.
+
+**Symptom**:
+```
+ERROR: 42601: syntax error at or near "-"
+LINE 1: SELECT * FROM pgmq.incoming-messages
+```
+
+**Root Cause**: PostgreSQL identifiers with special characters must be quoted in dynamic SQL.
+
+**Example**:
+```sql
+-- ❌ Bad: Unquoted identifier in dynamic SQL
+execute format('SELECT * FROM pgmq.%s', queue_name);
+-- Fails for queue_name = 'incoming-messages'
+
+-- ✅ Good: Use %I for identifier formatting
+execute format('SELECT * FROM pgmq.%I', queue_name);
+-- Properly quotes: SELECT * FROM pgmq."incoming-messages"
+
+-- ✅ Also good: Use quote_ident()
+execute format('SELECT * FROM pgmq.%s', quote_ident(queue_name));
+```
+
+**When It Happens**:
+- User-provided queue names (CLI, API)
+- Dynamic SQL with `execute format()`
+- Table/column names with hyphens, spaces, or special chars
+- Case-sensitive identifiers
+
+**Prevention**:
+- Always use `%I` for identifiers in `format()`
+- Use `quote_ident()` for manual quoting
+- Test with hyphenated names early
+- Document naming conventions
+
+**From Phase 2 Realtime**:
+```sql
+-- Fixed in enable_queue_realtime function
+create or replace function pgmq_public.enable_queue_realtime(
+    queue_name text
+)
+  returns jsonb
+  language plpgsql
+as $$
+declare
+    v_trigger_name text;
+begin
+    -- ✅ Properly quote identifiers
+    v_trigger_name := 'aimq_notify_' || queue_name;
+
+    execute format(
+        'create trigger %I
+         after insert on pgmq.%I
+         for each row
+         execute function aimq.notify_job_enqueued()',
+        v_trigger_name,  -- %I quotes trigger name
+        queue_name       -- %I quotes table name
+    );
+
+    return jsonb_build_object('success', true);
+end;
+$$;
+```
+
+### PostgREST JSONB Parsing Failure
+
+**Problem**: PostgREST fails to parse jsonb responses from functions using dynamic SQL.
+
+**Symptom**:
+```python
+Error: {
+    'message': 'JSON could not be generated',
+    'code': 200,
+    'hint': 'Refer to full message for details',
+    'details': 'b\'{"success": true, "queue_name": "my-queue"}\''
+}
+```
+
+**Root Cause**: PostgREST has trouble parsing jsonb responses from `execute format()` functions. The function executes successfully, but PostgREST can't parse the response. The actual result is buried in the error details.
+
+**Example**:
+```python
+# ❌ Without workaround: Appears to fail
+result = supabase.rpc('enable_queue_realtime', {'queue_name': 'test'})
+# Raises exception even though function succeeded
+
+# ✅ With workaround: Extract result from error
+def _rpc(self, method: str, params: dict) -> Any:
+    try:
+        result = supabase.client.schema("pgmq_public").rpc(method, params).execute()
+        return result.data
+    except Exception as e:
+        error_msg = str(e)
+
+        # WORKAROUND: Extract JSON from error details
+        if "'code': 200" in error_msg or "'code': '200'" in error_msg:
+            # Format: 'details': 'b\'{"success": true, ...}\''
+            match = re.search(r"'details':\s*'b\\'(.+?)\\'", error_msg)
+            if match:
+                try:
+                    json_str = match.group(1).replace("\\'", "'")
+                    return json.loads(json_str)
+                except (json.JSONDecodeError, AttributeError):
+                    pass  # Fall through to raise original error
+
+        raise
+```
+
+**When It Happens**:
+- Functions using `execute format()` with dynamic SQL
+- Functions returning jsonb from dynamic queries
+- Complex trigger setup functions
+- Management functions that create/modify objects
+
+**Prevention**:
+- Implement the workaround in your RPC wrapper
+- Test with actual Supabase instance early
+- Consider alternative approaches (static SQL where possible)
+- Document the limitation for future maintainers
+
+**Alternative Approaches**:
+```sql
+-- Option 1: Return simple types instead of jsonb
+create or replace function pgmq_public.enable_queue_realtime(
+    queue_name text
+)
+  returns boolean  -- Simple type, no parsing issues
+  language plpgsql
+as $$
+begin
+    -- Implementation
+    return true;
+end;
+$$;
+
+-- Option 2: Use static SQL where possible
+-- (Not always feasible for dynamic operations)
+```
+
+**From Phase 2 Realtime**:
+```python
+# Implemented in SupabaseQueueProvider._rpc()
+# Handles both the error and successful cases
+# All RPC calls go through this wrapper
+```
+
 ## Related
 
+- [@.claude/architecture/database-schema-organization.md](../architecture/database-schema-organization.md) - Schema patterns
 - [@.claude/architecture/langchain-integration.md](../architecture/langchain-integration.md) - LangChain patterns
 - [@.claude/quick-references/llm-api-differences.md](./llm-api-differences.md) - Provider API compatibility
 - [@.claude/quick-references/common-pitfalls.md](./common-pitfalls.md) - All pitfalls index

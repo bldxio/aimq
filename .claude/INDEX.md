@@ -16,6 +16,8 @@ Established patterns for consistency across the codebase.
 
 - **[module-organization.md](patterns/module-organization.md)** - How to organize code into modules
 - **[error-handling.md](patterns/error-handling.md)** - Error handling patterns and best practices
+- **[progressive-enhancement.md](patterns/progressive-enhancement.md)** - Build features in valuable phases
+- **[cli-ux-patterns.md](patterns/cli-ux-patterns.md)** - Helpful CLI error messages and UX
 - **[documentation-as-interface.md](patterns/documentation-as-interface.md)** - Structure commands as interfaces
 - **[progressive-disclosure.md](patterns/progressive-disclosure.md)** - Reveal information progressively
 - **[portable-commands.md](patterns/portable-commands.md)** - Keep commands generic and portable
@@ -35,6 +37,7 @@ Best practices for coding, testing, git workflow, and more.
 System design and library references.
 
 - **[aimq-overview.md](architecture/aimq-overview.md)** - High-level architecture overview
+- **[database-schema-organization.md](architecture/database-schema-organization.md)** - Multi-schema database patterns
 - **[key-libraries.md](architecture/key-libraries.md)** - Reference for main libraries
 - **[langchain-integration.md](architecture/langchain-integration.md)** - LangChain Runnable patterns
 - **[langgraph-integration.md](architecture/langgraph-integration.md)** - LangGraph workflow patterns

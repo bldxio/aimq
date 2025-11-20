@@ -123,6 +123,59 @@ def test_agent_generates_response(mock_llm):
     # Test code here
 ```
 
+### Mock-First Testing Strategy
+
+**Philosophy**: Mock external dependencies for unit tests. Save integration tests for manual verification or separate test suites.
+
+**Why Mock-First?**
+- **Fast**: Tests run in seconds, not minutes
+- **Reliable**: No flaky network/DB issues
+- **Portable**: Run anywhere (CI/CD, local, offline)
+- **Focused**: Test your code, not external services
+
+**Example from Phase 2 Realtime**:
+```python
+# ✅ Good: Mock Supabase RPC calls
+@patch("aimq.clients.supabase.supabase.client")
+def test_create_queue(mock_client):
+    """Test queue creation without real database"""
+    # Arrange: Mock the RPC response
+    mock_client.schema().rpc().execute.return_value.data = {
+        "success": True,
+        "queue_name": "test-queue"
+    }
+
+    # Act: Call the function
+    provider = SupabaseQueueProvider()
+    result = provider.create_queue("test-queue")
+
+    # Assert: Verify behavior
+    assert result["success"] is True
+    mock_client.schema().rpc.assert_called_once_with(
+        "create_queue",
+        {"queue_name": "test-queue", "with_realtime": True}
+    )
+
+# ❌ Bad: Requires real database
+def test_create_queue_integration():
+    """This requires a real Supabase instance"""
+    provider = SupabaseQueueProvider()
+    result = provider.create_queue("test-queue")  # Fails in CI!
+    assert result["success"] is True
+```
+
+**When to Use Integration Tests**:
+- Manual testing during development
+- Separate integration test suite (not in CI)
+- End-to-end testing before release
+- Verifying external service behavior
+
+**When to Use Mocks**:
+- Unit tests (always!)
+- CI/CD pipelines
+- Fast feedback loops
+- Testing error conditions
+
 ## Fixtures
 
 Use pytest fixtures for common setup (defined in `conftest.py`):
