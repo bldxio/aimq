@@ -61,7 +61,7 @@ class TestCreateCommand:
         mock_migrations: Mock,
         mock_project_path: Mock,
     ) -> None:
-        """Test creating a queue generates a migration file.
+        """Test creating a queue generates a migration file with --migration flag.
 
         Args:
             cli_runner: The CLI runner instance.
@@ -72,7 +72,7 @@ class TestCreateCommand:
             AssertionError: If migration creation fails or output is incorrect.
         """
         # Act
-        result = cli_runner.invoke(app, ["create", "test-queue"])
+        result = cli_runner.invoke(app, ["create", "test-queue", "--migration"])
 
         # Assert
         assert result.exit_code == 0
@@ -81,7 +81,6 @@ class TestCreateCommand:
         assert "20240101000000_create_queue_test.sql" in result.stdout
         assert "supabase db reset" in result.stdout
         assert "supabase db push" in result.stdout
-        assert "Supabase Dashboard" in result.stdout
 
     def test_create_migration_error(
         self,
@@ -103,7 +102,9 @@ class TestCreateCommand:
         mock_migrations.create_queue_migration.side_effect = Exception("Template not found")
 
         # Act
-        result = cli_runner.invoke(app, ["create", "test-queue"], catch_exceptions=False)
+        result = cli_runner.invoke(
+            app, ["create", "test-queue", "--migration"], catch_exceptions=False
+        )
 
         # Assert
         assert result.exit_code == 1
@@ -125,7 +126,7 @@ class TestCreateCommand:
             AssertionError: If queue name is not handled correctly.
         """
         # Act
-        result = cli_runner.invoke(app, ["create", "test-queue-123"])
+        result = cli_runner.invoke(app, ["create", "test-queue-123", "--migration"])
 
         # Assert
         assert result.exit_code == 0

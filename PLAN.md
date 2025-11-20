@@ -1,6 +1,6 @@
 # AIMQ Development Plan
 
-**Last Updated**: 2025-11-16
+**Last Updated**: 2025-11-19
 **Current Version**: 0.1.x
 **Target Version**: 0.2.0
 
@@ -137,7 +137,7 @@
 - ✅ All 469 tests passing with zero warnings
 - ✅ Committed: feat(realtime): add Supabase Realtime wake-up service (0166213)
 
-### Knowledge Garden Refactoring (Nov 16, 2025)
+### Knowledge Garden Refactoring (Nov 16-19, 2025)
 - ✅ Refactored all 12 command files for clarity and conciseness (83% reduction)
 - ✅ Standardized command structure with 🎯 ACTION headers
 - ✅ Adopted @ syntax for file references (Claude-compatible)
@@ -159,9 +159,11 @@
 - ✅ Created garden health check script in `.claude/hooks/`
 - ✅ Consolidated INDEX.md into `.claude/INDEX.md`
 - ✅ Renamed `/setup-knowledge-system` to `/seed`
+- ✅ Added `/tidyup` command for archiving completed work
 - ✅ Added cross-links to all command files for better navigation
 - ✅ Net reduction: 2,247 lines removed! 🌱
 - ✅ Committed: refactor(knowledge): streamline commands and organize garden (806a3b1)
+- ✅ Committed: docs: add /tidyup command and archive Phase 1-3 work (bbf1a33)
 
 ---
 
@@ -215,8 +217,8 @@
 
 ## 📋 Recommended Next Steps
 
-### Priority 0: Supabase Realtime for Worker Wake-up 🚀
-**Impact**: Critical | **Effort**: 2-3 hours (Phase 2 remaining) | **Status**: ✅ Phase 1 Complete!
+### ~~Priority 0: Supabase Realtime for Worker Wake-up~~ ✅ COMPLETE! 🚀
+**Impact**: Critical | **Effort**: 7-8 hours total | **Status**: ✅ Phase 1 & 2 Complete!
 
 **Branch**: `feature/supabase-realtime-wake`
 
@@ -233,14 +235,25 @@
 - ✅ Graceful shutdown fixed (no pending task errors)
 - ✅ All success criteria met!
 
-**Phase 2: DB Triggers** (2-3 hours, next step):
-1. Design PostgreSQL trigger function
-2. Create migration for pgmq queues
-3. Add Python migration helpers
-4. Test trigger emissions
-5. Documentation
+**Phase 2: DB Triggers + CLI Commands** ✅ COMPLETE (Nov 19, 2025):
+- ✅ PostgreSQL trigger function in `aimq` schema (private)
+- ✅ Enhanced `setup_aimq.sql` migration with realtime support
+- ✅ Public RPC functions in `pgmq_public` schema:
+  - `create_queue(name, with_realtime)` - Create queue with trigger
+  - `list_queues()` - List all queues with realtime status + metrics
+  - `enable_queue_realtime(name)` - Upgrade existing queues
+- ✅ Python provider methods in `src/aimq/providers/supabase.py`
+- ✅ CLI commands for queue management:
+  - `aimq create <queue>` - Create queue (with optional migration flag)
+  - `aimq list` - List all queues with metrics
+  - `aimq enable-realtime <queue>` - Enable realtime on existing queue
+- ✅ Fixed SQL identifier quoting for hyphenated queue names
+- ✅ Workaround for PostgREST jsonb parsing issue (code 200 error)
+- ✅ Helpful error messages for missing migrations
+- ✅ Mock-based tests (all 480 tests passing)
+- ✅ Documentation updated
 
-**Why Phase 2**: Currently, job notifications must be sent manually via Python. DB triggers will automatically emit realtime events when jobs are enqueued, making the system fully automatic and reliable.
+**Result**: Workers now wake instantly (<1s) when jobs are enqueued, even from outside AIMQ. No manual broadcast code needed. System is fully automatic and production-ready!
 
 **Documentation**: See `ideas/supabase-realtime-streaming.md` for full architecture
 

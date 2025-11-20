@@ -225,3 +225,128 @@ class TestSupabaseQueueProvider:
             provider.send("test_queue", {"test": "msg"})
 
         assert str(exc_info.value) == "Some other error"
+
+
+class TestQueueManagement:
+    """Tests for queue management methods."""
+
+    @patch("aimq.providers.supabase.config")
+    def test_create_queue_with_realtime(
+        self, mock_config, provider: SupabaseQueueProvider, mock_supabase
+    ):
+        """Test creating a queue with realtime enabled."""
+        mock_config.supabase_realtime_channel = "worker-wakeup"
+        mock_config.supabase_realtime_event = "job_enqueued"
+
+        mock_supabase.client.schema().rpc().execute.return_value.data = {
+            "success": True,
+            "queue_name": "test-queue",
+            "realtime_enabled": True,
+            "channel": "worker-wakeup",
+            "event": "job_enqueued",
+        }
+
+        result = provider.create_queue("test-queue")
+
+        mock_supabase.client.schema.assert_called_with("pgmq_public")
+        assert result["success"] is True
+        assert result["queue_name"] == "test-queue"
+        assert result["realtime_enabled"] is True
+
+    @patch("aimq.providers.supabase.config")
+    def test_create_queue_without_realtime(
+        self, mock_config, provider: SupabaseQueueProvider, mock_supabase
+    ):
+        """Test creating a queue without realtime."""
+        mock_config.supabase_realtime_channel = "worker-wakeup"
+        mock_config.supabase_realtime_event = "job_enqueued"
+
+        mock_supabase.client.schema().rpc().execute.return_value.data = {
+            "success": True,
+            "queue_name": "test-queue",
+            "realtime_enabled": False,
+        }
+
+        result = provider.create_queue("test-queue", with_realtime=False)
+
+        assert result["success"] is True
+        assert result["realtime_enabled"] is False
+
+    def test_list_queues_success(self, provider: SupabaseQueueProvider, mock_supabase):
+        """Test listing queues successfully."""
+        mock_supabase.client.schema().rpc().execute.return_value.data = {
+            "success": True,
+            "queues": [
+                {
+                    "queue_name": "queue-1",
+                    "realtime_enabled": True,
+                    "queue_length": 5,
+                    "total_messages": 100,
+                },
+                {
+                    "queue_name": "queue-2",
+                    "realtime_enabled": False,
+                    "queue_length": 0,
+                    "total_messages": 50,
+                },
+            ],
+        }
+
+        result = provider.list_queues()
+
+        assert len(result) == 2
+        assert result[0]["queue_name"] == "queue-1"
+        assert result[0]["realtime_enabled"] is True
+        assert result[0]["queue_length"] == 5
+        assert result[1]["queue_name"] == "queue-2"
+        assert result[1]["realtime_enabled"] is False
+
+    def test_list_queues_empty(self, provider: SupabaseQueueProvider, mock_supabase):
+        """Test listing queues when none exist."""
+        mock_supabase.client.schema().rpc().execute.return_value.data = {
+            "success": True,
+            "queues": [],
+        }
+
+        result = provider.list_queues()
+
+        assert result == []
+
+    @patch("aimq.providers.supabase.config")
+    def test_enable_queue_realtime_success(
+        self, mock_config, provider: SupabaseQueueProvider, mock_supabase
+    ):
+        """Test enabling realtime on existing queue."""
+        mock_config.supabase_realtime_channel = "worker-wakeup"
+        mock_config.supabase_realtime_event = "job_enqueued"
+
+        mock_supabase.client.schema().rpc().execute.return_value.data = {
+            "success": True,
+            "message": "Realtime enabled for queue: test-queue",
+            "queue_name": "test-queue",
+            "realtime_enabled": True,
+        }
+
+        result = provider.enable_queue_realtime("test-queue")
+
+        assert result["success"] is True
+        assert result["queue_name"] == "test-queue"
+        assert result["realtime_enabled"] is True
+
+    @patch("aimq.providers.supabase.config")
+    def test_enable_queue_realtime_not_found(
+        self, mock_config, provider: SupabaseQueueProvider, mock_supabase
+    ):
+        """Test enabling realtime on non-existent queue."""
+        mock_config.supabase_realtime_channel = "worker-wakeup"
+        mock_config.supabase_realtime_event = "job_enqueued"
+
+        mock_supabase.client.schema().rpc().execute.return_value.data = {
+            "success": False,
+            "error": "Queue does not exist: nonexistent-queue",
+        }
+
+        result = provider.enable_queue_realtime("nonexistent-queue")
+
+        assert result["success"] is False
+        assert "does not exist" in result["error"]
