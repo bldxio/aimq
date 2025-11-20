@@ -1,6 +1,6 @@
 # AIMQ Development Plan
 
-**Last Updated**: 2025-11-19
+**Last Updated**: 2025-11-20
 **Current Version**: 0.1.x
 **Target Version**: 0.2.0
 
@@ -11,115 +11,7 @@
 
 ## ✅ Completed Work
 
-### Module Refactoring (Nov 12, 2025)
-- ✅ Reorganized from monolithic `langgraph/` to modular structure:
-  - `agents/` - Agent implementations, decorators, states, validation
-  - `workflows/` - Workflow implementations, decorators, states
-  - `memory/` - Checkpointing and persistence
-  - `common/` - Shared utilities (exceptions, LLM resolution)
-- ✅ Split decorators by domain (agents vs workflows)
-- ✅ Improved code organization and maintainability
-
-### Testing & Stability (Nov 12, 2025)
-- ✅ Added comprehensive test suite (40 new tests)
-- ✅ Achieved 82% overall test coverage (up from 79%)
-- ✅ 4 modules now at 100% coverage (workflows, agents)
-- ✅ Mock-based testing for external dependencies
-- ✅ Error handling and edge case coverage
-- ✅ Graceful error handling in worker (no re-raising)
-
-### Knowledge Garden Enhancement (Nov 12-13, 2025)
-- ✅ Created 9 helper commands for knowledge management
-- ✅ Commands are language-agnostic and agent-agnostic
-- ✅ Added `/fix` - Run tests and fix issues
-- ✅ Added `/debug` - Troubleshoot build/test issues
-- ✅ Added `/test` - Suggest or write tests
-- ✅ Added `/plan` - Review and update PLAN.md (working memory)
-- ✅ Added `/remember` - Record patterns in knowledge garden
-- ✅ Added `/learn` - Extract lessons from history
-- ✅ Added `/focus` - Explore knowledge garden topics
-- ✅ Added `/levelup` - Research and add new knowledge
-- ✅ Added `/cultivate` - Maintain and organize knowledge garden
-- ✅ Updated `/commit` to remind about PLAN.md updates
-- ✅ Created GARDENING.md - Crash course guide with collaboration framework
-- ✅ Updated agents.md to reference GARDENING.md
-- ✅ Established hierarchy: CONSTITUTION → GARDEN → PLAN
-
-### Vision & Ideas (Nov 13, 2025)
-- ✅ Created VISION.md as living north star document
-- ✅ Updated hierarchy: CONSTITUTION → VISION → GARDEN → PLAN
-- ✅ Created `ideas/` directory for future feature planning
-- ✅ Added comprehensive multi-agent group chat design
-- ✅ Documented RAG workflows architecture
-- ✅ Planned Zep knowledge graph integration
-- ✅ Designed Supabase Realtime streaming
-- ✅ Outlined human-in-the-loop workflows
-- ✅ Broke down vision into 9 independently buildable components
-
-### Testing Improvements (Nov 13, 2025)
-- ✅ Improved worker coverage: 75% → 84% (+9%)
-- ✅ Improved queue coverage: 75% → 93% (+18%)
-- ✅ Added 11 new tests for core functionality:
-  - 4 worker tests (signal handling, graceful shutdown)
-  - 7 queue tests (DLQ, error handlers, max retries)
-- ✅ Fixed deprecation warning: `datetime.utcnow()` → `datetime.now(timezone.utc)`
-- ✅ Overall coverage: 82% → 84%
-- ✅ Total tests: 421 passing
-
-### Knowledge Garden Expansion (Nov 13, 2025)
-- ✅ Extracted lessons from recent work using `/learn`
-- ✅ Created 6 new knowledge documents:
-  - `patterns/testing-strategy.md` - Systematic testing approach
-  - `patterns/queue-error-handling.md` - DLQ and retry patterns
-  - `patterns/worker-error-handling.md` - Worker stability patterns
-  - `architecture/vision-driven-development.md` - Vision vs Plan
-  - `architecture/knowledge-systems.md` - Knowledge garden benefits
-  - `quick-references/common-pitfalls.md` - Common mistakes
-- ✅ Updated 5 existing documents with new insights
-- ✅ Updated all README files with new content
-
-### Message Agent Lessons (Nov 13, 2025)
-- ✅ Extracted lessons from message agent development using `/learn`
-- ✅ Created 3 new knowledge documents:
-  - `patterns/composable-tools.md` - Build small, focused tools that compose
-  - `patterns/demo-driven-development.md` - Use demo deadlines to focus
-  - `quick-references/llm-api-differences.md` - LLM provider API compatibility
-- ✅ Updated `quick-references/common-pitfalls.md` with 3 new sections:
-  - Message serialization for queues (LangChain objects)
-  - Regex edge cases (email addresses in @mentions)
-  - pgmq function signatures
-- ✅ Updated pattern and quick-reference README files
-
-### Message Agent MVP (Nov 13, 2025)
-- ✅ Built composable message routing system in ~2 hours
-- ✅ Created 3 routing tools:
-  - `DetectMentions` - Extract @mentions from text
-  - `ResolveQueue` - Map mentions to queue names
-  - `LookupProfile` - Query Supabase profiles (ready for future)
-- ✅ Implemented `MessageRoutingWorkflow` for intelligent routing
-- ✅ Created working demo with 3 queues:
-  - `incoming-messages` - Entry point for all messages
-  - `default-assistant` - General questions handler
-  - `react-assistant` - Complex queries with tools
-- ✅ Added 39 comprehensive tests (all passing)
-- ✅ Fixed bugs:
-  - Mutable default arguments in tools
-  - Noisy logging in routing workflow
-  - Mistral API compatibility (`chat.complete` vs `chat.completions.create`)
-  - Message serialization for queue compatibility
-  - Email detection in @mention regex
-- ✅ Created demo script and queue clearing utility
-- ✅ Full documentation in `examples/message_agent/`
-- ✅ Committed: feat(routing): add composable message routing system (17f7204)
-
-### Interactive Chat CLI (Nov 15, 2025)
-- ✅ Built beautiful Rich-based CLI for demoing the system
-- ✅ Added Weather tool (Open-Meteo API)
-- ✅ Added QueryTable tool for Supabase database queries
-- ✅ Implemented outbound message queue handling
-- ✅ Full markdown rendering, syntax highlighting, spinners
-- ✅ Successfully demoed in meeting - exposed performance bottlenecks
-- ✅ Committed: feat(message-agent): add interactive chat CLI with weather and database tools (99d4773)
+> **Note**: Work older than 5 days is archived in [CHANGELOG.md](./CHANGELOG.md) to keep this plan focused.
 
 ### Supabase Realtime Worker Wake-up - Phase 1 (Nov 16, 2025)
 - ✅ Added configuration for realtime service
@@ -164,6 +56,57 @@
 - ✅ Net reduction: 2,247 lines removed! 🌱
 - ✅ Committed: refactor(knowledge): streamline commands and organize garden (806a3b1)
 - ✅ Committed: docs: add /tidyup command and archive Phase 1-3 work (bbf1a33)
+
+### Supabase Realtime Worker Wake-up - Phase 2 (Nov 19-20, 2025)
+- ✅ PostgreSQL trigger function in `aimq` schema (private)
+- ✅ Enhanced `setup_aimq.sql` migration with realtime support
+- ✅ Public RPC functions in `pgmq_public` schema:
+  - `create_queue(name, with_realtime)` - Create queue with trigger
+  - `list_queues()` - List all queues with realtime status + metrics
+  - `enable_queue_realtime(name)` - Upgrade existing queues
+- ✅ Python provider methods in `src/aimq/providers/supabase.py`
+- ✅ CLI commands for queue management:
+  - `aimq create <queue>` - Create queue (with optional migration flag)
+  - `aimq list` - List all queues with metrics
+  - `aimq enable-realtime <queue>` - Enable realtime on existing queue
+- ✅ Fixed SQL identifier quoting for hyphenated queue names
+- ✅ Workaround for PostgREST jsonb parsing issue (code 200 error)
+- ✅ Helpful error messages for missing migrations
+- ✅ Mock-based tests (all 480 tests passing)
+- ✅ Documentation updated
+- ✅ Committed: feat(realtime): add db triggers and queue management cli (e498203)
+- ✅ Merged to dev (927d9cf)
+
+### Phase 2 Lessons Extraction (Nov 20, 2025)
+- ✅ Extracted 7 key lessons from Supabase Realtime Phase 2 work
+- ✅ Created 3 new knowledge documents:
+  - `architecture/database-schema-organization.md` - Three-schema pattern for security & usability
+  - `patterns/progressive-enhancement.md` - Build features in valuable phases
+  - `patterns/cli-ux-patterns.md` - Helpful error messages and user guidance
+- ✅ Updated 3 existing documents:
+  - `quick-references/aimq-pitfalls.md` - SQL identifier quoting & PostgREST jsonb workaround
+  - `quick-references/python-pitfalls.md` - Environment variable loading with pydantic-settings
+  - `standards/testing.md` - Mock-first testing strategy
+- ✅ All lessons include real examples from Phase 2 work
+- ✅ Committed: docs(garden): extract lessons from Phase 2 Realtime work (be76c60)
+
+### Knowledge Garden Cultivation (Nov 20, 2025)
+- ✅ Split 4 oversized files into 17 focused files (<400 lines each):
+  - `cli-ux-patterns.md` → 3 files (core, examples, patterns)
+  - `progressive-enhancement.md` → 3 files (core, patterns, case study)
+  - `llm-provider-apis.md` → 2 files (comparison, best practices)
+  - `database-schema-organization.md` → 2 files (patterns, migration)
+- ✅ Created 8 standard templates for consistent documentation:
+  - Pattern, Standard, Architecture, Quick-Reference, Command, Constitution, Vision, Plan
+  - Templates README with usage guidelines
+- ✅ Built automation for garden maintenance:
+  - `generate_index.py` script for auto-generating INDEX.md
+  - Scripts README with documentation
+- ✅ Marked original oversized files as deprecated with clear warnings
+- ✅ Refreshed INDEX.md with all 84 markdown files
+- ✅ Created maintenance log (MAINTENANCE-2025-11-20.md)
+- ✅ All active files now under 400 lines
+- ✅ Committed: docs(garden): cultivate and organize knowledge garden (6bf6d25)
 
 ---
 
