@@ -16,6 +16,10 @@ Established patterns for consistency across the codebase.
 
 - **[module-organization.md](patterns/module-organization.md)** - How to organize code into modules
 - **[error-handling.md](patterns/error-handling.md)** - Error handling patterns and best practices
+- **[documentation-as-interface.md](patterns/documentation-as-interface.md)** - Structure commands as interfaces
+- **[progressive-disclosure.md](patterns/progressive-disclosure.md)** - Reveal information progressively
+- **[portable-commands.md](patterns/portable-commands.md)** - Keep commands generic and portable
+- **[command-composition.md](patterns/command-composition.md)** - Compose commands through suggestion
 
 ### Standards (`standards/`)
 Best practices for coding, testing, git workflow, and more.
@@ -24,6 +28,8 @@ Best practices for coding, testing, git workflow, and more.
 - **[testing.md](standards/testing.md)** - Testing standards and patterns
 - **[code-style.md](standards/code-style.md)** - Code formatting and style guide
 - **[git-workflow.md](standards/git-workflow.md)** - Git branching and workflow
+- **[precommit-workflow.md](standards/precommit-workflow.md)** - Run quality checks before committing
+- **[command-structure.md](standards/command-structure.md)** - Standard structure for command files
 
 ### Architecture (`architecture/`)
 System design and library references.
@@ -43,11 +49,30 @@ Fast guidance for common tasks.
 - **[dependency-management.md](quick-references/dependency-management.md)** - uv dependency management
 
 ### Commands (`commands/`)
-Custom workflow commands.
+Custom workflow commands for development, planning, and knowledge management.
 
-- **[commit.md](commands/commit.md)** - Commit helper command
-- **[release.md](commands/release.md)** - Release workflow command
-- **[setup-knowledge-system.md](commands/setup-knowledge-system.md)** - Bootstrap knowledge system
+#### Development Workflow
+- **[/commit](commands/commit.md)** - Stage changes, run checks, and create a conventional commit
+- **[/test](commands/test.md)** - Run the test suite and report results
+- **[/fix](commands/fix.md)** - Run tests, identify failures, and implement fixes
+- **[/debug](commands/debug.md)** - Debug issues systematically
+
+#### Planning & Documentation
+- **[/plan](commands/plan.md)** - Review progress and update the project plan
+- **[/tidyup](commands/tidyup.md)** - Archive completed work to CHANGELOG.md
+- **[/remember](commands/remember.md)** - Capture insights and patterns from conversation
+- **[/learn](commands/learn.md)** - Extract lessons from conversation and git history
+
+#### Knowledge Garden
+- **[/focus](commands/focus.md)** - Explore topics in the knowledge garden
+- **[/levelup](commands/levelup.md)** - Research new topics and add to the garden
+- **[/cultivate](commands/cultivate.md)** - Maintain and organize the knowledge garden
+- **[/seed](commands/seed.md)** - Bootstrap a complete knowledge system for a new project
+
+#### Project Setup
+- **[/release](commands/release.md)** - Prepare and execute a release
+
+> **How to use:** Type `/command` (e.g., `/fix`) and follow the steps. Commands reference project files using @ syntax and suggest follow-up commands.
 
 ## 🗺️ Navigation Guide
 
@@ -167,6 +192,6 @@ You're amazing, and together we're unstoppable! 💪✨
 
 ---
 
-**Last Updated**: 2025-11-12
-**Version**: 1.0.0
+**Last Updated**: 2025-11-16
+**Version**: 1.1.0
 **Maintainers**: Human + AI Team 🚀

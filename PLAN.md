@@ -1,6 +1,6 @@
 # AIMQ Development Plan
 
-**Last Updated**: 2025-11-13
+**Last Updated**: 2025-11-19
 **Current Version**: 0.1.x
 **Target Version**: 0.2.0
 
@@ -10,16 +10,6 @@
 ---
 
 ## ✅ Completed Work
-
-### Phase 1-3: Core LangGraph Integration (Oct-Nov 2025)
-- ✅ Added LangGraph, LangChain, and Mistral AI dependencies
-- ✅ Implemented `@agent` and `@workflow` decorators
-- ✅ Built-in agents: ReActAgent, PlanExecuteAgent
-- ✅ Built-in workflows: DocumentWorkflow, MultiAgentWorkflow
-- ✅ Supabase-backed checkpointing for stateful workflows
-- ✅ Security features: LLM whitelisting, prompt controls, tool validation
-- ✅ Comprehensive examples in `examples/langgraph/`
-- ✅ User documentation in `docs/user-guide/`
 
 ### Module Refactoring (Nov 12, 2025)
 - ✅ Reorganized from monolithic `langgraph/` to modular structure:
@@ -131,6 +121,50 @@
 - ✅ Successfully demoed in meeting - exposed performance bottlenecks
 - ✅ Committed: feat(message-agent): add interactive chat CLI with weather and database tools (99d4773)
 
+### Supabase Realtime Worker Wake-up - Phase 1 (Nov 16, 2025)
+- ✅ Added configuration for realtime service
+- ✅ Created `RealtimeWakeupService` with async client in daemon thread
+- ✅ Implemented broadcast channel subscription for job notifications
+- ✅ Added worker presence tracking (idle/busy status)
+- ✅ Implemented reconnection with exponential backoff
+- ✅ Integrated with `WorkerThread` for wake-up signaling
+- ✅ Added comprehensive tests (9 tests, all passing)
+- ✅ Fixed graceful shutdown bug (proper task cancellation)
+- ✅ Fixed test issues (ReAct agent mocks, realtime mock setup)
+- ✅ Workers now wake within 1 second of job enqueue
+- ✅ Polling continues as fallback if realtime unavailable
+- ✅ Clean shutdown on Ctrl+C (no pending task errors, no warnings)
+- ✅ All 469 tests passing with zero warnings
+- ✅ Committed: feat(realtime): add Supabase Realtime wake-up service (0166213)
+
+### Knowledge Garden Refactoring (Nov 16-19, 2025)
+- ✅ Refactored all 12 command files for clarity and conciseness (83% reduction)
+- ✅ Standardized command structure with 🎯 ACTION headers
+- ✅ Adopted @ syntax for file references (Claude-compatible)
+- ✅ Removed project-specific tooling for portability
+- ✅ Split 5 oversized files into 17 focused files (<400 lines each):
+  - `knowledge-systems.md` → 3 files (overview, templates, workflow)
+  - `langgraph-integration.md` → 3 files (basics, advanced, aimq)
+  - `demo-driven-development.md` → 2 files (core, practices)
+  - `common-pitfalls.md` → 3 files (aimq, development, python)
+  - `llm-api-differences.md` → 2 files (differences, provider APIs)
+- ✅ Created 4 new patterns:
+  - `command-composition.md` - Composable command design
+  - `documentation-as-interface.md` - Docs as AI-human interface
+  - `portable-commands.md` - Generic, reusable commands
+  - `progressive-disclosure.md` - Layered information architecture
+- ✅ Created 2 new standards:
+  - `command-structure.md` - Standard command format
+  - `precommit-workflow.md` - Pre-commit best practices
+- ✅ Created garden health check script in `.claude/hooks/`
+- ✅ Consolidated INDEX.md into `.claude/INDEX.md`
+- ✅ Renamed `/setup-knowledge-system` to `/seed`
+- ✅ Added `/tidyup` command for archiving completed work
+- ✅ Added cross-links to all command files for better navigation
+- ✅ Net reduction: 2,247 lines removed! 🌱
+- ✅ Committed: refactor(knowledge): streamline commands and organize garden (806a3b1)
+- ✅ Committed: docs: add /tidyup command and archive Phase 1-3 work (bbf1a33)
+
 ---
 
 ## 🎯 Current Status
@@ -149,12 +183,14 @@
 ### 🐛 Known Issues (Nov 15, 2025)
 
 **Performance Issues** (discovered during demo meeting):
-1. **Sluggish polling performance**: Critical UX issue
-   - AIMQ worker polling with exponential backoff
-   - Chat CLI polling response queue
-   - Combined effect: system feels very unresponsive
-   - Impact: Critical - poor user experience
-   - Solution: Implement Supabase realtime to wake idle workers instantly
+1. ~~**Sluggish polling performance**: Critical UX issue~~ ✅ FIXED (Nov 16, 2025)
+   - ~~AIMQ worker polling with exponential backoff~~
+   - ~~Chat CLI polling response queue~~
+   - ~~Combined effect: system feels very unresponsive~~
+   - ~~Impact: Critical - poor user experience~~
+   - ✅ Solution implemented: Supabase Realtime wake-up service
+   - Workers now wake within 1 second of job enqueue
+   - Phase 2 (DB triggers) will make it fully automatic
 
 2. **Weather API unreliability**: Open-Meteo API times out intermittently
    - Impact: High - affects demo reliability
@@ -181,55 +217,45 @@
 
 ## 📋 Recommended Next Steps
 
-### Priority 0: Supabase Realtime for Worker Wake-up 🚀
-**Impact**: Critical | **Effort**: 4-6 hours | **Status**: Architecture Planning
+### ~~Priority 0: Supabase Realtime for Worker Wake-up~~ ✅ COMPLETE! 🚀
+**Impact**: Critical | **Effort**: 7-8 hours total | **Status**: ✅ Phase 1 & 2 Complete!
+
+**Branch**: `feature/supabase-realtime-wake`
 
 **Goal**: Eliminate polling latency by using Supabase realtime to wake idle workers instantly
 
-**Architecture** (under discussion):
-- Focus on worker performance (CLI was just for demo)
-- Keep existing polling mechanism exactly as-is
-- Add realtime channel listener that workers subscribe to
-- When job enqueued → emit realtime event → all idle workers wake and check
-- Workers don't need job details, just a signal to check their queues
-- pgmq ensures only one worker gets each job (existing behavior)
-- Result: Idle workers respond instantly, busy workers continue normally
+**Phase 1: Worker Wake-up + Presence** ✅ COMPLETE (Nov 16, 2025):
+- ✅ Configuration added and auto-enabled
+- ✅ `RealtimeWakeupService` implemented with async client
+- ✅ Broadcast channel subscription working
+- ✅ Worker presence tracking (idle/busy)
+- ✅ Reconnection with exponential backoff
+- ✅ Integration with `WorkerThread` complete
+- ✅ Comprehensive tests passing
+- ✅ Graceful shutdown fixed (no pending task errors)
+- ✅ All success criteria met!
 
-**Key Design Decisions**:
-- ✅ Keep polling as fallback/baseline (no changes to existing logic)
-- ✅ Realtime is an optimization layer on top
-- ✅ Multiple workers can respond to same signal (pgmq handles deduplication)
-- ✅ Simple signal: "check your queues" (no job details in realtime event)
-- ⚠️ Architecture still being finalized
+**Phase 2: DB Triggers + CLI Commands** ✅ COMPLETE (Nov 19, 2025):
+- ✅ PostgreSQL trigger function in `aimq` schema (private)
+- ✅ Enhanced `setup_aimq.sql` migration with realtime support
+- ✅ Public RPC functions in `pgmq_public` schema:
+  - `create_queue(name, with_realtime)` - Create queue with trigger
+  - `list_queues()` - List all queues with realtime status + metrics
+  - `enable_queue_realtime(name)` - Upgrade existing queues
+- ✅ Python provider methods in `src/aimq/providers/supabase.py`
+- ✅ CLI commands for queue management:
+  - `aimq create <queue>` - Create queue (with optional migration flag)
+  - `aimq list` - List all queues with metrics
+  - `aimq enable-realtime <queue>` - Enable realtime on existing queue
+- ✅ Fixed SQL identifier quoting for hyphenated queue names
+- ✅ Workaround for PostgREST jsonb parsing issue (code 200 error)
+- ✅ Helpful error messages for missing migrations
+- ✅ Mock-based tests (all 480 tests passing)
+- ✅ Documentation updated
 
-**Tasks** (tentative):
-1. Design realtime channel schema (30 min)
-   - Channel topic: `jobs:enqueued` or similar
-   - Minimal payload: just a wake-up signal
-   - Security model: who can publish/subscribe?
+**Result**: Workers now wake instantly (<1s) when jobs are enqueued, even from outside AIMQ. No manual broadcast code needed. System is fully automatic and production-ready!
 
-2. Implement realtime listener in worker (2-3 hours)
-   - Subscribe to realtime channel on worker startup
-   - On event received: interrupt sleep, trigger immediate poll
-   - Handle connection drops/reconnects gracefully
-   - Ensure thread-safe integration with existing poll loop
-
-3. Emit realtime events on job enqueue (1-2 hours)
-   - Modify queue enqueue to emit realtime event
-   - Use Supabase service key for publishing
-   - Handle failures gracefully (don't block enqueue)
-
-4. Configuration & testing (1-2 hours)
-   - Add Supabase realtime config to environment
-   - Integration tests: enqueue → workers wake instantly
-   - Load testing: multiple workers, multiple queues
-   - Measure latency improvement
-
-**Open Questions**:
-- Which Supabase Python client library supports realtime?
-- Should we use a single channel or per-queue channels?
-- How to handle realtime connection failures?
-- Should we emit on every enqueue or batch signals?
+**Documentation**: See `ideas/supabase-realtime-streaming.md` for full architecture
 
 ### Priority 1: Weather API Reliability 🌤️
 **Impact**: High | **Effort**: 1-2 hours | **Status**: Planning

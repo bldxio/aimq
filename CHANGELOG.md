@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- LangGraph integration with `@agent` and `@workflow` decorators
+- Built-in agents: ReActAgent and PlanExecuteAgent
+- Built-in workflows: DocumentWorkflow and MultiAgentWorkflow
+- Supabase-backed checkpointing for stateful workflows
+- Security features: LLM whitelisting, prompt controls, and tool validation
+- Comprehensive examples in `examples/langgraph/`
+- User documentation in `docs/user-guide/`
+
 ## [0.1.2] - 2025-10-21
 
 ### Fixed

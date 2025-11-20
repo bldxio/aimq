@@ -36,6 +36,12 @@
 - Makes git history readable and meaningful
 - See `.claude/commands/commit.md` for guidance
 
+### 6. Consistency is Key
+- Use project conventions everywhere (code, docs, error messages)
+- Error messages should reference `uv add`, not `pip install`
+- Command examples should use `uv run`, not bare `python`
+- Maintain consistency across all touchpoints with users
+
 ## Non-Negotiables
 
 ### Code Quality
