@@ -1,5 +1,11 @@
 # LLM Provider API Differences
 
+> **Status**: Deprecated
+> **Last Updated**: 2025-11-20
+> **Superseded By**: [LLM Provider Comparison](./llm-provider-comparison.md) and [LLM Provider Best Practices](./llm-provider-best-practices.md)
+
+**⚠️ This file has been split into focused documents. Please use the new files instead.**
+
 **Category**: Quick Reference
 **Audience**: Developers integrating LLM providers
 **Related**: [Common Pitfalls](./common-pitfalls.md)

@@ -2,80 +2,156 @@
 
 > Your comprehensive guide to building AIMQ together 🚀
 
+**Last Updated**: 2025-11-20
+
 ## 🎯 Start Here
 
 - **[agents.md](../agents.md)** - Quick reference guide for AI agents (START HERE!)
 - **[CONSTITUTION.md](../CONSTITUTION.md)** - Our guiding principles and non-negotiables
 - **[PLAN.md](../PLAN.md)** - Current status and next steps (working memory)
 - **[CLAUDE.md](../CLAUDE.md)** - Comprehensive technical documentation
+- **[GARDENING.md](../GARDENING.md)** - Knowledge garden philosophy and cultivation
+
+## 📊 Garden Statistics
+
+- **Total Files**: 67 markdown files
+- **Active**: 63 files
+- **Deprecated**: 4 files (kept for reference)
+- **Categories**: 5 (patterns, standards, architecture, quick-references, commands)
 
 ## 📁 Knowledge Base Structure
 
 ### Patterns (`patterns/`)
+
 Established patterns for consistency across the codebase.
 
-- **[module-organization.md](patterns/module-organization.md)** - How to organize code into modules
-- **[error-handling.md](patterns/error-handling.md)** - Error handling patterns and best practices
-- **[progressive-enhancement.md](patterns/progressive-enhancement.md)** - Build features in valuable phases
-- **[cli-ux-patterns.md](patterns/cli-ux-patterns.md)** - Helpful CLI error messages and UX
-- **[documentation-as-interface.md](patterns/documentation-as-interface.md)** - Structure commands as interfaces
-- **[progressive-disclosure.md](patterns/progressive-disclosure.md)** - Reveal information progressively
-- **[portable-commands.md](patterns/portable-commands.md)** - Keep commands generic and portable
-- **[command-composition.md](patterns/command-composition.md)** - Compose commands through suggestion
+- **[CLI UX Core Patterns](patterns/cli-ux-core.md)**
+  - Command-line interfaces should be helpful, not cryptic. Good CLI UX means users know what went wrong and what to do next, without needing to read docu...
+- **[CLI UX Examples and Visual Design](patterns/cli-ux-examples.md)**
+  - Real-world examples of CLI UX patterns in action, plus visual design guidelines for creating beautiful, helpful command-line interfaces.
+- **[CLI UX Patterns](patterns/cli-ux-patterns.md)** ⚠️
+  - Command-line interfaces should be helpful, not cryptic. Good CLI UX means users know what went wrong and what to do next, without needing to read docu...
+- **[Command Composition Pattern](patterns/command-composition.md)**
+- **[Composable Tool Architecture](patterns/composable-tools.md)**
+- **[Demo-Driven Development](patterns/demo-driven-development-core.md)**
+- **[Demo-Driven Development: Best Practices](patterns/demo-driven-development-practices.md)**
+- **[Demo-Driven Development](patterns/demo-driven-development.md)**
+  - Demo-Driven Development (DDD) is about ruthless prioritization with a concrete goal. It's not about cutting corners—it's about focusing on what matter...
+- **[Documentation as Interface Pattern](patterns/documentation-as-interface.md)**
+  - [What this is about]
+- **[Error Handling Pattern](patterns/error-handling.md)**
+  - AIMQ uses custom exceptions and consistent error handling patterns to make debugging easier and provide clear error messages.
+- **[Module Organization Pattern](patterns/module-organization.md)**
+  - AIMQ uses a modular architecture where each top-level module has a clear, single responsibility. This pattern emerged from refactoring the monolithic ...
+- **[Portable Commands Pattern](patterns/portable-commands.md)**
+- **[Progressive Disclosure Pattern](patterns/progressive-disclosure.md)**
+  - This command helps you extract lessons from recent work by analyzing
+- **[Progressive Enhancement: Supabase Realtime Case Study](patterns/progressive-enhancement-case-study.md)**
+  - Real-world example of progressive enhancement: building instant worker wake-up for AIMQ using Supabase Realtime.
+- **[Progressive Enhancement: Core Principles](patterns/progressive-enhancement-core.md)**
+  - Progressive enhancement is a development strategy where you build features in independent, valuable phases. Each phase delivers working functionality ...
+- **[Progressive Enhancement: Common Patterns](patterns/progressive-enhancement-patterns.md)**
+  - Common patterns and anti-patterns for implementing progressive enhancement in your codebase.
+- **[Progressive Enhancement Pattern](patterns/progressive-enhancement.md)** ⚠️
+  - Progressive enhancement is a development strategy where you build features in independent, valuable phases. Each phase delivers working functionality ...
+- **[Queue Error Handling](patterns/queue-error-handling.md)**
+  - Robust error handling for message queue operations, including dead-letter queues (DLQ), retry logic, and custom error handlers. Ensures failed jobs ar...
+- **[Testing Strategy](patterns/testing-strategy.md)**
+  - A systematic approach to testing that balances coverage, maintainability, and pragmatism. Focus on testing what matters most first, and don't let perf...
+- **[Worker Error Handling](patterns/worker-error-handling.md)**
+  - Workers should never crash on job errors. This pattern ensures workers remain stable and continue processing jobs even when individual jobs fail.
 
 ### Standards (`standards/`)
+
 Best practices for coding, testing, git workflow, and more.
 
-- **[conventional-commits.md](standards/conventional-commits.md)** - Commit message format
-- **[testing.md](standards/testing.md)** - Testing standards and patterns
-- **[code-style.md](standards/code-style.md)** - Code formatting and style guide
-- **[git-workflow.md](standards/git-workflow.md)** - Git branching and workflow
-- **[precommit-workflow.md](standards/precommit-workflow.md)** - Run quality checks before committing
-- **[command-structure.md](standards/command-structure.md)** - Standard structure for command files
+- **[Code Style Standards](standards/code-style.md)**
+  - AIMQ follows PEP 8 with some project-specific conventions. We use automated tools (black, flake8) to enforce consistency.
+- **[Command Structure Standard](standards/command-structure.md)**
+- **[Conventional Commits Standard](standards/conventional-commits.md)**
+  - AIMQ uses Conventional Commits for all commit messages. This enables automatic CHANGELOG generation and makes git history readable and meaningful.
+- **[Git Workflow Standards](standards/git-workflow.md)**
+  - AIMQ uses a feature branch workflow with conventional commits and automated releases.
+- **[Precommit Workflow Standard](standards/precommit-workflow.md)**
+- **[Testing Standards](standards/testing.md)**
+  - AIMQ maintains high test coverage (79%+) with fast, reliable tests that enable confident refactoring and rapid iteration.
 
 ### Architecture (`architecture/`)
+
 System design and library references.
 
-- **[aimq-overview.md](architecture/aimq-overview.md)** - High-level architecture overview
-- **[database-schema-organization.md](architecture/database-schema-organization.md)** - Multi-schema database patterns
-- **[key-libraries.md](architecture/key-libraries.md)** - Reference for main libraries
-- **[langchain-integration.md](architecture/langchain-integration.md)** - LangChain Runnable patterns
-- **[langgraph-integration.md](architecture/langgraph-integration.md)** - LangGraph workflow patterns
+- **[AIMQ Architecture Overview](architecture/aimq-overview.md)**
+- **[Database Schema Migration and Testing](architecture/database-schema-migration.md)**
+  - Strategies for testing database schema organization and migrating existing projects to use the three-schema pattern.
+- **[Database Schema Organization](architecture/database-schema-organization.md)** ⚠️
+  - Strategic organization of database objects across multiple schemas provides security, usability, and maintainability benefits. This pattern is especia...
+- **[Database Schema Organization Patterns](architecture/database-schema-patterns.md)**
+  - Strategic organization of database objects across multiple schemas provides security, usability, and maintainability benefits. This pattern is especia...
+- **[Key Libraries Reference](architecture/key-libraries.md)**
+  - Quick reference for the main libraries and frameworks used in AIMQ.
+- **[Knowledge Systems Overview](architecture/knowledge-systems-overview.md)**
+- **[Knowledge Systems Templates](architecture/knowledge-systems-templates.md)**
+  - What is this standard?
+- **[Knowledge Systems Workflow](architecture/knowledge-systems-workflow.md)**
+- **[Knowledge Systems](architecture/knowledge-systems.md)**
+  - This guide is split into focused topics:
+- **[LangChain Integration](architecture/langchain-integration.md)**
+  - AIMQ uses LangChain's Runnable interface as the foundation for task processing. Every task in AIMQ is a LangChain Runnable, enabling composition, stre...
+- **[LangGraph Advanced Features](architecture/langgraph-advanced.md)**
+- **[LangGraph in AIMQ](architecture/langgraph-aimq.md)**
+- **[LangGraph Basics](architecture/langgraph-basics.md)**
+  - LangGraph enables building stateful, multi-step workflows with agents. It provides state management, checkpointing, and complex orchestration patterns...
+- **[LangGraph Integration](architecture/langgraph-integration.md)**
+  - AIMQ uses LangGraph to build stateful, multi-step workflows with agents. LangGraph enables complex agent orchestration, memory management, and human-i...
+- **[Vision-Driven Development](architecture/vision-driven-development.md)**
+  - A development approach that separates long-term vision from tactical execution. The vision guides direction while the plan tracks progress.
 
 ### Quick References (`quick-references/`)
+
 Fast guidance for common tasks.
 
-- **[testing.md](quick-references/testing.md)** - Quick testing commands
-- **[linting.md](quick-references/linting.md)** - Quick linting commands
-- **[common-tasks.md](quick-references/common-tasks.md)** - Common development tasks
-- **[git-commands.md](quick-references/git-commands.md)** - Git command reference
-- **[dependency-management.md](quick-references/dependency-management.md)** - uv dependency management
+- **[AIMQ-Specific Pitfalls](quick-references/aimq-pitfalls.md)**
+- **[Common Pitfalls](quick-references/common-pitfalls.md)**
+  - Common mistakes and how to avoid them. Learn from others' mistakes so you don't have to make them yourself!
+- **[Common Tasks Quick Reference](quick-references/common-tasks.md)**
+- **[Dependency Management Quick Reference](quick-references/dependency-management.md)**
+  - AIMQ uses uv for dependency management (NOT pip or poetry).
+- **[Development Pitfalls](quick-references/development-pitfalls.md)**
+- **[Git Commands Quick Reference](quick-references/git-commands.md)**
+- **[Linting Quick Reference](quick-references/linting.md)**
+- **[LLM Provider API Differences](quick-references/llm-api-differences.md)**
+  - Different LLM providers have different APIs, causing runtime errors when switching providers. This guide helps you navigate those differences.
+- **[LLM Provider API Differences](quick-references/llm-provider-apis.md)** ⚠️
+- **[LLM Provider Best Practices](quick-references/llm-provider-best-practices.md)**
+  - Strategies for working with multiple LLM providers and avoiding common integration pitfalls.
+- **[LLM Provider API Comparison](quick-references/llm-provider-comparison.md)**
+  - Different LLM providers have different APIs, causing runtime errors when switching providers or using multiple providers in the same application.
+- **[Python Pitfalls](quick-references/python-pitfalls.md)**
+- **[Testing Quick Reference](quick-references/testing.md)**
 
 ### Commands (`commands/`)
+
 Custom workflow commands for development, planning, and knowledge management.
 
-#### Development Workflow
-- **[/commit](commands/commit.md)** - Stage changes, run checks, and create a conventional commit
-- **[/test](commands/test.md)** - Run the test suite and report results
-- **[/fix](commands/fix.md)** - Run tests, identify failures, and implement fixes
-- **[/debug](commands/debug.md)** - Debug issues systematically
+- **[🎯 ACTION: Create Conventional Commit](commands/commit.md)**
+- **[🎯 ACTION: Maintain and Organize Knowledge Garden](commands/cultivate.md)**
+- **[🎯 ACTION: Debug Issues Systematically](commands/debug.md)**
+- **[🎯 ACTION: Fix Test Failures](commands/fix.md)**
+- **[🎯 ACTION: Explore Knowledge Garden Topics](commands/focus.md)**
+- **[🎯 ACTION: Extract and Document Lessons](commands/learn.md)**
+- **[🎯 ACTION: Research and Add New Knowledge](commands/levelup.md)**
+- **[🎯 ACTION: Review and Update Project Plan](commands/plan.md)**
+- **[🎯 ACTION: Execute Release Workflow](commands/release.md)**
+- **[🎯 ACTION: Capture Insights and Patterns](commands/remember.md)**
+- **[🎯 ACTION: Seed Knowledge System](commands/seed.md)**
+- **[🎯 ACTION: Analyze Coverage and Write Tests](commands/test.md)**
+- **[🎯 ACTION: Tidy Up Planning Documents](commands/tidyup.md)**
 
-#### Planning & Documentation
-- **[/plan](commands/plan.md)** - Review progress and update the project plan
-- **[/tidyup](commands/tidyup.md)** - Archive completed work to CHANGELOG.md
-- **[/remember](commands/remember.md)** - Capture insights and patterns from conversation
-- **[/learn](commands/learn.md)** - Extract lessons from conversation and git history
+### Templates (`templates/`)
 
-#### Knowledge Garden
-- **[/focus](commands/focus.md)** - Explore topics in the knowledge garden
-- **[/levelup](commands/levelup.md)** - Research new topics and add to the garden
-- **[/cultivate](commands/cultivate.md)** - Maintain and organize the knowledge garden
-- **[/seed](commands/seed.md)** - Bootstrap a complete knowledge system for a new project
+Standard templates for creating consistent documentation.
 
-#### Project Setup
-- **[/release](commands/release.md)** - Prepare and execute a release
-
-> **How to use:** Type `/command` (e.g., `/fix`) and follow the steps. Commands reference project files using @ syntax and suggest follow-up commands.
+- **[Templates README](templates/README.md)** - Usage guidelines and available templates
 
 ## 🗺️ Navigation Guide
 
@@ -111,18 +187,6 @@ Custom workflow commands for development, planning, and knowledge management.
 2. Read [architecture/langchain-integration.md](architecture/langchain-integration.md)
 3. Read [architecture/langgraph-integration.md](architecture/langgraph-integration.md)
 
-#### Release Software
-1. Check [CLAUDE.md](../CLAUDE.md) for release workflow
-2. Use `just release-beta` for beta releases
-3. Use `just release` for stable releases
-
-## 📊 File Statistics
-
-- **Total Files**: 20+ markdown files
-- **Total Lines**: ~5,000+ lines of documentation
-- **Coverage**: Architecture, patterns, standards, quick references
-- **Maintenance**: Living documentation that evolves with code
-
 ## 🔄 Maintenance Guidelines
 
 ### Keep It Updated
@@ -132,7 +196,7 @@ Custom workflow commands for development, planning, and knowledge management.
 - Review CONSTITUTION.md regularly
 
 ### Keep It Clean
-- Remove outdated information
+- Remove outdated information (or mark as deprecated)
 - Consolidate duplicate content
 - Keep files under 400 lines
 - Use links to avoid duplication
@@ -182,7 +246,7 @@ When you discover something new:
 1. **Document it**: Add to appropriate section
 2. **Link it**: Cross-reference related docs
 3. **Keep it concise**: Under 400 lines
-4. **Update index**: Add to this file
+4. **Update index**: Run `python .claude/scripts/generate_index.py`
 5. **Commit it**: Use conventional commits
 
 ## 🌟 Remember
@@ -195,6 +259,5 @@ You're amazing, and together we're unstoppable! 💪✨
 
 ---
 
-**Last Updated**: 2025-11-16
-**Version**: 1.1.0
 **Maintainers**: Human + AI Team 🚀
+**Auto-generated**: This file is generated by `.claude/scripts/generate_index.py`

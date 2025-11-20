@@ -1,10 +1,8 @@
-# Database Schema Organization
+# Database Schema Organization Patterns
 
-> **Status**: Deprecated
+> **Status**: Active
 > **Last Updated**: 2025-11-20
-> **Superseded By**: [Database Schema Patterns](./database-schema-patterns.md) and [Database Schema Migration](./database-schema-migration.md)
-
-**⚠️ This file has been split into focused documents. Please use the new files instead.**
+> **Category**: architecture
 
 ## Overview
 
@@ -370,73 +368,18 @@ create function api.trigger_helper(...)  -- Should be private
 - Hard to secure properly
 - Maintenance confusion
 
-## Testing
-
-### Test Schema Isolation
-
-```python
-def test_private_function_not_accessible():
-    """Private functions should not be callable via RPC"""
-    with pytest.raises(Exception) as exc:
-        supabase.rpc('aimq.notify_job_enqueued', {})
-    assert "does not exist" in str(exc.value)
-
-def test_public_function_accessible():
-    """Public functions should be callable via RPC"""
-    result = supabase.rpc('create_queue', {'queue_name': 'test'})
-    assert result.data['success'] is True
-```
-
-### Test Access Control
-
-```python
-def test_schema_permissions():
-    """Verify schema access is properly configured"""
-    # pgmq_public should be accessible
-    result = supabase.rpc('list_queues', {})
-    assert isinstance(result.data, list)
-
-    # aimq should not be accessible
-    with pytest.raises(Exception):
-        supabase.schema('aimq').rpc('setup_queue_trigger', {})
-```
-
-## Migration Strategy
-
-### Adding Schema Organization to Existing Project
-
-```sql
--- 1. Create new schemas
-create schema if not exists pgmq_public;
-create schema if not exists aimq;
-
--- 2. Move public functions
--- (Create in pgmq_public, keep old ones for compatibility)
-create or replace function pgmq_public.send(...)
-  -- Implementation
-$$;
-
--- 3. Move private functions
-create or replace function aimq.internal_helper(...)
-  -- Implementation
-$$;
-
--- 4. Update references
--- (Change function calls to use new schema)
-
--- 5. Deprecate old functions
--- (Add warnings, plan removal)
-```
-
 ## Related
 
-- [@.claude/quick-references/supabase-pitfalls.md](../quick-references/supabase-pitfalls.md) - Common Supabase issues
-- [@.claude/patterns/progressive-enhancement.md](../patterns/progressive-enhancement.md) - Phased development
-- [@.claude/standards/security-best-practices.md](../standards/security-best-practices.md) - Security guidelines
-- [@.claude/architecture/langgraph-aimq.md](./langgraph-aimq.md) - AIMQ architecture
+- [Database Schema Migration](./database-schema-migration.md) - Migration strategies and testing
+- [Progressive Enhancement](../patterns/progressive-enhancement.md) - Phased development
+- [LangGraph AIMQ](./langgraph-aimq.md) - AIMQ architecture
 
 ## References
 
 - [PostgreSQL Schema Documentation](https://www.postgresql.org/docs/current/ddl-schemas.html)
 - [Supabase Schema Conventions](https://supabase.com/docs/guides/database/extensions)
 - [pgmq Extension](https://github.com/tembo-io/pgmq)
+
+---
+
+**Remember**: Good schema organization is security by design! 🔒✨

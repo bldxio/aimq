@@ -1,5 +1,11 @@
 # Progressive Enhancement Pattern
 
+> **Status**: Deprecated
+> **Last Updated**: 2025-11-20
+> **Superseded By**: [Progressive Enhancement: Core](./progressive-enhancement-core.md), [Patterns](./progressive-enhancement-patterns.md), and [Case Study](./progressive-enhancement-case-study.md)
+
+**⚠️ This file has been split into focused documents. Please use the new files instead.**
+
 ## Overview
 
 Progressive enhancement is a development strategy where you build features in independent, valuable phases. Each phase delivers working functionality that can be tested, deployed, and used immediately, while setting the foundation for the next phase.
