@@ -50,6 +50,7 @@ dependencies = [
     "langchain-core>=0.3.79",
     "psycopg-binary>=3.2.12",
     "python-magic>=0.4.27,<1.0.0",
+    "tenacity>=8.2.0,<10.0.0",
 ]
 
 

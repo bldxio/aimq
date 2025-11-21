@@ -209,7 +209,7 @@ create or replace function aimq.pgmq_notify_job_enqueued()
 returns trigger
 language plpgsql
 security definer
-set search_path = ''
+set search_path = 'realtime, pg_catalog'
 as $$
 declare
   channel_name text;
@@ -218,30 +218,40 @@ declare
   payload jsonb;
 begin
   -- Extract configuration from trigger arguments
-  -- TG_ARGV[0] = channel name (e.g., 'worker-wakeup')
+  -- TG_ARGV[0] = channel name (e.g., 'aimq:jobs')
   -- TG_ARGV[1] = event name (e.g., 'job_enqueued')
   -- TG_ARGV[2] = queue name (e.g., 'default')
   channel_name := TG_ARGV[0];
   event_name := TG_ARGV[1];
   queue_name := TG_ARGV[2];
 
-  -- Build payload for Supabase Realtime
+  -- Build payload for Supabase Realtime broadcast
   payload := jsonb_build_object(
-    'type', 'broadcast',
-    'event', event_name,
-    'payload', jsonb_build_object(
-      'queue', queue_name,
-      'job_id', NEW.msg_id
-    )
+    'queue', queue_name,
+    'job_id', NEW.msg_id
   );
 
-  -- Emit notification to Supabase Realtime
-  -- Format: realtime:{channel_name}
-  perform pg_notify('realtime:' || channel_name, payload::text);
+  -- Send broadcast via Supabase Realtime
+  -- Uses realtime.send() instead of pg_notify for proper Realtime integration
+  begin
+    perform realtime.send(
+      payload,        -- message payload (jsonb)
+      event_name,     -- event name
+      channel_name,   -- topic/channel name
+      false           -- public broadcast (not private)
+    );
+  exception when others then
+    -- Log error but don't fail the insert
+    raise warning 'Failed to send realtime broadcast: %', SQLERRM;
+  end;
 
   return NEW;
 end;
 $$;
+
+-- Grant necessary permissions for the trigger function
+grant usage on schema realtime to postgres, service_role;
+grant execute on function realtime.send(jsonb, text, text, boolean) to postgres, service_role;
 
 comment on function aimq.pgmq_notify_job_enqueued() is
   'Trigger function that emits Supabase Realtime notifications when jobs are enqueued to pgmq queues. Expects 3 trigger arguments: channel_name, event_name, queue_name.';
@@ -388,7 +398,7 @@ grant execute on function pgmq_public.list_queues() to postgres, service_role, a
 -- Enable realtime on an existing queue
 create or replace function pgmq_public.enable_queue_realtime(
   queue_name text,
-  channel_name text default 'worker-wakeup',
+  channel_name text default 'aimq:jobs',
   event_name text default 'job_enqueued'
 )
 returns jsonb
@@ -450,13 +460,13 @@ begin
       and t.tgname = trigger_name
   ) into trigger_exists;
 
+  -- Drop existing trigger if it exists (to update channel/event)
   if trigger_exists then
-    return jsonb_build_object(
-      'success', true,
-      'queue_name', queue_name,
-      'realtime_enabled', true,
-      'channel', channel_name,
-      'event', event_name
+    execute format(
+      'drop trigger if exists %I on %I.%I',
+      trigger_name,
+      table_schema,
+      table_name
     );
   end if;
 
@@ -489,5 +499,87 @@ $$;
 
 comment on function pgmq_public.enable_queue_realtime(text, text, text) is
   'Enables realtime trigger on an existing pgmq queue. Upgrades a standard queue to an AIMQ queue with instant worker wake-up. Returns JSON with operation result.';
+
+grant execute on function pgmq_public.enable_queue_realtime(text, text, text) to postgres, service_role, authenticated;
+
+-- Disable realtime on a queue
+create or replace function pgmq_public.disable_queue_realtime(
+  queue_name text
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  table_name text;
+  table_schema text;
+  trigger_name text;
+  trigger_exists boolean;
+  result jsonb;
+begin
+  -- Find which schema the queue table is in
+  select n.nspname
+  into table_schema
+  from pg_class c
+  join pg_namespace n on c.relnamespace = n.oid
+  where c.relname = 'q_' || queue_name
+    and n.nspname in ('pgmq', 'pgmq_public')
+    and c.relkind = 'r'
+  limit 1;
+
+  if table_schema is null then
+    return jsonb_build_object(
+      'success', false,
+      'error', 'Queue table not found for: ' || queue_name
+    );
+  end if;
+
+  -- Build table and trigger names
+  table_name := 'q_' || queue_name;
+  trigger_name := 'aimq_notify_' || queue_name;
+
+  -- Check if trigger exists
+  select exists(
+    select 1
+    from pg_trigger t
+    join pg_class c on t.tgrelid = c.oid
+    join pg_namespace n on c.relnamespace = n.oid
+    where n.nspname = table_schema
+      and c.relname = 'q_' || queue_name
+      and t.tgname = trigger_name
+  ) into trigger_exists;
+
+  if not trigger_exists then
+    return jsonb_build_object(
+      'success', true,
+      'message', 'Realtime already disabled for queue: ' || queue_name,
+      'queue_name', queue_name
+    );
+  end if;
+
+  -- Drop the trigger
+  execute format(
+    'drop trigger if exists %I on %I.%I',
+    trigger_name,
+    table_schema,
+    table_name
+  );
+
+  -- Return success result
+  result := jsonb_build_object(
+    'success', true,
+    'message', 'Realtime disabled for queue: ' || queue_name,
+    'queue_name', queue_name
+  );
+
+  return result;
+end;
+$$;
+
+comment on function pgmq_public.disable_queue_realtime(text) is
+  'Disables realtime trigger on a pgmq queue. Removes the trigger that broadcasts job_enqueued events. Returns JSON with operation result.';
+
+grant execute on function pgmq_public.disable_queue_realtime(text) to postgres, service_role, authenticated;
 
 grant execute on function pgmq_public.enable_queue_realtime(text, text, text) to postgres, service_role, authenticated;

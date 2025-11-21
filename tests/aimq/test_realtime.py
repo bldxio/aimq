@@ -21,7 +21,7 @@ class TestRealtimeWakeupService:
         assert service._key == "test-key"
         assert service._worker_name == "test-worker"
         assert service._queues == ["queue1", "queue2"]
-        assert service._channel_name == "worker-wakeup"
+        assert service._channel_name == "aimq:jobs"
         assert service._event_name == "job_enqueued"
 
     def test_register_unregister_worker(self):

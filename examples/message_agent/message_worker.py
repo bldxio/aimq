@@ -40,9 +40,9 @@ from langchain_core.runnables import RunnableLambda
 
 from aimq.agents import ReActAgent
 from aimq.clients.supabase import supabase
+from aimq.tools import ToolLoader
 from aimq.tools.ocr import ImageOCR
 from aimq.tools.supabase import QueryTable, ReadFile, ReadRecord
-from aimq.tools.weather import Weather
 from aimq.worker import Worker
 from aimq.workflows import MessageRoutingWorkflow
 
@@ -149,30 +149,34 @@ default_agent = ReActAgent(
 worker.assign(create_agent_with_outbound(default_agent), queue="default-assistant", timeout=300)
 
 
-react_agent = ReActAgent(
-    tools=[
-        Weather(),
-        QueryTable(),
-        ReadFile(),
-        ReadRecord(),
-        ImageOCR(),
-    ],
-    system_prompt="""You are a helpful ReAct assistant with access to tools.
-    You can get weather information, query sports databases, read files, extract text from images, and more.
-    Use your tools to gather information and provide accurate, helpful responses.
+# Load tools from tools.json (if available) + built-in tools
+webhook_tools = ToolLoader.load_from_env()
 
-    Available tools:
-    - weather: Get current weather for any location (accepts natural language)
-    - query_table: Query the competitors table (teams, players, sports data)
-    - read_file: Read files from Supabase storage
-    - read_record: Read database records
-    - image_ocr: Extract text from images
+react_tools = [
+    *webhook_tools,  # Webhook tools from tools.json (e.g., weather)
+    QueryTable(),
+    ReadFile(),
+    ReadRecord(),
+    ImageOCR(),
+]
+
+react_agent = ReActAgent(
+    tools=react_tools,
+    system_prompt="""You are a helpful ReAct assistant with access to various tools.
+    Use your tools to gather information and provide accurate, helpful responses.
 
     When using tools:
     - Be thorough but efficient
     - Explain what you're doing
     - Provide clear, actionable answers
-    - Format sports data in a readable way""",
+    - Format data in a readable way
+
+    You have access to tools for:
+    - External APIs (via webhooks)
+    - Database queries
+    - File operations
+    - Image processing
+    - And more!""",
     llm="mistral-large-latest",
     temperature=0.1,
     memory=False,

@@ -215,3 +215,31 @@ class SupabaseQueueProvider(QueueProvider):
         }
 
         return self._rpc("enable_queue_realtime", params)
+
+    def disable_queue_realtime(self, queue_name: str) -> Dict[str, Any]:
+        """Disable realtime trigger on a pgmq queue.
+
+        Removes the trigger that broadcasts to Supabase Realtime when jobs are enqueued.
+
+        Args:
+            queue_name: Name of the queue to disable realtime on
+
+        Returns:
+            Dict with operation result:
+            {
+                "success": true,
+                "message": "Realtime disabled for queue: my-queue",
+                "queue_name": "my-queue"
+            }
+
+        Raises:
+            Exception: If operation fails
+
+        Example:
+            >>> provider = SupabaseQueueProvider()
+            >>> result = provider.disable_queue_realtime("my-queue")
+            >>> if result["success"]:
+            ...     print(f"Disabled: {result['queue_name']}")
+        """
+        params = {"queue_name": queue_name}
+        return self._rpc("disable_queue_realtime", params)

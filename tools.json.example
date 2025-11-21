@@ -1,0 +1,48 @@
+{
+  "tools": [
+    {
+      "type": "webhook",
+      "name": "weather",
+      "description": "Get current weather information for any location. Accepts city names, addresses, or natural language queries. Returns temperature, conditions, humidity, and wind speed.",
+      "url": "https://hooks.zapier.com/hooks/catch/YOUR_WEBHOOK_ID/",
+      "method": "POST",
+      "timeout": 10,
+      "headers": {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer ${ZAPIER_API_KEY}"
+      },
+      "args": {
+        "location": {
+          "type": "string",
+          "description": "Location to get weather for (city name, address, or coordinates)"
+        }
+      },
+      "response_template": "Weather for {location}:\n{response}"
+    },
+    {
+      "type": "webhook",
+      "name": "send_email",
+      "description": "Send an email via webhook integration",
+      "url": "https://hooks.make.com/YOUR_WEBHOOK_ID",
+      "method": "POST",
+      "timeout": 15,
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "args": {
+        "to": {
+          "type": "string",
+          "description": "Email recipient address"
+        },
+        "subject": {
+          "type": "string",
+          "description": "Email subject line"
+        },
+        "body": {
+          "type": "string",
+          "description": "Email body content"
+        }
+      }
+    }
+  ]
+}
