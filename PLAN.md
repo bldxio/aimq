@@ -108,6 +108,36 @@
 - ✅ All active files now under 400 lines
 - ✅ Committed: docs(garden): cultivate and organize knowledge garden (6bf6d25)
 
+### CLI & Realtime Refactoring + Webhook Tools (Nov 20, 2025)
+- ✅ **Fixed Realtime Broadcasting**:
+  - Changed trigger function from `pg_notify()` to `realtime.send()` for proper Supabase Realtime
+  - Fixed logger to flush immediately for real-time feedback
+  - Fixed broadcast payload access using dictionary syntax
+  - Standardized channel name to `aimq:jobs` everywhere
+  - Added `disable_queue_realtime()` SQL function
+  - Updated `enable_queue_realtime()` to drop/recreate triggers (allows updates)
+- ✅ **CLI Restructuring**:
+  - Consolidated realtime commands into `aimq realtime` subcommands (enable/disable/status)
+  - Consolidated schema commands into `aimq schema` subcommands (enable/disable)
+  - Promoted chat to first-class command: `aimq chat`
+  - Added Rich interactive prompts for queue selection
+  - Removed old flat command structure (enable-realtime, disable-realtime, enable, disable)
+- ✅ **Realtime Module Refactoring**:
+  - Created `src/aimq/realtime/` package with base class + inheritance
+  - Built `RealtimeBaseListener` base class with shared logic
+  - Specialized `RealtimeWakeupService` for worker wake-up + presence
+  - Specialized `RealtimeChatListener` for chat notifications
+  - Eliminated ~200 lines of duplicated code
+- ✅ **Webhook Tool System**:
+  - Created generic `WebhookTool` for calling any webhook (Zapier, Make.com, custom)
+  - Created `ToolLoader` for loading tools from `tools.json` configuration
+  - Added secret substitution with `${VAR_NAME}` syntax
+  - Added retry logic with tenacity (3 attempts, exponential backoff)
+  - Created `tools.json.example` with weather and email examples
+- ✅ **Result**: Chat responses now instant, CLI much more organized, realtime code DRY
+- ✅ Net changes: +2550 lines, -637 lines (major refactoring)
+- ✅ Committed: refactor: restructure CLI and realtime modules with webhook tools (9964a8e)
+
 ---
 
 ## 🎯 Current Status
