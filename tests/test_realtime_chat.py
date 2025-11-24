@@ -114,24 +114,33 @@ class TestRealtimeChatListener:
 
         assert result is None
 
-    def test_wait_for_message_received(self):
+    @patch("aimq.clients.supabase.supabase")
+    def test_wait_for_message_received(self, mock_supabase):
         """Test waiting for message that arrives."""
+        message_id = "test_msg_123"
+        job_id = 12345
+
+        # Mock Supabase response
+        mock_response = Mock()
+        mock_response.data = [
+            {
+                "msg_id": job_id,
+                "message": {"message_id": message_id, "content": "test response"},
+            }
+        ]
+        mock_supabase.client.schema.return_value.rpc.return_value.execute.return_value = (
+            mock_response
+        )
+
         listener = RealtimeChatListener(
             url="https://test.supabase.co",
             key="test-key",
         )
 
-        message_id = "test_msg_123"
-        test_payload = {
-            "queue": "outgoing-messages",
-            "message_id": message_id,
-            "message": {"content": "test response"},
-        }
-
         # Simulate message arrival in background thread
         def send_message():
             time.sleep(0.1)
-            listener._handle_message_notification(test_payload)
+            listener._handle_broadcast({"queue": "outgoing-messages", "job_id": job_id})
 
         thread = threading.Thread(target=send_message)
         thread.start()
@@ -144,7 +153,8 @@ class TestRealtimeChatListener:
         assert result is not None
         assert result["message_id"] == message_id
 
-    def test_handle_message_notification(self):
+    @patch("aimq.clients.supabase.supabase")
+    def test_handle_message_notification(self, mock_supabase):
         """Test handling message notification."""
         callback_called = False
         received_payload = None
@@ -154,22 +164,32 @@ class TestRealtimeChatListener:
             callback_called = True
             received_payload = payload
 
+        job_id = 12345
+        message_id = "test_123"
+
+        # Mock Supabase response
+        mock_response = Mock()
+        mock_response.data = [
+            {
+                "msg_id": job_id,
+                "message": {"message_id": message_id, "content": "test"},
+            }
+        ]
+        mock_supabase.client.schema.return_value.rpc.return_value.execute.return_value = (
+            mock_response
+        )
+
         listener = RealtimeChatListener(
             url="https://test.supabase.co",
             key="test-key",
             on_message=on_message,
         )
 
-        payload = {
-            "queue": "outgoing-messages",
-            "message_id": "test_123",
-            "message": {"content": "test"},
-        }
-
-        listener._handle_message_notification(payload)
+        listener._handle_broadcast({"queue": "outgoing-messages", "job_id": job_id})
 
         assert callback_called
-        assert received_payload == payload
+        assert received_payload["message_id"] == message_id
+        assert received_payload["message"]["content"] == "test"
 
     def test_handle_message_notification_wrong_queue(self):
         """Test handling notification for wrong queue."""
@@ -185,21 +205,32 @@ class TestRealtimeChatListener:
             on_message=on_message,
         )
 
-        payload = {
-            "queue": "other-queue",
-            "message_id": "test_123",
-        }
-
-        listener._handle_message_notification(payload)
+        # Send notification for wrong queue
+        listener._handle_broadcast({"queue": "other-queue", "job_id": 12345})
 
         # Callback should not be called for wrong queue
         assert not callback_called
 
-    def test_handle_message_notification_callback_error(self):
+    @patch("aimq.clients.supabase.supabase")
+    def test_handle_message_notification_callback_error(self, mock_supabase):
         """Test handling callback errors gracefully."""
 
         def on_message(payload):
             raise Exception("Callback error")
+
+        job_id = 12345
+
+        # Mock Supabase response
+        mock_response = Mock()
+        mock_response.data = [
+            {
+                "msg_id": job_id,
+                "message": {"message_id": "test_123", "content": "test"},
+            }
+        ]
+        mock_supabase.client.schema.return_value.rpc.return_value.execute.return_value = (
+            mock_response
+        )
 
         listener = RealtimeChatListener(
             url="https://test.supabase.co",
@@ -207,13 +238,8 @@ class TestRealtimeChatListener:
             on_message=on_message,
         )
 
-        payload = {
-            "queue": "outgoing-messages",
-            "message_id": "test_123",
-        }
-
         # Should not crash
-        listener._handle_message_notification(payload)
+        listener._handle_broadcast({"queue": "outgoing-messages", "job_id": job_id})
 
     def test_handle_message_notification_with_broadcast_payload(self):
         """Test handling BroadcastPayload object."""
@@ -229,15 +255,16 @@ class TestRealtimeChatListener:
 
         payload_data = {
             "queue": "outgoing-messages",
-            "message_id": "test_123",
+            "job_id": 12345,
         }
 
         broadcast_payload = MockBroadcastPayload(payload_data)
 
-        # Should extract payload from BroadcastPayload object
-        listener._handle_message_notification(broadcast_payload)
+        # Should extract payload from BroadcastPayload object via wrapper
+        # This tests the base class _handle_broadcast_wrapper method
+        listener._handle_broadcast_wrapper(broadcast_payload)
 
-        # Should not crash
+        # Should not crash (no Supabase mock needed since no job_id fetch happens)
 
     @pytest.mark.asyncio
     async def test_connect(self, mock_supabase_client):

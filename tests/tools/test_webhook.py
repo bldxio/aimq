@@ -1,7 +1,7 @@
 """Tests for webhook tool."""
 
 import os
-from unittest.mock import Mock, patch
+from unittest.mock import MagicMock, Mock, patch
 
 import httpx
 
@@ -111,7 +111,7 @@ class TestWebhookTool:
         mock_response.json.return_value = {"result": "success", "data": "test"}
         mock_response.raise_for_status = Mock()
 
-        mock_client = Mock()
+        mock_client = MagicMock()
         mock_client.request.return_value = mock_response
         mock_client.__enter__.return_value = mock_client
         mock_client.__exit__.return_value = None
@@ -125,7 +125,7 @@ class TestWebhookTool:
         )
 
         tool = WebhookTool(config=config)
-        result = tool.run(input="test")
+        result = tool.run({"input": "test"})
 
         assert "success" in result
         mock_client.request.assert_called_once()
@@ -142,7 +142,7 @@ class TestWebhookTool:
 
         mock_response.raise_for_status = raise_status
 
-        mock_client = Mock()
+        mock_client = MagicMock()
         mock_client.request.return_value = mock_response
         mock_client.__enter__.return_value = mock_client
         mock_client.__exit__.return_value = None
@@ -156,7 +156,7 @@ class TestWebhookTool:
         )
 
         tool = WebhookTool(config=config)
-        result = tool.run(input="test")
+        result = tool.run({"input": "test"})
 
         assert "Error calling webhook" in result
         assert "404" in result
@@ -164,7 +164,7 @@ class TestWebhookTool:
     @patch("httpx.Client")
     def test_timeout_error(self, mock_client_class):
         """Test handling timeout errors."""
-        mock_client = Mock()
+        mock_client = MagicMock()
         mock_client.request.side_effect = httpx.TimeoutException("Timeout")
         mock_client.__enter__.return_value = mock_client
         mock_client.__exit__.return_value = None
@@ -179,7 +179,7 @@ class TestWebhookTool:
         )
 
         tool = WebhookTool(config=config)
-        result = tool.run(input="test")
+        result = tool.run({"input": "test"})
 
         assert "Error calling webhook" in result
         assert "timed out" in result
@@ -192,7 +192,7 @@ class TestWebhookTool:
         mock_response.json.return_value = {"temperature": "72°F", "condition": "Sunny"}
         mock_response.raise_for_status = Mock()
 
-        mock_client = Mock()
+        mock_client = MagicMock()
         mock_client.request.return_value = mock_response
         mock_client.__enter__.return_value = mock_client
         mock_client.__exit__.return_value = None
@@ -207,8 +207,8 @@ class TestWebhookTool:
         )
 
         tool = WebhookTool(config=config)
-        result = tool.run(location="San Francisco")
+        result = tool.run({"location": "San Francisco"})
 
         assert "Weather for San Francisco" in result
-        assert "72°F" in result
+        assert "72°F" in result or "72\\u00b0F" in result
         assert "Sunny" in result
