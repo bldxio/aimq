@@ -52,12 +52,10 @@ message_result = (
             "content_text": "Hi, I need help with my account. Can you assist?",
         }
     )
-    .select()
-    .single()
     .execute()
 )
 
-message_id = message_result.data["id"]
+message_id = message_result.data[0]["id"]
 print(f"✓ Message created: {message_id}\n")
 
 # Step 2: Process the message (simulating what the worker would do)
