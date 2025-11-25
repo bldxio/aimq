@@ -370,8 +370,11 @@ From our project:
 
 ## Related
 
-- [Knowledge Garden](../quick-references/knowledge-garden.md) - Knowledge management
-- [Planning](../../PLAN.md) - Current project plan
+- [@knowledge-systems-workflow.md](./knowledge-systems-workflow.md) - Knowledge systems workflow
+- [@../patterns/progressive-enhancement-core.md](../patterns/progressive-enhancement-core.md) - Progressive enhancement
+- [@../patterns/demo-driven-development.md](../patterns/demo-driven-development.md) - Demo-driven development
+- [@../../PLAN.md](../../PLAN.md) - Current project plan
+- [@../../VISION.md](../../VISION.md) - Project vision
 - [Vision](../../VISION.md) - Project vision
 - [Constitution](../../CONSTITUTION.md) - Guiding principles
 

@@ -152,6 +152,7 @@ just changelog-finalize 0.2.0
 
 ## Related
 
-- See `.claude/commands/commit.md` for the commit helper command
-- See `docs/development/conventional-commits.md` for full documentation
-- See `CLAUDE.md` for release workflow details
+- [@../commands/commit.md](../commands/commit.md) - Commit helper command
+- [@git-workflow.md](./git-workflow.md) - Git workflow and best practices
+- [@precommit-workflow.md](./precommit-workflow.md) - Pre-commit checks
+- [@../../CONSTITUTION.md](../../CONSTITUTION.md) - Commit conventions

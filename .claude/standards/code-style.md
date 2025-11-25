@@ -379,6 +379,7 @@ target-version = ['py311', 'py312', 'py313']
 
 ## Related
 
-- See `quick-references/linting.md` for quick commands
-- See `CONSTITUTION.md` for non-negotiable style rules
-- See `CLAUDE.md` for detailed conventions
+- [@../quick-references/linting.md](../quick-references/linting.md) - Linting quick reference
+- [@testing.md](./testing.md) - Testing standards
+- [@precommit-workflow.md](./precommit-workflow.md) - Pre-commit checks
+- [@../../CONSTITUTION.md](../../CONSTITUTION.md) - Non-negotiable style rules

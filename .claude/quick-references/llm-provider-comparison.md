@@ -265,8 +265,10 @@ def _reasoning_node(state: AgentState) -> AgentState:
 
 ## Related
 
-- [LLM Provider Best Practices](./llm-provider-best-practices.md) - Prevention strategies and patterns
-- [Error Handling](../patterns/error-handling.md) - Handling provider-specific errors
+- [@llm-provider-best-practices.md](./llm-provider-best-practices.md) - Prevention strategies and patterns
+- [@../patterns/error-handling.md](../patterns/error-handling.md) - Handling provider-specific errors
+- [@../architecture/langchain-integration.md](../architecture/langchain-integration.md) - LangChain integration
+- [@development-pitfalls.md](./development-pitfalls.md) - Common development pitfalls
 - [Testing](./testing.md) - Testing with multiple providers
 
 ## References

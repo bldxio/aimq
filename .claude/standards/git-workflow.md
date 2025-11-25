@@ -294,7 +294,7 @@ git rebase origin/dev
 
 ## Related
 
-- See `standards/conventional-commits.md` for commit format
-- See `.claude/commands/commit.md` for commit helper
-- See `CLAUDE.md` for release workflow
-- See `CONSTITUTION.md` for git non-negotiables
+- [@conventional-commits.md](./conventional-commits.md) - Commit message format
+- [@../commands/commit.md](../commands/commit.md) - Commit helper command
+- [@precommit-workflow.md](./precommit-workflow.md) - Pre-commit checks
+- [@../../CONSTITUTION.md](../../CONSTITUTION.md) - Git non-negotiables

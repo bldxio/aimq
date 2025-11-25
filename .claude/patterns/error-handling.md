@@ -330,6 +330,7 @@ def test_job_validation_error():
 
 ## Related
 
-- See `common/exceptions.py` for custom exception definitions
-- See `standards/testing.md` for testing error handling
-- See `CONSTITUTION.md` for error handling non-negotiables
+- [@../standards/testing.md](../standards/testing.md) - Testing error handling
+- [@worker-error-handling.md](./worker-error-handling.md) - Worker-specific error patterns
+- [@queue-error-handling.md](./queue-error-handling.md) - Queue error patterns
+- [@../../CONSTITUTION.md](../../CONSTITUTION.md) - Error handling non-negotiables

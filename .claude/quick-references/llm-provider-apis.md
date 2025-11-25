@@ -1,10 +1,30 @@
 # LLM Provider API Differences
 
-> **Status**: Deprecated
+> **⚠️ DEPRECATED - This file has been archived**
+>
 > **Last Updated**: 2025-11-20
-> **Superseded By**: [LLM Provider Comparison](./llm-provider-comparison.md) and [LLM Provider Best Practices](./llm-provider-best-practices.md)
+> **Archived**: 2025-11-24
+> **Superseded By**:
+> - [@llm-provider-comparison.md](./llm-provider-comparison.md) - Provider comparison
+> - [@llm-provider-best-practices.md](./llm-provider-best-practices.md) - Best practices
 
-**⚠️ This file has been split into focused documents. Please use the new files instead.**
+---
+
+## 🔄 Redirect
+
+This file has been split into focused documents for better maintainability.
+
+**Please use the new files:**
+- **[LLM Provider Comparison](./llm-provider-comparison.md)** - Compare providers and their APIs
+- **[LLM Provider Best Practices](./llm-provider-best-practices.md)** - Best practices for integration
+
+---
+
+## Archive Notice
+
+The content below is preserved for reference but is no longer maintained. Please refer to the superseding documents above for current information.
+
+---
 
 **Category**: Quick Reference
 **Audience**: Developers integrating LLM providers

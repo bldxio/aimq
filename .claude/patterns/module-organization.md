@@ -207,5 +207,7 @@ src/aimq/
 
 ## Related
 
-- See `standards/code-organization.md` for file-level organization
-- See `architecture/aimq-modules.md` for detailed module documentation
+- [@../architecture/aimq-overview.md](../architecture/aimq-overview.md) - AIMQ architecture overview
+- [@composable-tools.md](./composable-tools.md) - Tool composition patterns
+- [@error-handling.md](./error-handling.md) - Error handling patterns
+- [@../standards/code-style.md](../standards/code-style.md) - Code style standards

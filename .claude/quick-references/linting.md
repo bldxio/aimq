@@ -137,8 +137,64 @@ This runs:
 2. `just type-check` - Mypy
 3. `just test` - pytest
 
+## Pre-existing Issues Don't Block Commits
+
+### The Scenario
+
+You run linting and see errors, but they're in files you didn't change:
+
+```bash
+$ just lint
+src/aimq/commands/chat.py:173:1: C901 'chat' is too complex (15)
+src/aimq/realtime/chat.py:79:5: C901 '_handle_broadcast' is too complex (13)
+error: Recipe `lint` failed
+
+$ git status
+M tests/test_realtime_chat.py  # Only this file is staged
+```
+
+### Key Insight
+
+**Pre-commit hooks only check staged files.** Linting errors in unchanged files are pre-existing and won't block your commit.
+
+### How to Verify
+
+```bash
+# Check what files are staged
+git diff --cached --name-only
+
+# If linting errors are in files NOT in this list,
+# they're pre-existing and won't block the commit
+```
+
+### When to Fix Pre-existing Issues
+
+**Don't fix immediately if:**
+- Issues are in unrelated files
+- You're in the middle of a feature
+- Fixing would expand scope significantly
+
+**Do fix in a separate commit:**
+```bash
+# Create a dedicated refactoring task
+git checkout -b refactor/reduce-complexity
+# Fix the issues
+git commit -m "refactor: reduce complexity in chat command"
+```
+
+### Running Lint on Staged Files Only
+
+```bash
+# Lint only staged files
+git diff --cached --name-only | grep '\.py$' | xargs uv run flake8
+
+# Or use pre-commit (automatically checks staged files)
+uv run pre-commit run flake8
+```
+
 ## Related
 
-- See `standards/code-style.md` for detailed style guide
-- See `.flake8` for flake8 configuration
-- See `pyproject.toml` for black/isort configuration
+- [@../standards/code-style.md](../standards/code-style.md) - Detailed style guide
+- [@precommit-troubleshooting.md](./precommit-troubleshooting.md) - Pre-commit hook issues
+- [@../standards/precommit-workflow.md](../standards/precommit-workflow.md) - Pre-commit workflow
+- [@common-tasks.md](./common-tasks.md) - Common development tasks

@@ -339,7 +339,7 @@ def test_supabase_integration():
 
 ## Related
 
-- [Testing Strategy](../patterns/testing-strategy.md) - Systematic testing approach
-- [Quick Reference: Testing](../quick-references/testing.md) - Quick commands
-- [Error Handling](../patterns/error-handling.md) - Testing error handling
-- See `pyproject.toml` for pytest configuration
+- [@../patterns/testing-strategy.md](../patterns/testing-strategy.md) - Systematic testing approach
+- [@../patterns/test-mocking-external-services.md](../patterns/test-mocking-external-services.md) - Mocking patterns
+- [@../patterns/error-handling.md](../patterns/error-handling.md) - Testing error handling
+- [@../quick-references/testing.md](../quick-references/testing.md) - Quick commands and reference

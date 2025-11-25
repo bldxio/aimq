@@ -1,10 +1,30 @@
 # Database Schema Organization
 
-> **Status**: Deprecated
+> **⚠️ DEPRECATED - This file has been archived**
+>
 > **Last Updated**: 2025-11-20
-> **Superseded By**: [Database Schema Patterns](./database-schema-patterns.md) and [Database Schema Migration](./database-schema-migration.md)
+> **Archived**: 2025-11-24
+> **Superseded By**:
+> - [@database-schema-patterns.md](./database-schema-patterns.md) - Schema patterns
+> - [@database-schema-migration.md](./database-schema-migration.md) - Migration strategies
 
-**⚠️ This file has been split into focused documents. Please use the new files instead.**
+---
+
+## 🔄 Redirect
+
+This file has been split into focused documents for better maintainability.
+
+**Please use the new files:**
+- **[Database Schema Patterns](./database-schema-patterns.md)** - Schema design patterns and best practices
+- **[Database Schema Migration](./database-schema-migration.md)** - Migration strategies and workflows
+
+---
+
+## Archive Notice
+
+The content below is preserved for reference but is no longer maintained. Please refer to the superseding documents above for current information.
+
+---
 
 ## Overview
 

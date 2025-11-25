@@ -133,6 +133,7 @@ tests/
 
 ## Related
 
-- See `standards/testing.md` for detailed testing standards
-- See `conftest.py` for available fixtures
-- See `pyproject.toml` for pytest configuration
+- [@../standards/testing.md](../standards/testing.md) - Detailed testing standards
+- [@../patterns/testing-strategy.md](../patterns/testing-strategy.md) - Testing strategy
+- [@../patterns/test-mocking-external-services.md](../patterns/test-mocking-external-services.md) - Mocking patterns
+- [@common-tasks.md](./common-tasks.md) - Common development tasks

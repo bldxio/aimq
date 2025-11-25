@@ -251,10 +251,10 @@ After: "Oh, I just need to run this command"
 
 ## Related
 
-- [CLI UX Examples](./cli-ux-examples.md) - Real-world examples and visual design
-- [Progressive Disclosure](./progressive-disclosure.md) - Show info progressively
-- [Error Handling](./error-handling.md) - Error handling patterns
-- [AIMQ Pitfalls](../quick-references/aimq-pitfalls.md) - Common issues
+- [@cli-ux-examples.md](./cli-ux-examples.md) - Real-world examples and visual design
+- [@progressive-disclosure.md](./progressive-disclosure.md) - Show info progressively
+- [@error-handling.md](./error-handling.md) - Error handling patterns
+- [@../quick-references/aimq-pitfalls.md](../quick-references/aimq-pitfalls.md) - Common issues
 
 ## References
 

@@ -295,8 +295,10 @@ Update documentation as you migrate:
 
 ## Related
 
-- [Database Schema Patterns](./database-schema-patterns.md) - Schema organization patterns
-- [Progressive Enhancement](../patterns/progressive-enhancement.md) - Phased development
+- [@database-schema-patterns.md](./database-schema-patterns.md) - Schema organization patterns
+- [@../patterns/database-migration-wrappers.md](../patterns/database-migration-wrappers.md) - Migration wrapper patterns
+- [@../patterns/progressive-enhancement-core.md](../patterns/progressive-enhancement-core.md) - Phased development
+- [@../quick-references/supabase-local/migrations.md](../quick-references/supabase-local/migrations.md) - Supabase migrations
 - [Testing Strategy](../patterns/testing-strategy.md) - Testing patterns
 
 ## References

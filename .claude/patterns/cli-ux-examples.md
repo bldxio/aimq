@@ -279,8 +279,10 @@ Run: supabase db reset
 
 ## Related
 
-- [CLI UX Core](./cli-ux-core.md) - Core principles and implementation patterns
-- [Progressive Disclosure](./progressive-disclosure.md) - Show info progressively
+- [@cli-ux-core.md](./cli-ux-core.md) - Core principles and implementation patterns
+- [@progressive-disclosure.md](./progressive-disclosure.md) - Show info progressively
+- [@error-handling.md](./error-handling.md) - Error handling patterns
+- [@../quick-references/aimq-pitfalls.md](../quick-references/aimq-pitfalls.md) - Common issues
 - [Testing Strategy](./testing-strategy.md) - Testing patterns
 - [Demo-Driven Development](./demo-driven-development.md) - User-first development
 

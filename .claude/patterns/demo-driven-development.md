@@ -91,7 +91,10 @@ Defer: Nice-to-haves, future features
 
 ## Related
 
-- [@.claude/patterns/testing-strategy.md](./testing-strategy.md) - Testing approach
+- [@demo-driven-development-core.md](./demo-driven-development-core.md) - Core concepts
+- [@demo-driven-development-practices.md](./demo-driven-development-practices.md) - Best practices
+- [@progressive-enhancement-core.md](./progressive-enhancement-core.md) - Progressive enhancement
+- [@testing-strategy.md](./testing-strategy.md) - Testing approach
 - [@.claude/architecture/vision-driven-development.md](../architecture/vision-driven-development.md) - Development philosophy
 - [@.claude/patterns/composable-tools.md](./composable-tools.md) - Building flexible components
 - [@.claude/patterns/error-handling.md](./error-handling.md) - Error handling patterns

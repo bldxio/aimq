@@ -2,7 +2,7 @@
 
 > Your comprehensive guide to building AIMQ together 🚀
 
-**Last Updated**: 2025-11-20
+**Last Updated**: 2025-11-24
 
 ## 🎯 Start Here
 
@@ -14,10 +14,11 @@
 
 ## 📊 Garden Statistics
 
-- **Total Files**: 67 markdown files
-- **Active**: 63 files
-- **Deprecated**: 4 files (kept for reference)
-- **Categories**: 5 (patterns, standards, architecture, quick-references, commands)
+- **Total Files**: 76 markdown files
+- **Active**: 71 files
+- **Archived**: 5 files (kept for reference with redirects)
+- **Categories**: 8 (patterns, standards, architecture, quick-references, commands, hooks, scripts, templates)
+- **Last Cultivation**: 2025-11-24
 
 ## 📁 Knowledge Base Structure
 
@@ -33,6 +34,7 @@ Established patterns for consistency across the codebase.
   - Command-line interfaces should be helpful, not cryptic. Good CLI UX means users know what went wrong and what to do next, without needing to read docu...
 - **[Command Composition Pattern](patterns/command-composition.md)**
 - **[Composable Tool Architecture](patterns/composable-tools.md)**
+- **[Database Migration Wrapper Functions](patterns/database-migration-wrappers.md)**
 - **[Demo-Driven Development](patterns/demo-driven-development-core.md)**
 - **[Demo-Driven Development: Best Practices](patterns/demo-driven-development-practices.md)**
 - **[Demo-Driven Development](patterns/demo-driven-development.md)**
@@ -56,6 +58,7 @@ Established patterns for consistency across the codebase.
   - Progressive enhancement is a development strategy where you build features in independent, valuable phases. Each phase delivers working functionality ...
 - **[Queue Error Handling](patterns/queue-error-handling.md)**
   - Robust error handling for message queue operations, including dead-letter queues (DLQ), retry logic, and custom error handlers. Ensures failed jobs ar...
+- **[Test Mocking Evolution for External Services](patterns/test-mocking-external-services.md)**
 - **[Testing Strategy](patterns/testing-strategy.md)**
   - A systematic approach to testing that balances coverage, maintainability, and pragmatism. Focus on testing what matters most first, and don't let perf...
 - **[Worker Error Handling](patterns/worker-error-handling.md)**
@@ -126,7 +129,20 @@ Fast guidance for common tasks.
   - Strategies for working with multiple LLM providers and avoiding common integration pitfalls.
 - **[LLM Provider API Comparison](quick-references/llm-provider-comparison.md)**
   - Different LLM providers have different APIs, causing runtime errors when switching providers or using multiple providers in the same application.
+- **[Pre-commit Hook Troubleshooting](quick-references/precommit-troubleshooting.md)**
 - **[Python Pitfalls](quick-references/python-pitfalls.md)**
+- **[Supabase Local Development Setup](quick-references/supabase-local-setup.md)** ⚠️
+  - Archived - Split into focused guides below
+- **[Supabase Local: Overview](quick-references/supabase-local/overview.md)**
+  - Getting started with Supabase local development
+- **[Supabase Local: Configuration](quick-references/supabase-local/configuration.md)**
+  - Port configuration and settings
+- **[Supabase Local: Migrations](quick-references/supabase-local/migrations.md)**
+  - Database migration workflows
+- **[Supabase Local: Troubleshooting](quick-references/supabase-local/troubleshooting.md)**
+  - Common issues and solutions
+- **[Supabase Local: Integration](quick-references/supabase-local/integration.md)**
+  - AIMQ integration guide
 - **[Testing Quick Reference](quick-references/testing.md)**
 
 ### Commands (`commands/`)

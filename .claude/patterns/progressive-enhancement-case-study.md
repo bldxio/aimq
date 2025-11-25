@@ -177,7 +177,10 @@ def enable_realtime(queue_name: str):
 
 ## Related
 
-- [Progressive Enhancement: Core](./progressive-enhancement-core.md) - Core principles
+- [@progressive-enhancement-core.md](./progressive-enhancement-core.md) - Core principles
+- [@progressive-enhancement-patterns.md](./progressive-enhancement-patterns.md) - Common patterns
+- [@test-mocking-external-services.md](./test-mocking-external-services.md) - Test evolution
+- [@../quick-references/supabase-local/integration.md](../quick-references/supabase-local/integration.md) - Supabase integration
 - [Progressive Enhancement: Patterns](./progressive-enhancement-patterns.md) - Common patterns
 - [Demo-Driven Development](./demo-driven-development.md) - Build demos first
 - [Database Schema Organization](../architecture/database-schema-organization.md) - Schema evolution
