@@ -98,6 +98,14 @@ class Config(BaseSettings):
     # OpenAI Configuration
     openai_api_key: str = Field(default="", alias="OPENAI_API_KEY")
 
+    # Resend Configuration
+    resend_api_key: str = Field(default="", alias="RESEND_API_KEY")
+    inbound_mail_host: str = Field(
+        default="",
+        alias="INBOUND_MAIL_HOST",
+        description="Root domain for inbound email (e.g., 'acme.bldx.run')",
+    )
+
     # Mistral Configuration
     mistral_api_key: str = Field(default="", alias="MISTRAL_API_KEY")
     mistral_model: str = Field(
