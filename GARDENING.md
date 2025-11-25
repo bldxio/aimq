@@ -47,6 +47,9 @@ The knowledge garden is our **long-term memory** - a curated collection of patte
 ├── architecture/       # System design and decisions
 ├── quick-references/   # How-to guides and checklists
 └── commands/           # Helper commands for workflows
+
+ideas/                  # Human-AI interface for future features
+└── *.md                # Feature explorations and planning
 ```
 
 ### What Goes Where?
@@ -77,6 +80,13 @@ The knowledge garden is our **long-term memory** - a curated collection of patte
 - Troubleshooting
 - Checklists
 - Debugging tips
+
+**Ideas** - "What could we build?" (Root level - Human-AI interface)
+- Feature explorations
+- Future work planning
+- Architectural experiments
+- Research and brainstorming
+- Sprint planning documents
 
 ---
 
