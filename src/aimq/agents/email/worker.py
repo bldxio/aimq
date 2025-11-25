@@ -57,14 +57,14 @@ def process_email_response(job_data: dict) -> dict:
         if not from_email:
             raise ValueError("No TO address found in original message")
 
-        to_email = message.get("email_from") or (
+        sender_result = (
             supabase.client.table("members")
             .select("profile:profiles(email)")
             .eq("id", message["from_member_id"])
             .single()
             .execute()
-            .data["profile"]["email"]
         )
+        to_email = sender_result.data["profile"]["email"]
 
         reply_subject = message.get("email_subject", "")
         if not reply_subject.startswith("Re:"):
@@ -72,18 +72,24 @@ def process_email_response(job_data: dict) -> dict:
 
         logger.info(f"Sending email from {from_email} to {to_email}")
 
-        try:
-            email_result = resend_client.send_email(
-                from_email=from_email,
-                to=[to_email],
-                subject=reply_subject,
-                text=response_text,
-                reply_to=from_email,
-            )
-            logger.info(f"Email sent successfully: {email_result}")
-        except ResendError as e:
-            logger.error(f"Failed to send email: {e}")
-            raise
+        import os
+
+        if os.getenv("DRY_RUN") == "true":
+            logger.info("DRY_RUN mode: Skipping actual email send")
+            email_result = {"id": "dry-run-email-id"}
+        else:
+            try:
+                email_result = resend_client.send_email(
+                    from_email=from_email,
+                    to=[to_email],
+                    subject=reply_subject,
+                    text=response_text,
+                    reply_to=from_email,
+                )
+                logger.info(f"Email sent successfully: {email_result}")
+            except ResendError as e:
+                logger.error(f"Failed to send email: {e}")
+                raise
 
         response_message_result = (
             supabase.client.table("messages")
