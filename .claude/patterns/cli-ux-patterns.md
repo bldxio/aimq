@@ -1,10 +1,30 @@
 # CLI UX Patterns
 
-> **Status**: Deprecated
+> **⚠️ DEPRECATED - This file has been archived**
+>
 > **Last Updated**: 2025-11-20
-> **Superseded By**: [CLI UX Core](./cli-ux-core.md) and [CLI UX Examples](./cli-ux-examples.md)
+> **Archived**: 2025-11-24
+> **Superseded By**:
+> - [@cli-ux-core.md](./cli-ux-core.md) - Core principles and patterns
+> - [@cli-ux-examples.md](./cli-ux-examples.md) - Real-world examples
 
-**⚠️ This file has been split into focused documents. Please use the new files instead.**
+---
+
+## 🔄 Redirect
+
+This file has been split into focused documents for better maintainability.
+
+**Please use the new files:**
+- **[CLI UX Core](./cli-ux-core.md)** - Core principles, patterns, and best practices
+- **[CLI UX Examples](./cli-ux-examples.md)** - Real-world examples and implementations
+
+---
+
+## Archive Notice
+
+The content below is preserved for reference but is no longer maintained. Please refer to the superseding documents above for current information.
+
+---
 
 ## Overview
 

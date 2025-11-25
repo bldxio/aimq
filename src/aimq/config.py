@@ -21,7 +21,7 @@ class Config(BaseSettings):
 
     # Supabase Realtime Configuration
     supabase_realtime_channel: str = Field(
-        default="worker-wakeup",
+        default="aimq:jobs",
         alias="SUPABASE_REALTIME_CHANNEL",
         description="Realtime channel name for worker notifications",
     )

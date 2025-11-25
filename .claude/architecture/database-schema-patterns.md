@@ -370,8 +370,10 @@ create function api.trigger_helper(...)  -- Should be private
 
 ## Related
 
-- [Database Schema Migration](./database-schema-migration.md) - Migration strategies and testing
-- [Progressive Enhancement](../patterns/progressive-enhancement.md) - Phased development
+- [@database-schema-migration.md](./database-schema-migration.md) - Migration strategies and testing
+- [@../patterns/database-migration-wrappers.md](../patterns/database-migration-wrappers.md) - Migration wrapper patterns
+- [@../patterns/progressive-enhancement-core.md](../patterns/progressive-enhancement-core.md) - Phased development
+- [@../quick-references/supabase-local/migrations.md](../quick-references/supabase-local/migrations.md) - Supabase migrations
 - [LangGraph AIMQ](./langgraph-aimq.md) - AIMQ architecture
 
 ## References

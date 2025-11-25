@@ -216,7 +216,8 @@ rm -rf .coverage htmlcov/
 
 ## Related
 
-- See `quick-references/testing.md` for testing commands
-- See `quick-references/linting.md` for linting commands
-- See `CLAUDE.md` for comprehensive documentation
-- See `justfile` for all available tasks
+- [@testing.md](./testing.md) - Testing commands and reference
+- [@linting.md](./linting.md) - Linting commands and reference
+- [@git-commands.md](./git-commands.md) - Git commands reference
+- [@dependency-management.md](./dependency-management.md) - Dependency management
+- [@../../CLAUDE.md](../../CLAUDE.md) - Comprehensive documentation

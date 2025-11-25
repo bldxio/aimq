@@ -275,7 +275,7 @@ If you're used to pip or poetry:
 
 ## Related
 
-- See `CONSTITUTION.md` for dependency management non-negotiables
-- See `pyproject.toml` for current dependencies
-- See `uv.lock` for locked versions
-- See [uv docs](https://github.com/astral-sh/uv) for more details
+- [@common-tasks.md](./common-tasks.md) - Common development tasks
+- [@development-pitfalls.md](./development-pitfalls.md) - Common pitfalls
+- [@../../CONSTITUTION.md](../../CONSTITUTION.md) - Dependency management non-negotiables
+- [uv docs](https://github.com/astral-sh/uv) - Official uv documentation

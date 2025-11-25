@@ -378,7 +378,10 @@ metrics.increment(f"worker.errors.{error_type}")
 
 ## Related
 
-- [Queue Error Handling](./queue-error-handling.md) - Queue-level error handling
+- [@queue-error-handling.md](./queue-error-handling.md) - Queue-level error handling
+- [@error-handling.md](./error-handling.md) - General error handling patterns
+- [@../standards/testing.md](../standards/testing.md) - Testing error handling
+- [@../architecture/aimq-overview.md](../architecture/aimq-overview.md) - AIMQ architecture
 - [Error Handling](./error-handling.md) - General error handling patterns
 - [Testing Strategy](./testing-strategy.md) - How to test error handling
 

@@ -196,10 +196,11 @@ Progressive: 1 week → First working feature
 
 ## Related
 
-- [Progressive Enhancement: Patterns](./progressive-enhancement-patterns.md) - Common patterns and anti-patterns
-- [Progressive Enhancement: Case Study](./progressive-enhancement-case-study.md) - Real-world Supabase Realtime example
-- [Demo-Driven Development](./demo-driven-development.md) - Build demos first
-- [Testing Strategy](./testing-strategy.md) - Testing approach
+- [@progressive-enhancement-patterns.md](./progressive-enhancement-patterns.md) - Common patterns and anti-patterns
+- [@progressive-enhancement-case-study.md](./progressive-enhancement-case-study.md) - Real-world Supabase Realtime example
+- [@demo-driven-development.md](./demo-driven-development.md) - Build demos first
+- [@testing-strategy.md](./testing-strategy.md) - Testing approach
+- [@test-mocking-external-services.md](./test-mocking-external-services.md) - Test evolution patterns
 
 ## References
 

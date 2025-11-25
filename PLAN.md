@@ -1,6 +1,6 @@
 # AIMQ Development Plan
 
-**Last Updated**: 2025-11-20
+**Last Updated**: 2025-11-25
 **Current Version**: 0.1.x
 **Target Version**: 0.2.0
 
@@ -108,6 +108,65 @@
 - ✅ All active files now under 400 lines
 - ✅ Committed: docs(garden): cultivate and organize knowledge garden (6bf6d25)
 
+### CLI & Realtime Refactoring + Webhook Tools (Nov 20, 2025)
+- ✅ **Fixed Realtime Broadcasting**:
+  - Changed trigger function from `pg_notify()` to `realtime.send()` for proper Supabase Realtime
+  - Fixed logger to flush immediately for real-time feedback
+  - Fixed broadcast payload access using dictionary syntax
+  - Standardized channel name to `aimq:jobs` everywhere
+  - Added `disable_queue_realtime()` SQL function
+  - Updated `enable_queue_realtime()` to drop/recreate triggers (allows updates)
+- ✅ **CLI Restructuring**:
+  - Consolidated realtime commands into `aimq realtime` subcommands (enable/disable/status)
+  - Consolidated schema commands into `aimq schema` subcommands (enable/disable)
+  - Promoted chat to first-class command: `aimq chat`
+  - Added Rich interactive prompts for queue selection
+  - Removed old flat command structure (enable-realtime, disable-realtime, enable, disable)
+- ✅ **Realtime Module Refactoring**:
+  - Created `src/aimq/realtime/` package with base class + inheritance
+  - Built `RealtimeBaseListener` base class with shared logic
+  - Specialized `RealtimeWakeupService` for worker wake-up + presence
+  - Specialized `RealtimeChatListener` for chat notifications
+  - Eliminated ~200 lines of duplicated code
+- ✅ **Webhook Tool System**:
+  - Created generic `WebhookTool` for calling any webhook (Zapier, Make.com, custom)
+  - Created `ToolLoader` for loading tools from `tools.json` configuration
+  - Added secret substitution with `${VAR_NAME}` syntax
+  - Added retry logic with tenacity (3 attempts, exponential backoff)
+  - Created `tools.json.example` with weather and email examples
+- ✅ **Result**: Chat responses now instant, CLI much more organized, realtime code DRY
+- ✅ Net changes: +2550 lines, -637 lines (major refactoring)
+- ✅ Committed: refactor: restructure CLI and realtime modules with webhook tools (9964a8e)
+
+### Supabase Realtime Phase 3 - Infrastructure (Nov 24, 2025)
+- ✅ **PostgreSQL Migration**:
+  - Added comprehensive pgmq setup migration (`20251123021000_setup_aimq.sql`)
+  - Configured realtime broadcast for message notifications
+  - Added seed data for initial setup
+- ✅ **Supabase Configuration**:
+  - Updated config with new ports and project settings
+  - Configured realtime service for job notifications
+- ✅ **Test Infrastructure**:
+  - Updated realtime chat tests with proper Supabase mocking
+  - Removed obsolete enable/disable command tests
+- ✅ **Result**: Complete database infrastructure for realtime job notifications
+- ✅ Committed: feat(supabase): add pgmq migration and realtime infrastructure (5e4adc5)
+
+### Knowledge Garden Cultivation (Nov 25, 2025)
+- ✅ **Documentation Splits**:
+  - Split `supabase-local-setup.md` into 5 focused guides (overview, configuration, migrations, integration, troubleshooting)
+  - Added 4 new lesson files (migration wrappers, test mocking, troubleshooting, supabase setup)
+- ✅ **Cross-Linking & Navigation**:
+  - Updated 30+ files with proper markdown cross-links [@file.md](path)
+  - Created `lint-links.sh` script for link validation
+  - Built knowledge graph with interconnected documents
+- ✅ **Garden Health**:
+  - 76 total files, 71 active, 5 archived
+  - All files properly organized and cross-referenced
+  - Updated INDEX.md with new structure and statistics
+- ✅ **Result**: Knowledge garden is thriving with clear navigation and validation
+- ✅ Committed: docs(garden): cultivate knowledge garden with splits and cross-links (64576ab)
+
 ---
 
 ## 🎯 Current Status
@@ -160,10 +219,18 @@
 
 ## 📋 Recommended Next Steps
 
-### ~~Priority 0: Supabase Realtime for Worker Wake-up~~ ✅ COMPLETE! 🚀
-**Impact**: Critical | **Effort**: 7-8 hours total | **Status**: ✅ Phase 1 & 2 Complete!
+**Immediate Plan** (Today - Demo Prep):
+1. 🌤️ **Weather API** (30 min) - Use webhook tool for reliable weather
+2. 🐛 **Agent Runtime Check** (30 min) - Quick investigation, fix critical issues
+3. 📧 **Email Processing** (3-4 hours) - **URGENT** - Build for demo today
+4. 🚀 **Merge to dev** - After weather API fix
 
-**Branch**: `feature/supabase-realtime-wake`
+---
+
+### ~~Priority 0: Supabase Realtime for Worker Wake-up~~ ✅ COMPLETE! 🚀
+**Impact**: Critical | **Effort**: 7-8 hours total | **Status**: ✅ Phase 1, 2 & 3 Complete!
+
+**Branch**: `feature/webhook-tools-chat-realtime` (ready to merge after weather API fix)
 
 **Goal**: Eliminate polling latency by using Supabase realtime to wake idle workers instantly
 
@@ -178,7 +245,7 @@
 - ✅ Graceful shutdown fixed (no pending task errors)
 - ✅ All success criteria met!
 
-**Phase 2: DB Triggers + CLI Commands** ✅ COMPLETE (Nov 19, 2025):
+**Phase 2: DB Triggers + CLI Commands** ✅ COMPLETE (Nov 19-20, 2025):
 - ✅ PostgreSQL trigger function in `aimq` schema (private)
 - ✅ Enhanced `setup_aimq.sql` migration with realtime support
 - ✅ Public RPC functions in `pgmq_public` schema:
@@ -196,41 +263,77 @@
 - ✅ Mock-based tests (all 480 tests passing)
 - ✅ Documentation updated
 
+**Phase 3: Infrastructure & Migration** ✅ COMPLETE (Nov 24, 2025):
+- ✅ Comprehensive pgmq setup migration (`20251123021000_setup_aimq.sql`)
+- ✅ Realtime broadcast configuration for job notifications
+- ✅ Supabase config updates (ports, project settings)
+- ✅ Seed data for initial setup
+- ✅ Updated test infrastructure with proper mocking
+
 **Result**: Workers now wake instantly (<1s) when jobs are enqueued, even from outside AIMQ. No manual broadcast code needed. System is fully automatic and production-ready!
 
 **Documentation**: See `ideas/supabase-realtime-streaming.md` for full architecture
 
+### Priority 0: Email Processing Feature 📧 **URGENT - DEMO TODAY**
+**Impact**: Critical | **Effort**: 3-4 hours | **Status**: Next up after weather API
+
+**Goal**: Process incoming emails with AI agents for demo
+
+**Requirements** (to clarify):
+- Email ingestion method (webhook? polling? IMAP?)
+- Processing workflow (extract info? respond? route?)
+- Demo scenario (what should the agent do with emails?)
+- Integration points (Supabase? Queue? Direct agent call?)
+
+**Approach**:
+1. Clarify requirements and demo scenario (15 min)
+2. Design email processing workflow (30 min)
+3. Implement email ingestion (1-2 hours)
+4. Implement agent processing (1 hour)
+5. Test and polish for demo (30 min)
+
+**Note**: Will tackle after quick weather API fix and agent runtime check
+
 ### Priority 1: Weather API Reliability 🌤️
-**Impact**: High | **Effort**: 1-2 hours | **Status**: Planning
+**Impact**: High | **Effort**: 30 min | **Status**: In Progress (this branch)
 
-**Goal**: Replace unreliable Open-Meteo with a production-grade weather API
+**Goal**: Use webhook tool system for weather instead of unreliable Open-Meteo
 
-**Tasks**:
-1. Evaluate weather API providers (30 min)
-   - WeatherAPI.com (free tier: 1M calls/month)
-   - OpenWeather (free tier: 1K calls/day, 60 calls/min)
-   - Compare: reliability, features, rate limits, pricing
-
-2. Implement new weather tool (1 hour)
+**Approach** (simplified with webhook tool):
+1. Configure webhook tool for weather API (15 min)
+   - Add weather webhook to `tools.json`
+   - Use WeatherAPI.com or OpenWeather
    - Add `WEATHER_API_KEY` to environment variables
-   - Update Weather tool to use new provider
-   - Maintain same interface for agents
-   - Add error handling and rate limit awareness
 
-3. Update documentation (30 min)
+2. Update agent to use webhook tool (10 min)
+   - Load weather tool from `tools.json`
+   - Test with chat CLI
+
+3. Update documentation (5 min)
    - Add API key setup to README
-   - Update CHAT_DEMO.md with new provider info
    - Update .env.example
 
 ### Priority 2: Fix Message Agent Runtime Issues 🐛
-**Impact**: Medium | **Effort**: 1-2 hours
+**Impact**: Medium | **Effort**: 30 min - 1 hour | **Status**: Quick check before email
 
-Fix the runtime issues discovered during earlier testing:
-1. **Tool validation errors** - Debug why agent sends empty dict to tools
-2. **Unknown tool handling** - Add graceful fallback for missing tools
-3. **Metadata None checks** - Add defensive None handling in tools
+**Goal**: Quick investigation and fixes for runtime issues
 
-**Result**: Tools work reliably in all scenarios
+**Approach**:
+1. **Quick investigation** (15 min)
+   - Review error logs and test cases
+   - Identify root causes
+   - Determine if blocking for demo
+
+2. **Fix critical issues** (15-30 min)
+   - Tool validation errors (if critical)
+   - Unknown tool handling (if critical)
+   - Metadata None checks (if critical)
+
+3. **Defer non-critical**
+   - Document issues for later if not blocking demo
+   - Focus on email processing priority
+
+**Result**: Critical issues fixed, non-critical documented for later
 
 ### Priority 3: Finish Quality Sprint (Target: 90%+ coverage) 🎯
 

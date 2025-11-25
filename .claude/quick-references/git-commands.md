@@ -333,6 +333,7 @@ git push --force-with-lease origin branch-name
 
 ## Related
 
-- See `standards/git-workflow.md` for detailed workflow
-- See `standards/conventional-commits.md` for commit format
-- See `.claude/commands/commit.md` for commit helper
+- [@../standards/git-workflow.md](../standards/git-workflow.md) - Detailed git workflow
+- [@../standards/conventional-commits.md](../standards/conventional-commits.md) - Commit message format
+- [@../commands/commit.md](../commands/commit.md) - Commit helper command
+- [@common-tasks.md](./common-tasks.md) - Common development tasks

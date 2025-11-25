@@ -76,6 +76,7 @@
 - ✅ **Keep .claude/ files under 400 lines** (split if needed)
 - ✅ **Update CLAUDE.md** when architecture changes
 - ✅ **No nested directories** in .claude/ (stay shallow)
+- ✅ **Ideas live at root** (`/ideas/`, not `.claude/ideas/`) - Human-AI interface
 
 ## Strong Preferences
 
@@ -132,7 +133,7 @@ This constitution evolves as we work together. When you notice:
 - **Better ways of working** → Update this document
 - **Outdated rules** → Remove or revise them
 
-**Last Updated**: 2025-11-13
+**Last Updated**: 2025-11-25
 
 ---
 

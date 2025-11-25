@@ -372,10 +372,10 @@ result = branch.invoke({"type": "image", "data": "..."})
 
 ## Related
 
-- See `architecture/langgraph-integration.md` for workflow patterns
-- See `architecture/key-libraries.md` for LangChain reference
-- See `common/llm.py` for LLM initialization
-- See `tools/` for LangChain tool implementations
+- [@langgraph-integration.md](./langgraph-integration.md) - Workflow patterns with LangGraph
+- [@key-libraries.md](./key-libraries.md) - LangChain reference and key libraries
+- [@../patterns/composable-tools.md](../patterns/composable-tools.md) - Tool composition patterns
+- [@../quick-references/llm-provider-comparison.md](../quick-references/llm-provider-comparison.md) - LLM provider comparison
 
 ## Resources
 

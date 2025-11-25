@@ -21,7 +21,7 @@ class TestRealtimeWakeupService:
         assert service._key == "test-key"
         assert service._worker_name == "test-worker"
         assert service._queues == ["queue1", "queue2"]
-        assert service._channel_name == "worker-wakeup"
+        assert service._channel_name == "aimq:jobs"
         assert service._event_name == "job_enqueued"
 
     def test_register_unregister_worker(self):
@@ -66,7 +66,7 @@ class TestRealtimeWakeupService:
         assert not event2.is_set()
 
         # Notification for monitored queue should wake workers
-        service._handle_job_notification({"queue": "queue1", "job_id": 123})
+        service._handle_broadcast({"queue": "queue1", "job_id": 123})
 
         assert event1.is_set()
         assert event2.is_set()
@@ -86,12 +86,12 @@ class TestRealtimeWakeupService:
         assert not event1.is_set()
 
         # Notification for unmonitored queue should NOT wake workers
-        service._handle_job_notification({"queue": "queue3", "job_id": 456})
+        service._handle_broadcast({"queue": "queue3", "job_id": 456})
 
         assert not event1.is_set()  # Should still be unset
 
         # Notification for monitored queue SHOULD wake workers
-        service._handle_job_notification({"queue": "queue2", "job_id": 789})
+        service._handle_broadcast({"queue": "queue2", "job_id": 789})
 
         assert event1.is_set()  # Now it should be set
 

@@ -234,7 +234,8 @@ docker run -e AIMQ_TASKS=git:user/repo aimq
 
 ## Related
 
-- See `patterns/module-organization.md` for module structure details
-- See `architecture/langchain-integration.md` for LangChain details
-- See `architecture/langgraph-integration.md` for LangGraph details
-- See `CLAUDE.md` for comprehensive technical documentation
+- [@../patterns/module-organization.md](../patterns/module-organization.md) - Module structure details
+- [@langchain-integration.md](./langchain-integration.md) - LangChain integration
+- [@langgraph-integration.md](./langgraph-integration.md) - LangGraph workflows
+- [@key-libraries.md](./key-libraries.md) - Key libraries and dependencies
+- [@../../CLAUDE.md](../../CLAUDE.md) - Comprehensive technical documentation

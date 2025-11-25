@@ -342,10 +342,12 @@ From the Message Agent implementation:
 - **Easy to extend** (LookupProfile tool ready to add)
 - **Easy to modify** (changed mention regex without touching routing)
 
-## Related Patterns
+## Related
 
-- **[Module Organization](./module-organization.md)**: How to organize composable tools
-- **[Testing Strategy](./testing-strategy.md)**: How to test composable systems
+- [@module-organization.md](./module-organization.md) - How to organize composable tools
+- [@testing-strategy.md](./testing-strategy.md) - How to test composable systems
+- [@../architecture/langchain-integration.md](../architecture/langchain-integration.md) - LangChain tool integration
+- [@error-handling.md](./error-handling.md) - Error handling patterns
 - **[Error Handling](./error-handling.md)**: How to handle errors in composed workflows
 
 ## Further Reading

@@ -306,8 +306,10 @@ From our recent work (commit 91c4ae1):
 
 ## Related
 
-- [Testing Standards](../standards/testing.md) - Testing conventions
-- [Error Handling](./error-handling.md) - Error handling patterns
+- [@../standards/testing.md](../standards/testing.md) - Testing conventions
+- [@test-mocking-external-services.md](./test-mocking-external-services.md) - Mocking patterns
+- [@error-handling.md](./error-handling.md) - Error handling patterns
+- [@../quick-references/testing.md](../quick-references/testing.md) - Testing quick reference
 - [Common Pitfalls](../quick-references/common-pitfalls.md) - Things to avoid
 
 ---

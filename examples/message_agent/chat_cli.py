@@ -15,11 +15,13 @@ Usage:
     uv run python examples/message_agent/chat_cli.py --agent react-assistant
 """
 
+import os
 import time
 import uuid
 from typing import Optional
 
 import typer
+from dotenv import load_dotenv
 from rich.console import Console
 from rich.live import Live
 from rich.markdown import Markdown
@@ -29,11 +31,19 @@ from rich.spinner import Spinner
 from rich.text import Text
 
 from aimq.clients.supabase import supabase
+from aimq.logger import Logger
+from aimq.realtime import RealtimeChatListener
+
+# Load environment variables from .env file
+load_dotenv()
 
 app = typer.Typer(help="Interactive chat with AIMQ message agents")
 console = Console()
+logger = Logger()
 
 OUTBOUND_QUEUE = "outgoing-messages"
+
+realtime_listener: Optional[RealtimeChatListener] = None
 
 
 def send_message(
@@ -79,8 +89,50 @@ def send_message(
     return message_id
 
 
+def wait_for_response(message_id: str, timeout: int = 60) -> Optional[dict]:
+    """Wait for a response using realtime (if available) or polling fallback.
+
+    Args:
+        message_id: Message ID to look for
+        timeout: Maximum time to wait (seconds)
+
+    Returns:
+        Response message dict or None if timeout
+    """
+    global realtime_listener
+
+    if realtime_listener and realtime_listener.is_connected:
+        logger.debug(f"Waiting for realtime response: {message_id}")
+        payload = realtime_listener.wait_for_message(message_id, timeout=timeout)
+
+        if payload:
+            msg = payload.get("message", {})
+            job_id = payload.get("job_id")
+
+            agent_response = msg.get("agent_response", {})
+            messages = agent_response.get("messages", [])
+
+            result = {
+                "content": messages[-1].get("content", "") if messages else "",
+                "agent_response": agent_response,
+                "metadata": msg.get("metadata", {}),
+                "job_id": job_id,
+            }
+
+            try:
+                supabase.client.schema("pgmq_public").rpc(
+                    "archive", {"queue_name": OUTBOUND_QUEUE, "message_id": job_id}
+                ).execute()
+            except Exception as e:
+                logger.warning(f"Failed to archive message: {e}")
+
+            return result
+
+    return poll_for_response(message_id, timeout)
+
+
 def poll_for_response(
-    message_id: str, timeout: int = 60, poll_interval: float = 1.0
+    message_id: str, timeout: int = 60, poll_interval: float = 0.2
 ) -> Optional[dict]:
     """Poll the outbound queue for a response to our message.
 
@@ -169,15 +221,44 @@ Type `/quit` or `/exit` to leave.
     console.print(Panel(Markdown(welcome), border_style="cyan", padding=(1, 2)))
 
 
+# CLI Chat with --debug flag
 @app.command()
 def chat(
     agent: str = typer.Option("default-assistant", help="Default agent to chat with"),
     workspace: str = typer.Option("demo_workspace_123", help="Workspace ID"),
     channel: str = typer.Option("demo_channel_456", help="Channel ID"),
     thread: Optional[str] = typer.Option(None, help="Thread ID"),
+    no_realtime: bool = typer.Option(False, help="Disable realtime notifications"),
+    debug: bool = typer.Option(False, help="Enable debug logging"),
 ):
     """Start an interactive chat session with an AI agent."""
+    global realtime_listener
+
+    logger.level("debug" if debug else "info")
     show_welcome()
+
+    if not no_realtime:
+        try:
+            supabase_url = os.getenv("SUPABASE_URL")
+            supabase_key = os.getenv("SUPABASE_KEY")
+
+            if supabase_url and supabase_key:
+                realtime_listener = RealtimeChatListener(
+                    url=supabase_url,
+                    key=supabase_key,
+                    channel_name="aimq:jobs",  # Match the trigger channel
+                    event_name="job_enqueued",  # Match the trigger event
+                    logger=logger,
+                )
+                realtime_listener.start()
+                console.print("[dim]⚡ Realtime notifications enabled[/dim]")
+            else:
+                console.print(
+                    "[dim]⚠️  Realtime disabled (missing SUPABASE_URL or SUPABASE_KEY)[/dim]"
+                )
+        except Exception as e:
+            logger.warning(f"Failed to start realtime listener: {e}")
+            console.print("[dim]⚠️  Realtime disabled, using polling fallback[/dim]")
 
     console.print(f"\n[dim]Connected to workspace: {workspace}[/dim]")
     console.print(f"[dim]Default agent: {format_agent_name(agent)}[/dim]\n")
@@ -216,7 +297,7 @@ def chat(
                 console=console,
                 transient=True,
             ):
-                response = poll_for_response(message_id, timeout=60)
+                response = wait_for_response(message_id, timeout=60)
 
             if response:
                 content = response["content"]
@@ -240,6 +321,9 @@ def chat(
         except Exception as e:
             console.print(f"\n[red]❌ Error: {e}[/red]")
             console.print("[dim]Make sure the worker is running![/dim]\n")
+
+    if realtime_listener:
+        realtime_listener.stop()
 
 
 @app.command()

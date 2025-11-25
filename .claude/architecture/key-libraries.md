@@ -306,6 +306,7 @@ dependencies = [
 
 ## Related
 
-- See `architecture/aimq-overview.md` for how these fit together
-- See `quick-references/common-imports.md` for import patterns
-- See `pyproject.toml` for complete dependency list
+- [@aimq-overview.md](./aimq-overview.md) - How these libraries fit together
+- [@langchain-integration.md](./langchain-integration.md) - LangChain integration details
+- [@langgraph-integration.md](./langgraph-integration.md) - LangGraph workflow patterns
+- [@../quick-references/dependency-management.md](../quick-references/dependency-management.md) - Dependency management

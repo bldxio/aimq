@@ -152,7 +152,10 @@ def test_phase2_enhances_phase1():
 
 ## Related
 
-- [Progressive Enhancement: Core](./progressive-enhancement-core.md) - Core principles and strategy
+- [@progressive-enhancement-core.md](./progressive-enhancement-core.md) - Core principles and strategy
+- [@progressive-enhancement-case-study.md](./progressive-enhancement-case-study.md) - Real-world case study
+- [@demo-driven-development.md](./demo-driven-development.md) - Demo-driven development
+- [@testing-strategy.md](./testing-strategy.md) - Testing approach
 - [Progressive Enhancement: Case Study](./progressive-enhancement-case-study.md) - Real-world example
 - [Testing Strategy](./testing-strategy.md) - Testing patterns
 - [Error Handling](./error-handling.md) - Error handling patterns

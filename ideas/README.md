@@ -34,6 +34,9 @@ Each idea gets its own markdown file with:
 - [**Supabase Realtime Streaming**](./supabase-realtime-streaming.md) - Live updates without polling
 - [**Human-in-the-Loop**](./human-in-the-loop.md) - Pause/resume with checkpointing
 
+### 📧 Email Processing
+- [**Email Processing System**](./email-processing-system.md) - AI-powered email monitoring and response
+
 ## Contributing Ideas
 
 When adding a new idea:
