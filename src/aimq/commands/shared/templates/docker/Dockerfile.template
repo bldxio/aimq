@@ -3,11 +3,12 @@
 
 FROM python:3.12-slim
 
-# Install runtime dependencies for AI/ML libraries
+# Install runtime dependencies for AI/ML libraries and libmagic
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libgl1 \
     libglib2.0-0 \
     libgomp1 \
+    libmagic1 \
     && rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/*
 
 # Create non-root user for security

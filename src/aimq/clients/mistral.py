@@ -40,3 +40,15 @@ class MistralClient:
 
 
 mistral = MistralClient()
+
+
+def get_mistral_client() -> Mistral:
+    """Get the Mistral client instance.
+
+    Returns:
+        Mistral: Configured Mistral client
+
+    Raises:
+        MistralError: If Mistral is not properly configured
+    """
+    return mistral.client

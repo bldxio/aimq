@@ -1,7 +1,6 @@
 """Command for starting the AIMQ worker."""
 
 import os
-import signal
 import sys
 from pathlib import Path
 from typing import Optional
@@ -167,19 +166,7 @@ def start(
     worker = load_worker_safely(resolved_path)
     worker.log_level = LogLevel.DEBUG if debug else log_level
 
-    def signal_handler(signum, frame):
-        """Handle shutdown signals gracefully."""
-        print("")
-        worker.logger.info("Shutting down...")
-        worker.log(block=False)
-        worker.stop()
-        worker.log(block=False)
-        sys.exit(0)
-
-    # Set up signal handlers
-    signal.signal(signal.SIGINT, signal_handler)
-    signal.signal(signal.SIGTERM, signal_handler)
-
+    # Signal handlers are now registered automatically in worker.start()
     try:
         worker.start()
     except Exception as e:

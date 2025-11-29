@@ -102,3 +102,21 @@ class SupabaseMigrations:
             template_name="create_queue.sql",
             context={"queue_name": queue_name},
         )
+
+    def setup_langgraph_checkpoints_migration(self) -> Path:
+        """
+        Create the LangGraph checkpoints migration.
+        This migration creates the necessary database schema for LangGraph checkpointing.
+
+        Creates 4 tables:
+        - checkpoints: Main checkpoint storage
+        - checkpoint_blobs: Large binary data storage
+        - checkpoint_writes: Write operations tracking
+        - checkpoint_migrations: Schema version tracking
+
+        Returns:
+            Path: Path to the created migration file
+        """
+        return self.create_migration(
+            name="setup_langgraph_checkpoints", template_name="setup_langgraph_checkpoints.sql"
+        )

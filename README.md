@@ -9,6 +9,8 @@
 
 AIMQ (AI Message Queue) is a robust message queue processor designed specifically for Supabase's pgmq integration. It provides a powerful framework for processing queued tasks with built-in support for AI-powered document processing and OCR capabilities.
 
+**Vision**: Building the foundation for intelligent, collaborative AI systems where multiple agents and humans work together seamlessly. See [VISION.md](./VISION.md) for the full vision.
+
 ## Features
 
 - **Supabase pgmq Integration**: Seamlessly process messages from Supabase's message queue
@@ -361,6 +363,16 @@ just --list
 3. Make your changes
 4. Run quality checks: `just ci`
 5. Submit a pull request
+
+See [CONSTITUTION.md](./CONSTITUTION.md) for our guiding principles and [GARDENING.md](./GARDENING.md) for our knowledge management system.
+
+## Documentation
+
+- **[VISION.md](./VISION.md)** - Where we're going (the north star)
+- **[CONSTITUTION.md](./CONSTITUTION.md)** - Who we are (guiding principles)
+- **[PLAN.md](./PLAN.md)** - What we're doing (current roadmap)
+- **[GARDENING.md](./GARDENING.md)** - How we learn (knowledge system)
+- **[agents.md](./agents.md)** - Quick reference guide
 
 ## License
 

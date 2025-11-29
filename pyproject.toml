@@ -27,7 +27,7 @@ classifiers = [
 ]
 dependencies = [
     "easyocr>=1.7.1,<2.0.0",
-    "torch>=2.9.0,<3.0.0",  # Exclude vulnerable 2.8.0 (CVE-2025-55551)
+    "torch>=2.9.0,<3.0.0", # Exclude vulnerable 2.8.0 (CVE-2025-55551)
     "python-dotenv>=1.0.0,<2.0.0",
     "supabase>=2.10.0,<3.0.0",
     "typer>=0.9.0,<1.0.0",
@@ -45,6 +45,13 @@ dependencies = [
     "tomlkit>=0.13.2,<1.0.0",
     "mistralai>=1.9.10,<2.0.0",
     "langchain-mistralai>=0.2.11,<0.3.0",
+    "langgraph>=1.0.1",
+    "langgraph-checkpoint-postgres>=3.0.0",
+    "langchain-core>=0.3.79",
+    "psycopg-binary>=3.2.12",
+    "python-magic>=0.4.27,<1.0.0",
+    "tenacity>=8.2.0,<10.0.0",
+    "resend>=2.19.0",
 ]
 
 
@@ -86,13 +93,28 @@ line_length = 100
 
 [tool.pytest.ini_options]
 minversion = "8.0"
-addopts = "-ra -q --cov=aimq --cov-report=term-missing"
+addopts = "-ra -q --timeout=30 --timeout-method=thread"
 testpaths = ["tests"]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "integration: marks tests as integration tests",
+]
+# Default timeout for all tests (can be overridden per test)
+timeout = 30
+timeout_method = "thread"
+filterwarnings = [
+    # Ignore Mistral model parameter warnings (expected when using mistral_model)
+    "ignore:WARNING! mistral_model is not default parameter:UserWarning",
+    # Ignore psycopg_pool deprecation warning (will be fixed in future psycopg release)
+    "ignore:the default for the ConnectionPool 'open' parameter:DeprecationWarning:psycopg_pool.pool",
+]
 
 [tool.coverage.run]
 branch = true
 source = ["aimq"]
 omit = ["src/aimq/commands/shared/templates/*"]
+parallel = true
+concurrency = ["thread", "multiprocessing"]
 
 [tool.coverage.report]
 exclude_lines = [
@@ -129,4 +151,6 @@ dev = [
     "flake8>=7.0.0,<8.0.0",
     "mypy>=1.8.0,<2.0.0",
     "pre-commit>=4.3.0",
+    "pytest-timeout>=2.4.0",
+    "pytest-xdist>=3.8.0",
 ]

@@ -38,11 +38,12 @@ RUN uv sync --frozen
 # Stage 2: Runtime - Minimal image with only runtime dependencies
 FROM python:3.12-slim
 
-# Install runtime dependencies for AI/ML libraries and git
+# Install runtime dependencies for AI/ML libraries, git, and libmagic
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libgl1 \
     libglib2.0-0 \
     libgomp1 \
+    libmagic1 \
     git \
     openssh-client \
     && rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/*

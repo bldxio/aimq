@@ -51,12 +51,15 @@ class WriteFile(BaseTool):
         file: Attachment,
         path: Optional[str] = None,
         bucket: Optional[str] = None,
-        metadata: Dict[str, Any] = {},
+        metadata: Optional[Dict[str, Any]] = None,
         config: RunnableConfig = RunnableConfig(),
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> Dict:
         """Write a file to Supabase Storage."""
         try:
+            if metadata is None:
+                metadata = {}
+
             template_args = metadata.copy()
             template_args["file"] = file
             template_args["config"] = config.get("configurable", {})

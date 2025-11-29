@@ -115,7 +115,11 @@ class TestQueue:
             queue.next()
 
     def test_get_runtime_config(self, queue):
-        """Test creation of runtime configuration."""
+        """Test creation of runtime configuration.
+
+        The thread_id should be extracted from job data and placed in
+        config["configurable"], or auto-generated if not present.
+        """
         job = create_test_job()
         config = queue.get_runtime_config(job)
 
@@ -123,15 +127,43 @@ class TestQueue:
         assert isinstance(config, dict)
         assert config["metadata"] == expected_metadata
         assert config["tags"] == queue.tags
-        assert config["configurable"] == job.data
+        # thread_id is auto-generated from job ID
+        assert config["configurable"] == {"thread_id": f"job-{job.id}"}
+
+    def test_get_runtime_config_with_thread_id(self, queue):
+        """Test runtime config when thread_id is provided in job data."""
+        job = create_test_job(data={"key": "value", "thread_id": "custom-thread-123"})
+        config = queue.get_runtime_config(job)
+
+        # thread_id should be extracted from job data
+        assert config["configurable"] == {"thread_id": "custom-thread-123"}
 
     def test_run_job(self, queue):
-        """Test running a specific job."""
+        """Test running a specific job.
+
+        The job data should be passed to the runnable, excluding thread_id
+        which is moved to the config.
+        """
         job_data = {"key": "value"}
         job = create_test_job(data=job_data)
 
         result = queue.run(job)
+        # Result should match input (MockRunnable echoes input)
         assert result == job_data
+
+    def test_run_job_with_thread_id(self, queue):
+        """Test running a job with thread_id in data.
+
+        The thread_id should be filtered out of the input data and
+        placed in the config instead.
+        """
+        job_data = {"key": "value", "thread_id": "test-123"}
+        job = create_test_job(data=job_data)
+
+        result = queue.run(job)
+        # Result should not include thread_id (it's filtered out)
+        assert result == {"key": "value"}
+        assert "thread_id" not in result
 
     def test_work_success(self, queue, mock_provider):
         """Test successful job processing."""
@@ -164,3 +196,160 @@ class TestQueue:
 
         queue.finish(job)
         mock_provider.delete.assert_called_once_with(queue.name, job.id)
+
+    def test_send_to_dlq_success(self, queue, mock_provider):
+        """Test sending a job to dead-letter queue."""
+        queue.dlq = "test_dlq"
+        job = create_test_job()
+        job.attempt = 3
+        error = ValueError("Test error")
+
+        mock_provider.send.return_value = 999
+
+        dlq_job_id = queue.send_to_dlq(job, error)
+
+        assert dlq_job_id == 999
+        mock_provider.send.assert_called_once()
+        call_args = mock_provider.send.call_args
+        assert call_args[0][0] == "test_dlq"
+        dlq_data = call_args[0][1]
+        assert dlq_data["original_queue"] == queue.name
+        assert dlq_data["original_job_id"] == job.id
+        assert dlq_data["error_type"] == "ValueError"
+        assert dlq_data["error_message"] == "Test error"
+
+    def test_send_to_dlq_no_dlq_configured(self, queue):
+        """Test sending to DLQ when no DLQ is configured raises ValueError."""
+        job = create_test_job()
+        error = ValueError("Test error")
+
+        with pytest.raises(ValueError, match="No DLQ configured"):
+            queue.send_to_dlq(job, error)
+
+    def test_work_with_custom_error_handler(self, queue, mock_provider):
+        """Test work with custom error handler."""
+        error_handler = Mock()
+        queue.on_error = error_handler
+        queue.max_retries = 1
+
+        job = create_test_job()
+        mock_provider.read.return_value = [job]
+
+        class FailingRunnable(Runnable):
+            name = "failing"
+
+            def invoke(
+                self, input: Any, config: RunnableConfig | None = None, **kwargs: Any
+            ) -> Any:
+                raise RuntimeError("Test failure")
+
+        queue.runnable = FailingRunnable()
+
+        with pytest.raises(RuntimeError):
+            queue.work()
+
+        error_handler.assert_called_once()
+        call_args = error_handler.call_args[0]
+        assert call_args[0] == job
+        assert isinstance(call_args[1], RuntimeError)
+
+    def test_work_error_handler_exception(self, queue, mock_provider):
+        """Test work when error handler itself raises an exception."""
+
+        def bad_error_handler(job, error):
+            raise ValueError("Handler error")
+
+        queue.on_error = bad_error_handler
+        queue.max_retries = 1
+
+        job = create_test_job()
+        mock_provider.read.return_value = [job]
+
+        class FailingRunnable(Runnable):
+            name = "failing"
+
+            def invoke(
+                self, input: Any, config: RunnableConfig | None = None, **kwargs: Any
+            ) -> Any:
+                raise RuntimeError("Test failure")
+
+        queue.runnable = FailingRunnable()
+
+        with pytest.raises(RuntimeError):
+            queue.work()
+
+    def test_work_max_retries_with_dlq(self, queue, mock_provider):
+        """Test work sends to DLQ after max retries."""
+        queue.max_retries = 2
+        queue.dlq = "test_dlq"
+
+        job = create_test_job()
+        job.attempt = 2
+        mock_provider.read.return_value = [job]
+        mock_provider.send.return_value = 999
+
+        class FailingRunnable(Runnable):
+            name = "failing"
+
+            def invoke(
+                self, input: Any, config: RunnableConfig | None = None, **kwargs: Any
+            ) -> Any:
+                raise RuntimeError("Test failure")
+
+        queue.runnable = FailingRunnable()
+
+        result = queue.work()
+
+        assert result is None
+        mock_provider.send.assert_called_once()
+        call_args = mock_provider.send.call_args[0]
+        assert call_args[0] == "test_dlq"
+        mock_provider.archive.assert_called_once_with(queue.name, job.id)
+
+    def test_work_max_retries_no_dlq(self, queue, mock_provider):
+        """Test work archives job after max retries when no DLQ configured."""
+        queue.max_retries = 2
+
+        job = create_test_job()
+        job.attempt = 2
+        mock_provider.read.return_value = [job]
+
+        class FailingRunnable(Runnable):
+            name = "failing"
+
+            def invoke(
+                self, input: Any, config: RunnableConfig | None = None, **kwargs: Any
+            ) -> Any:
+                raise RuntimeError("Test failure")
+
+        queue.runnable = FailingRunnable()
+
+        result = queue.work()
+
+        assert result is None
+        mock_provider.archive.assert_called_once_with(queue.name, job.id)
+
+    def test_work_dlq_send_failure(self, queue, mock_provider):
+        """Test work when DLQ send fails."""
+        queue.max_retries = 2
+        queue.dlq = "test_dlq"
+
+        job = create_test_job()
+        job.attempt = 2
+        mock_provider.read.return_value = [job]
+        mock_provider.send.side_effect = Exception("DLQ send failed")
+
+        class FailingRunnable(Runnable):
+            name = "failing"
+
+            def invoke(
+                self, input: Any, config: RunnableConfig | None = None, **kwargs: Any
+            ) -> Any:
+                raise RuntimeError("Test failure")
+
+        queue.runnable = FailingRunnable()
+
+        with pytest.raises(Exception, match="DLQ send failed"):
+            queue.work()
+
+        mock_provider.archive.assert_not_called()

@@ -5,6 +5,7 @@ from typing import List
 from langchain.tools import BaseTool
 
 from .enqueue import Enqueue
+from .query_table import QueryTable
 from .read_file import ReadFile
 from .read_record import ReadRecord
 from .write_file import WriteFile
@@ -16,6 +17,7 @@ __all__ = [
     "ReadFile",
     "WriteFile",
     "Enqueue",
+    "QueryTable",
 ]
 
 

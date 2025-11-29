@@ -49,11 +49,12 @@ def setup_env_template(project_dir: Path) -> None:
         console.print("  .env.example already exists, skipping", style="yellow")
 
 
-def setup_supabase(project_dir: Path) -> None:
+def setup_supabase(project_dir: Path, langgraph: bool = False) -> None:
     """Set up Supabase configuration and migrations.
 
     Args:
         project_dir: The project directory path.
+        langgraph: Whether to create LangGraph checkpointing migration.
     """
     # Create Supabase directories
     (project_dir / "supabase").mkdir(exist_ok=True)
@@ -66,9 +67,13 @@ def setup_supabase(project_dir: Path) -> None:
     config = SupabaseConfig(project_path)
     config.enable()  # Ensure pgmq_public is enabled
 
-    # Create setup migration
+    # Create migrations
     migrations = SupabaseMigrations(project_path)
     migrations.setup_aimq_migration()
+
+    # Create LangGraph checkpoints migration if requested
+    if langgraph:
+        migrations.setup_langgraph_checkpoints_migration()
 
     console.print("✓ Configured Supabase and created migrations", style="green")
 
@@ -109,10 +114,13 @@ def setup_docker(project_dir: Path) -> None:
         console.print("  .dockerignore already exists, skipping", style="yellow")
 
 
-def init(
+def init(  # noqa: C901
     directory: Optional[str] = typer.Argument(None, help="Directory to initialize AIMQ project in"),
     supabase: bool = typer.Option(None, "--supabase", help="Setup Supabase configuration"),
     docker: bool = typer.Option(None, "--docker", help="Setup Docker files"),
+    langgraph: bool = typer.Option(
+        None, "--langgraph", help="Setup LangGraph checkpointing tables"
+    ),
     all_components: bool = typer.Option(False, "--all", help="Setup all components"),
     minimal: bool = typer.Option(False, "--minimal", help="Minimal setup (only tasks.py)"),
 ) -> None:
@@ -127,6 +135,7 @@ def init(
         directory: Optional directory path to initialize project in. Defaults to current directory.
         supabase: Setup Supabase configuration and migrations.
         docker: Setup Docker and docker-compose files.
+        langgraph: Setup LangGraph checkpointing tables (requires Supabase).
         all_components: Setup all available components.
         minimal: Create only the basic tasks.py template (no Supabase or Docker).
 
@@ -150,32 +159,73 @@ def init(
         # Create project directory
         project_dir.mkdir(parents=True, exist_ok=True)
 
+        # Check if Supabase already exists
+        supabase_exists = (project_dir / "supabase").exists()
+
         # Determine what to setup
         setup_supabase_flag = supabase
         setup_docker_flag = docker
+        setup_langgraph_flag = langgraph
 
         # Handle --all flag
         if all_components:
             setup_supabase_flag = True
             setup_docker_flag = True
+            setup_langgraph_flag = True
 
         # Handle --minimal flag
         if minimal:
             setup_supabase_flag = False
             setup_docker_flag = False
+            setup_langgraph_flag = False
 
-        # If no flags provided and not minimal, ask interactively
-        if supabase is None and docker is None and not all_components and not minimal:
-            console.print("\n[bold]Select components to setup:[/bold]")
-            setup_supabase_flag = typer.confirm("  Setup Supabase configuration?", default=True)
-            setup_docker_flag = typer.confirm("  Generate Docker files?", default=True)
+        # If Supabase already exists, handle it specially
+        if supabase_exists:
+            console.print("\n[yellow]✓ Supabase already initialized[/yellow]")
+
+            # Only prompt for LangGraph if not in minimal mode
+            if not minimal and langgraph is None:
+                setup_langgraph_flag = typer.confirm(
+                    "  Add LangGraph checkpointing migration?", default=True
+                )
+
+            # Don't setup Supabase again
+            setup_supabase_flag = False
+        else:
+            # Normal flow for new Supabase setup
+            # If no flags provided and not minimal, ask interactively
+            if (
+                supabase is None
+                and docker is None
+                and langgraph is None
+                and not all_components
+                and not minimal
+            ):
+                console.print("\n[bold]Select components to setup:[/bold]")
+                setup_supabase_flag = typer.confirm("  Setup Supabase configuration?", default=True)
+
+                # Only ask about LangGraph if Supabase is being setup
+                if setup_supabase_flag:
+                    setup_langgraph_flag = typer.confirm(
+                        "  Setup LangGraph checkpointing?", default=False
+                    )
+
+                setup_docker_flag = typer.confirm("  Generate Docker files?", default=True)
 
         # Show what will be created
         console.print("\n[bold]Components to setup:[/bold]")
         console.print("  • tasks.py template: [green]✓[/green]")
         console.print("  • .env.example: [green]✓[/green]")
-        supabase_status = "green]✓" if setup_supabase_flag else "dim]✗"
-        console.print(f"  • Supabase config: [{supabase_status}[/]")
+
+        if supabase_exists:
+            console.print("  • Supabase config: [yellow]Already exists[/]")
+        else:
+            supabase_status = "green]✓" if setup_supabase_flag else "dim]✗"
+            console.print(f"  • Supabase config: [{supabase_status}[/]")
+
+        langgraph_status = "green]✓" if setup_langgraph_flag else "dim]✗"
+        console.print(f"  • LangGraph checkpointing: [{langgraph_status}[/]")
+
         docker_status = "green]✓" if setup_docker_flag else "dim]✗"
         console.print(f"  • Docker files: [{docker_status}[/]")
         console.print()
@@ -194,7 +244,15 @@ def init(
             # Setup Supabase if requested
             if setup_supabase_flag:
                 task = progress.add_task("Configuring Supabase...", total=None)
-                setup_supabase(project_dir)
+                setup_supabase(project_dir, langgraph=setup_langgraph_flag)
+                progress.update(task, completed=True)
+            elif supabase_exists and setup_langgraph_flag:
+                # Supabase exists but we want to add LangGraph migration
+                task = progress.add_task("Adding LangGraph migration...", total=None)
+                project_path = ProjectPath(project_dir)
+                migrations = SupabaseMigrations(project_path)
+                migration_path = migrations.setup_langgraph_checkpoints_migration()
+                console.print(f"✓ Created {migration_path.name}", style="green")
                 progress.update(task, completed=True)
 
             # Setup Docker if requested

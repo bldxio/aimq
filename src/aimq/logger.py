@@ -71,11 +71,23 @@ class LogEvent(BaseModel):
 
 
 class Logger:
-    def __init__(self):
+    def __init__(self, level: Union[LogLevel, str] = LogLevel.INFO, auto_print: bool = True):
         self._queue = queue.Queue()
+        self._auto_print = auto_print
+        self._level = level
+
+    def level(self, level: Union[LogLevel, str] = None) -> LogLevel:
+        if level is not None:
+            if isinstance(level, str):
+                level = LogLevel(level)
+            self._level = level
+        return self._level
 
     def log_event(self, event: LogEvent):
-        self._queue.put(event)
+        if self._auto_print and event.level >= self._level:
+            event.print()
+        else:
+            self._queue.put(event)
 
     def debug(self, msg: str, data: Any = None):
         self.log_event(LogEvent(level=LogLevel.DEBUG, msg=msg, data=data))
@@ -105,7 +117,9 @@ class Logger:
             except queue.Empty:
                 break
 
-    def print(self, block=True, level: Union[LogLevel, str] = LogLevel.INFO):
+    def print(self, block=True, level: Union[LogLevel, str] = None):
+        if level is None:
+            level = self._level
         if isinstance(level, str):
             level = LogLevel(level)
         [event.print() for event in self.events(block=block) if event.level >= level]

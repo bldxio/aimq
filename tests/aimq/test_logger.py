@@ -8,8 +8,8 @@ class TestLogger:
 
     @pytest.fixture
     def logger(self):
-        """Fixture providing a Logger instance."""
-        return Logger()
+        """Fixture providing a Logger instance with auto_print disabled for testing."""
+        return Logger(auto_print=False)
 
     def test_log_levels(self, logger):
         """Test all logging levels."""

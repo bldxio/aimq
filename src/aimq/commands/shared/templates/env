@@ -2,6 +2,24 @@
 SUPABASE_URL="http://127.0.0.1:54321"
 SUPABASE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU"
 
+# Database Configuration (Optional - for LangGraph checkpointing)
+# By default, database connection is auto-detected from SUPABASE_URL
+#
+# Smart defaults for localhost/127.0.0.1:
+#   - Port: 54322 (from `supabase start`)
+#   - Password: "postgres" (not the JWT token!)
+#   - Just use SUPABASE_URL above and it works! No extra config needed.
+
+# Direct PostgreSQL connection string (highest priority, overrides everything)
+# DATABASE_URL="postgresql://postgres:postgres@localhost:54322/postgres"
+
+# Or override individual parameters:
+# DATABASE_HOST="localhost"           # Override database host
+# DATABASE_PORT="54322"               # Auto-detected for localhost! Set for: 5432 (cloud), 6543 (pooler)
+# DATABASE_NAME="postgres"            # Database name
+# DATABASE_USER="postgres"            # Database user
+# DATABASE_PASSWORD=""                # Auto="postgres" for localhost, else SUPABASE_KEY
+
 # Worker Configuration
 WORKER_NAME="aimq-worker"
 WORKER_LOG_LEVEL="info"
