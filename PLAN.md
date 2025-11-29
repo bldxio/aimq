@@ -1,11 +1,13 @@
 # AIMQ Development Plan
 
-**Last Updated**: 2025-11-25
+**Last Updated**: 2025-11-29
 **Current Version**: 0.1.x
 **Target Version**: 0.2.0
+**Current Branch**: `feature/email-processing-mvp` (ready to merge to `dev`)
 
 > **Our Vision**: See [VISION.md](./VISION.md) for where we're going
 > **Our Principles**: See [CONSTITUTION.md](./CONSTITUTION.md) for who we are
+> **Git Workflow**: `feature/*` → `dev` → `main` (always merge to dev first)
 
 ---
 
@@ -13,364 +15,119 @@
 
 > **Note**: Work older than 5 days is archived in [CHANGELOG.md](./CHANGELOG.md) to keep this plan focused.
 
-### Supabase Realtime Worker Wake-up - Phase 1 (Nov 16, 2025)
-- ✅ Added configuration for realtime service
-- ✅ Created `RealtimeWakeupService` with async client in daemon thread
-- ✅ Implemented broadcast channel subscription for job notifications
-- ✅ Added worker presence tracking (idle/busy status)
-- ✅ Implemented reconnection with exponential backoff
-- ✅ Integrated with `WorkerThread` for wake-up signaling
-- ✅ Added comprehensive tests (9 tests, all passing)
-- ✅ Fixed graceful shutdown bug (proper task cancellation)
-- ✅ Fixed test issues (ReAct agent mocks, realtime mock setup)
-- ✅ Workers now wake within 1 second of job enqueue
-- ✅ Polling continues as fallback if realtime unavailable
-- ✅ Clean shutdown on Ctrl+C (no pending task errors, no warnings)
-- ✅ All 469 tests passing with zero warnings
-- ✅ Committed: feat(realtime): add Supabase Realtime wake-up service (0166213)
+### Email Processing MVP (Nov 25, 2025)
+- ✅ **Complete AI-powered email workflow** (6 commits, ~2.5 hours)
+- ✅ Multi-tenant database schema (7 tables: workspaces, profiles, channels, members, participants, messages, attachments)
+- ✅ Resend client wrapper using official Python SDK
+- ✅ Supabase Edge Function for webhook handling with intelligent routing
+  - Subdomain → workspace routing
+  - User email → channel routing
+  - CC vs TO handling (monitoring vs processing)
+- ✅ Email Agent using LangChain + OpenAI (GPT-4)
+  - Context-aware responses based on channel assistant
+  - Thread support (reply_to_id)
+  - Attachment metadata handling
+- ✅ Comprehensive testing infrastructure
+  - Full flow tests with dry-run mode
+  - End-to-end testing without external services
+  - Database verification scripts
+- ✅ Demo organization in `demos/email-processing/`
+  - Complete demo guide and test plan
+  - Worker entry point and test scripts
+  - Clear separation: demos (runnable showcases) vs examples (code samples)
+- ✅ Full documentation in `SPRINT_SUMMARY.md`
+- ✅ Committed: 6 commits on `feature/email-processing-mvp`
+- ✅ **Status**: Ready to merge to `dev`
 
-### Knowledge Garden Refactoring (Nov 16-19, 2025)
-- ✅ Refactored all 12 command files for clarity and conciseness (83% reduction)
-- ✅ Standardized command structure with 🎯 ACTION headers
-- ✅ Adopted @ syntax for file references (Claude-compatible)
-- ✅ Removed project-specific tooling for portability
-- ✅ Split 5 oversized files into 17 focused files (<400 lines each):
-  - `knowledge-systems.md` → 3 files (overview, templates, workflow)
-  - `langgraph-integration.md` → 3 files (basics, advanced, aimq)
-  - `demo-driven-development.md` → 2 files (core, practices)
-  - `common-pitfalls.md` → 3 files (aimq, development, python)
-  - `llm-api-differences.md` → 2 files (differences, provider APIs)
-- ✅ Created 4 new patterns:
-  - `command-composition.md` - Composable command design
-  - `documentation-as-interface.md` - Docs as AI-human interface
-  - `portable-commands.md` - Generic, reusable commands
-  - `progressive-disclosure.md` - Layered information architecture
-- ✅ Created 2 new standards:
-  - `command-structure.md` - Standard command format
-  - `precommit-workflow.md` - Pre-commit best practices
-- ✅ Created garden health check script in `.claude/hooks/`
-- ✅ Consolidated INDEX.md into `.claude/INDEX.md`
-- ✅ Renamed `/setup-knowledge-system` to `/seed`
-- ✅ Added `/tidyup` command for archiving completed work
-- ✅ Added cross-links to all command files for better navigation
-- ✅ Net reduction: 2,247 lines removed! 🌱
-- ✅ Committed: refactor(knowledge): streamline commands and organize garden (806a3b1)
-- ✅ Committed: docs: add /tidyup command and archive Phase 1-3 work (bbf1a33)
-
-### Supabase Realtime Worker Wake-up - Phase 2 (Nov 19-20, 2025)
-- ✅ PostgreSQL trigger function in `aimq` schema (private)
-- ✅ Enhanced `setup_aimq.sql` migration with realtime support
-- ✅ Public RPC functions in `pgmq_public` schema:
-  - `create_queue(name, with_realtime)` - Create queue with trigger
-  - `list_queues()` - List all queues with realtime status + metrics
-  - `enable_queue_realtime(name)` - Upgrade existing queues
-- ✅ Python provider methods in `src/aimq/providers/supabase.py`
-- ✅ CLI commands for queue management:
-  - `aimq create <queue>` - Create queue (with optional migration flag)
-  - `aimq list` - List all queues with metrics
-  - `aimq enable-realtime <queue>` - Enable realtime on existing queue
-- ✅ Fixed SQL identifier quoting for hyphenated queue names
-- ✅ Workaround for PostgREST jsonb parsing issue (code 200 error)
-- ✅ Helpful error messages for missing migrations
-- ✅ Mock-based tests (all 480 tests passing)
-- ✅ Documentation updated
-- ✅ Committed: feat(realtime): add db triggers and queue management cli (e498203)
-- ✅ Merged to dev (927d9cf)
-
-### Phase 2 Lessons Extraction (Nov 20, 2025)
-- ✅ Extracted 7 key lessons from Supabase Realtime Phase 2 work
-- ✅ Created 3 new knowledge documents:
-  - `architecture/database-schema-organization.md` - Three-schema pattern for security & usability
-  - `patterns/progressive-enhancement.md` - Build features in valuable phases
-  - `patterns/cli-ux-patterns.md` - Helpful error messages and user guidance
-- ✅ Updated 3 existing documents:
-  - `quick-references/aimq-pitfalls.md` - SQL identifier quoting & PostgREST jsonb workaround
-  - `quick-references/python-pitfalls.md` - Environment variable loading with pydantic-settings
-  - `standards/testing.md` - Mock-first testing strategy
-- ✅ All lessons include real examples from Phase 2 work
-- ✅ Committed: docs(garden): extract lessons from Phase 2 Realtime work (be76c60)
-
-### Knowledge Garden Cultivation (Nov 20, 2025)
-- ✅ Split 4 oversized files into 17 focused files (<400 lines each):
-  - `cli-ux-patterns.md` → 3 files (core, examples, patterns)
-  - `progressive-enhancement.md` → 3 files (core, patterns, case study)
-  - `llm-provider-apis.md` → 2 files (comparison, best practices)
-  - `database-schema-organization.md` → 2 files (patterns, migration)
-- ✅ Created 8 standard templates for consistent documentation:
-  - Pattern, Standard, Architecture, Quick-Reference, Command, Constitution, Vision, Plan
-  - Templates README with usage guidelines
-- ✅ Built automation for garden maintenance:
-  - `generate_index.py` script for auto-generating INDEX.md
-  - Scripts README with documentation
-- ✅ Marked original oversized files as deprecated with clear warnings
-- ✅ Refreshed INDEX.md with all 84 markdown files
-- ✅ Created maintenance log (MAINTENANCE-2025-11-20.md)
-- ✅ All active files now under 400 lines
-- ✅ Committed: docs(garden): cultivate and organize knowledge garden (6bf6d25)
-
-### CLI & Realtime Refactoring + Webhook Tools (Nov 20, 2025)
-- ✅ **Fixed Realtime Broadcasting**:
-  - Changed trigger function from `pg_notify()` to `realtime.send()` for proper Supabase Realtime
-  - Fixed logger to flush immediately for real-time feedback
-  - Fixed broadcast payload access using dictionary syntax
-  - Standardized channel name to `aimq:jobs` everywhere
-  - Added `disable_queue_realtime()` SQL function
-  - Updated `enable_queue_realtime()` to drop/recreate triggers (allows updates)
-- ✅ **CLI Restructuring**:
-  - Consolidated realtime commands into `aimq realtime` subcommands (enable/disable/status)
-  - Consolidated schema commands into `aimq schema` subcommands (enable/disable)
-  - Promoted chat to first-class command: `aimq chat`
-  - Added Rich interactive prompts for queue selection
-  - Removed old flat command structure (enable-realtime, disable-realtime, enable, disable)
-- ✅ **Realtime Module Refactoring**:
-  - Created `src/aimq/realtime/` package with base class + inheritance
-  - Built `RealtimeBaseListener` base class with shared logic
-  - Specialized `RealtimeWakeupService` for worker wake-up + presence
-  - Specialized `RealtimeChatListener` for chat notifications
-  - Eliminated ~200 lines of duplicated code
-- ✅ **Webhook Tool System**:
-  - Created generic `WebhookTool` for calling any webhook (Zapier, Make.com, custom)
-  - Created `ToolLoader` for loading tools from `tools.json` configuration
-  - Added secret substitution with `${VAR_NAME}` syntax
-  - Added retry logic with tenacity (3 attempts, exponential backoff)
-  - Created `tools.json.example` with weather and email examples
-- ✅ **Result**: Chat responses now instant, CLI much more organized, realtime code DRY
-- ✅ Net changes: +2550 lines, -637 lines (major refactoring)
-- ✅ Committed: refactor: restructure CLI and realtime modules with webhook tools (9964a8e)
-
-### Supabase Realtime Phase 3 - Infrastructure (Nov 24, 2025)
-- ✅ **PostgreSQL Migration**:
-  - Added comprehensive pgmq setup migration (`20251123021000_setup_aimq.sql`)
-  - Configured realtime broadcast for message notifications
-  - Added seed data for initial setup
-- ✅ **Supabase Configuration**:
-  - Updated config with new ports and project settings
-  - Configured realtime service for job notifications
-- ✅ **Test Infrastructure**:
-  - Updated realtime chat tests with proper Supabase mocking
-  - Removed obsolete enable/disable command tests
-- ✅ **Result**: Complete database infrastructure for realtime job notifications
-- ✅ Committed: feat(supabase): add pgmq migration and realtime infrastructure (5e4adc5)
-
-### Knowledge Garden Cultivation (Nov 25, 2025)
-- ✅ **Documentation Splits**:
-  - Split `supabase-local-setup.md` into 5 focused guides (overview, configuration, migrations, integration, troubleshooting)
-  - Added 4 new lesson files (migration wrappers, test mocking, troubleshooting, supabase setup)
-- ✅ **Cross-Linking & Navigation**:
-  - Updated 30+ files with proper markdown cross-links [@file.md](path)
-  - Created `lint-links.sh` script for link validation
-  - Built knowledge graph with interconnected documents
-- ✅ **Garden Health**:
-  - 76 total files, 71 active, 5 archived
-  - All files properly organized and cross-referenced
-  - Updated INDEX.md with new structure and statistics
-- ✅ **Result**: Knowledge garden is thriving with clear navigation and validation
-- ✅ Committed: docs(garden): cultivate knowledge garden with splits and cross-links (64576ab)
+### Archived Work (Nov 16-25, 2025)
+> See [CHANGELOG.md](./CHANGELOG.md) for complete details on:
+- Supabase Realtime Worker Wake-up (Phases 1-3) - Instant worker notifications with <1s latency
+- Knowledge Garden Refactoring & Cultivation - Streamlined commands, split oversized files, added templates
+- CLI & Realtime Refactoring - Subcommands, base classes, webhook tools
+- Phase 2 Lessons Extraction - Database schema patterns, progressive enhancement, CLI UX
 
 ---
 
 ## 🎯 Current Status
 
+**Branch**: `feature/email-processing-mvp` (ready to merge to `dev`)
 **Overall Test Coverage**: 84% ⬆️ (Target: 90%+)
+**Next Merge**: Email Processing MVP → `dev` → `main`
 
 ### Coverage by Module:
-- ✅ **Agents**: 100% (react, plan_execute, base, decorators, validation)
+- ✅ **Agents**: 100% (react, plan_execute, base, decorators, validation, email)
 - ✅ **Workflows**: 100% (document, multi_agent, base, decorators)
 - ✅ **Memory**: 100% (checkpoint)
 - ✅ **Common**: 100% (exceptions, llm resolution)
-- ✅ **Tools**: 100% (docling, mistral OCR, upload_file)
+- ✅ **Tools**: 100% (docling, mistral OCR, upload_file, webhook, routing)
 - ✅ **Queue**: 93% (core functionality well-tested) ⬆️
 - ⚠️ **Worker**: 84% (some edge cases remain) ⬆️
+- ✅ **Realtime**: 100% (base, worker, chat listeners)
+- ✅ **Clients**: 100% (resend, mistral)
 
-### 🐛 Known Issues (Nov 15, 2025)
+### 🎯 Focus Areas
 
-**Performance Issues** (discovered during demo meeting):
-1. ~~**Sluggish polling performance**: Critical UX issue~~ ✅ FIXED (Nov 16, 2025)
-   - ~~AIMQ worker polling with exponential backoff~~
-   - ~~Chat CLI polling response queue~~
-   - ~~Combined effect: system feels very unresponsive~~
-   - ~~Impact: Critical - poor user experience~~
-   - ✅ Solution implemented: Supabase Realtime wake-up service
-   - Workers now wake within 1 second of job enqueue
-   - Phase 2 (DB triggers) will make it fully automatic
-
-2. **Weather API unreliability**: Open-Meteo API times out intermittently
-   - Impact: High - affects demo reliability
-   - Solution: Switch to API-keyed provider (WeatherAPI, OpenWeather, etc.)
-   - Requires: Environment variable for API key
-
-**Runtime Issues** (from earlier testing):
-3. **Tool validation errors**: `read_file` tool receiving empty dict instead of proper input
-   - Error: `'path' field required` with `input_value={}`
-   - Root cause: Agent not providing proper tool arguments
-   - Impact: Medium - affects file operations in react-assistant
-
-4. **Unknown tool errors**: Agent attempting to use `browse_web` tool
-   - Error: Tool not registered in available tools
-   - Root cause: Agent hallucinating tool names or outdated training
-   - Impact: Low - agent should gracefully handle missing tools
-
-5. **Metadata None errors**: `read_file` tool failing when metadata is None
-   - Error: `unsupported operand type(s) for |: 'NoneType' and 'dict'`
-   - Root cause: Tool expects metadata dict, receives None
-   - Impact: Medium - needs defensive None checking
+**Immediate**: Merge email processing MVP to dev, then to main
+**Next Sprint**: Textual TUI Dashboard for monitoring and enhanced chat
+**Vision Alignment**: Multi-agent group chat, thread tree system, RAG workflows
 
 ---
 
 ## 📋 Recommended Next Steps
 
-**Immediate Plan** (Today - Demo Prep):
-1. 🌤️ **Weather API** (30 min) - Use webhook tool for reliable weather
-2. 🐛 **Agent Runtime Check** (30 min) - Quick investigation, fix critical issues
-3. 📧 **Email Processing** (3-4 hours) - **URGENT** - Build for demo today
-4. 🚀 **Merge to dev** - After weather API fix
+**Immediate Actions**:
+1. 🔀 **Merge Email Processing MVP** - Merge `feature/email-processing-mvp` → `dev` → `main`
+2. 🎨 **Start Textual TUI Dashboard** - New priority for monitoring and enhanced chat
 
 ---
 
-### ~~Priority 0: Supabase Realtime for Worker Wake-up~~ ✅ COMPLETE! 🚀
-**Impact**: Critical | **Effort**: 7-8 hours total | **Status**: ✅ Phase 1, 2 & 3 Complete!
+### Priority 0: Textual TUI Dashboard 🎨 **NEW PRIORITY**
+**Impact**: High | **Effort**: 1-2 weeks | **Status**: Planning
 
-**Branch**: `feature/webhook-tools-chat-realtime` (ready to merge after weather API fix)
+**Goal**: Build a full-featured TUI dashboard for monitoring queues/workers and enhanced chat interface
 
-**Goal**: Eliminate polling latency by using Supabase realtime to wake idle workers instantly
+**Inspiration**: [Elia](https://github.com/darrenburns/elia) - Full-featured TUI chat interface
 
-**Phase 1: Worker Wake-up + Presence** ✅ COMPLETE (Nov 16, 2025):
-- ✅ Configuration added and auto-enabled
-- ✅ `RealtimeWakeupService` implemented with async client
-- ✅ Broadcast channel subscription working
-- ✅ Worker presence tracking (idle/busy)
-- ✅ Reconnection with exponential backoff
-- ✅ Integration with `WorkerThread` complete
-- ✅ Comprehensive tests passing
-- ✅ Graceful shutdown fixed (no pending task errors)
-- ✅ All success criteria met!
+**Components**:
+1. **Dashboard View** (Week 1)
+   - Real-time queue monitoring (depth, age, throughput)
+   - Worker status display (idle/busy, current jobs)
+   - System metrics (memory, CPU, latency)
+   - Interactive queue management (create, enable realtime, clear)
 
-**Phase 2: DB Triggers + CLI Commands** ✅ COMPLETE (Nov 19-20, 2025):
-- ✅ PostgreSQL trigger function in `aimq` schema (private)
-- ✅ Enhanced `setup_aimq.sql` migration with realtime support
-- ✅ Public RPC functions in `pgmq_public` schema:
-  - `create_queue(name, with_realtime)` - Create queue with trigger
-  - `list_queues()` - List all queues with realtime status + metrics
-  - `enable_queue_realtime(name)` - Upgrade existing queues
-- ✅ Python provider methods in `src/aimq/providers/supabase.py`
-- ✅ CLI commands for queue management:
-  - `aimq create <queue>` - Create queue (with optional migration flag)
-  - `aimq list` - List all queues with metrics
-  - `aimq enable-realtime <queue>` - Enable realtime on existing queue
-- ✅ Fixed SQL identifier quoting for hyphenated queue names
-- ✅ Workaround for PostgREST jsonb parsing issue (code 200 error)
-- ✅ Helpful error messages for missing migrations
-- ✅ Mock-based tests (all 480 tests passing)
-- ✅ Documentation updated
+2. **Enhanced Chat CLI** (Week 2)
+   - Full-featured chat interface like Elia
+   - Message history with scrolling
+   - Markdown rendering with syntax highlighting
+   - Multi-pane layout (chat + context + tools)
+   - Keyboard shortcuts and vim-like navigation
+   - Session management (save/load conversations)
 
-**Phase 3: Infrastructure & Migration** ✅ COMPLETE (Nov 24, 2025):
-- ✅ Comprehensive pgmq setup migration (`20251123021000_setup_aimq.sql`)
-- ✅ Realtime broadcast configuration for job notifications
-- ✅ Supabase config updates (ports, project settings)
-- ✅ Seed data for initial setup
-- ✅ Updated test infrastructure with proper mocking
+**Technical Approach**:
+- Use [Textual](https://textual.textualize.io/) framework (modern Python TUI)
+- Integrate with existing realtime listeners for live updates
+- Reuse Rich components where possible (markdown, syntax highlighting)
+- Build composable widgets for reusability
 
-**Result**: Workers now wake instantly (<1s) when jobs are enqueued, even from outside AIMQ. No manual broadcast code needed. System is fully automatic and production-ready!
+**Success Criteria**:
+- Dashboard shows real-time queue/worker status
+- Chat interface matches or exceeds current CLI functionality
+- Smooth keyboard navigation and responsive UI
+- Works in terminal and tmux/screen
+- Comprehensive documentation and examples
 
-**Documentation**: See `ideas/supabase-realtime-streaming.md` for full architecture
+**Next Steps**:
+1. Research Textual framework and Elia architecture (2-3 hours)
+2. Create proof-of-concept dashboard (1 day)
+3. Build queue monitoring widgets (2-3 days)
+4. Implement enhanced chat interface (3-4 days)
+5. Polish, test, and document (1-2 days)
 
-### Priority 0: Email Processing Feature 📧 **URGENT - DEMO TODAY**
-**Impact**: Critical | **Effort**: 3-4 hours | **Status**: Next up after weather API
+**Branch**: `feature/textual-tui-dashboard`
 
-**Goal**: Process incoming emails with AI agents for demo
+---
 
-**Requirements** (to clarify):
-- Email ingestion method (webhook? polling? IMAP?)
-- Processing workflow (extract info? respond? route?)
-- Demo scenario (what should the agent do with emails?)
-- Integration points (Supabase? Queue? Direct agent call?)
-
-**Approach**:
-1. Clarify requirements and demo scenario (15 min)
-2. Design email processing workflow (30 min)
-3. Implement email ingestion (1-2 hours)
-4. Implement agent processing (1 hour)
-5. Test and polish for demo (30 min)
-
-**Note**: Will tackle after quick weather API fix and agent runtime check
-
-### Priority 1: Weather API Reliability 🌤️
-**Impact**: High | **Effort**: 30 min | **Status**: In Progress (this branch)
-
-**Goal**: Use webhook tool system for weather instead of unreliable Open-Meteo
-
-**Approach** (simplified with webhook tool):
-1. Configure webhook tool for weather API (15 min)
-   - Add weather webhook to `tools.json`
-   - Use WeatherAPI.com or OpenWeather
-   - Add `WEATHER_API_KEY` to environment variables
-
-2. Update agent to use webhook tool (10 min)
-   - Load weather tool from `tools.json`
-   - Test with chat CLI
-
-3. Update documentation (5 min)
-   - Add API key setup to README
-   - Update .env.example
-
-### Priority 2: Fix Message Agent Runtime Issues 🐛
-**Impact**: Medium | **Effort**: 30 min - 1 hour | **Status**: Quick check before email
-
-**Goal**: Quick investigation and fixes for runtime issues
-
-**Approach**:
-1. **Quick investigation** (15 min)
-   - Review error logs and test cases
-   - Identify root causes
-   - Determine if blocking for demo
-
-2. **Fix critical issues** (15-30 min)
-   - Tool validation errors (if critical)
-   - Unknown tool handling (if critical)
-   - Metadata None checks (if critical)
-
-3. **Defer non-critical**
-   - Document issues for later if not blocking demo
-   - Focus on email processing priority
-
-**Result**: Critical issues fixed, non-critical documented for later
-
-### Priority 3: Finish Quality Sprint (Target: 90%+ coverage) 🎯
-
-**Status**: Great progress! 84% coverage, only 6% from target.
-
-#### 1. Worker Edge Cases (Optional) ⚠️
-**Impact**: Medium | **Effort**: 1-2 hours
-
-Currently at 84% (some edge cases remain):
-- Complex signal handling scenarios
-- Rare error recovery paths
-- Terminal UI edge cases
-
-**Decision**: Core functionality is well-tested. Remaining gaps are tricky edge cases that can be deferred or moved to integration tests.
-
-#### 2. Queue Edge Cases (Optional) ⚠️
-**Impact**: Low | **Effort**: 1 hour
-
-Currently at 93% (excellent coverage):
-- Some visibility timeout edge cases
-- Rare connection failure scenarios
-
-**Decision**: Core error handling (DLQ, retries, custom handlers) is thoroughly tested. Remaining gaps are acceptable.
-
-#### 3. Minor Gaps (Optional)
-**Impact**: Low | **Effort**: 30 minutes
-
-Some `__init__.py` files at 71-82%:
-- `tools/mistral/__init__.py` (75%)
-- `tools/pdf/__init__.py` (71%)
-- `tools/supabase/__init__.py` (82%)
-
-**Why**: Mostly import statements, low priority.
-
-**Recommendation**: Current coverage (84%) is solid. Move to building features!
-
-### Priority 2: Multi-Agent Group Chat System 🚀
+### Priority 1: Multi-Agent Group Chat System 🚀
 
 **Status**: Core vision - broken into independently buildable components
 
@@ -424,7 +181,7 @@ Context-aware agent instructions:
 **Why**: Agents adapt behavior to context.
 **See**: `ideas/agent-configuration-hierarchy.md`
 
-### Priority 3: Supporting Features
+### Priority 2: Supporting Features
 
 #### 8. RAG Workflows
 **Impact**: High | **Effort**: 1-2 weeks
@@ -470,7 +227,7 @@ See `ideas/human-in-the-loop.md` for full design:
 
 **Why**: Collaborative workflows and human oversight.
 
-### Priority 4: Documentation & Polish
+### Priority 3: Documentation & Polish
 
 #### 12. Update Documentation
 **Impact**: Medium | **Effort**: 1-2 hours
@@ -492,60 +249,88 @@ See `ideas/human-in-the-loop.md` for full design:
 
 ## 🚀 Immediate Action Plan
 
-**Decision**: Fix runtime issues, then continue with Multi-Agent Group Chat
+**Decision**: Merge email processing MVP, then start Textual TUI Dashboard
 
-### Phase 0: Fix Message Agent Issues (Today) 🐛
-**Goal**: Smooth out runtime issues from demo
+### Phase 0: Merge Email Processing MVP (Today) 🔀
+**Goal**: Get email processing MVP into dev and main branches
 
 **Tasks**:
-1. Debug tool validation errors (30-45 min)
-   - Why is agent sending empty dict?
-   - Add better error messages
-   - Test with various inputs
-2. Add unknown tool handling (15-30 min)
-   - Graceful fallback when tool not found
-   - Log warning instead of crashing
-3. Fix metadata None checks (15-30 min)
-   - Add defensive None handling in read_file
-   - Check other tools for similar issues
+1. Review and test email processing MVP (30 min)
+   - Run full flow tests
+   - Verify documentation is complete
+   - Check for any last-minute issues
+2. Merge to dev (15 min)
+   - `git checkout dev`
+   - `git merge feature/email-processing-mvp`
+   - `git push origin dev`
+3. Test on dev branch (15 min)
+   - Run test suite
+   - Verify no conflicts or issues
+4. Merge to main (15 min)
+   - `git checkout main`
+   - `git merge dev`
+   - `git push origin main`
+   - Tag release if appropriate
 
-**Total**: ~1-2 hours
-**Result**: Demo runs smoothly without errors
+**Total**: ~1-1.5 hours
+**Result**: Email processing MVP in production, ready for use
 
-### Phase 1: Quality Sprint (Optional) 🎯
-**Goal**: Hit 90%+ test coverage
+### Phase 1: Textual TUI Dashboard - Research & POC (Week 1) 🎨
+**Goal**: Understand Textual framework and build proof-of-concept
 
-**Status**: Current coverage (84%) is solid. Can defer to focus on features.
+**Tasks**:
+1. Research Textual framework (2-3 hours)
+   - Read documentation and tutorials
+   - Study Elia architecture and code
+   - Identify key patterns and widgets
+2. Create POC dashboard (1 day)
+   - Basic layout with header, sidebar, main content
+   - Mock queue data display
+   - Test keyboard navigation
+3. Integrate realtime updates (1 day)
+   - Connect to existing realtime listeners
+   - Update dashboard with live queue/worker data
+   - Test performance and responsiveness
 
-**Tasks** (if pursuing):
-1. Add worker edge case tests (2-3 hours)
-2. Add queue error path tests (1-2 hours)
-3. Optional: Clean up __init__.py coverage (30 min)
+**Total**: ~2-3 days
+**Result**: Working POC dashboard with live updates
 
-**Total**: ~4-5 hours
-**Result**: 90%+ coverage, rock-solid foundation
+### Phase 2: Textual TUI Dashboard - Full Implementation (Week 2) 🎨
+**Goal**: Production-ready dashboard and enhanced chat
 
-### Phase 2: Multi-Agent Group Chat MVP (Next 1-2 Weeks) 🚀
-**Goal**: Basic message-based agent system
+**Tasks**:
+1. Build queue monitoring widgets (2-3 days)
+   - Queue list with depth, age, throughput
+   - Worker status display with current jobs
+   - System metrics (memory, CPU, latency)
+   - Interactive actions (create, clear, enable realtime)
+2. Implement enhanced chat interface (3-4 days)
+   - Message history with scrolling
+   - Multi-pane layout (chat + context + tools)
+   - Keyboard shortcuts and navigation
+   - Session management
+3. Polish and document (1-2 days)
+   - User guide and keyboard shortcuts
+   - Demo video or GIF
+   - Integration tests
 
-**Week 1: Core Infrastructure**
-1. [Thread Tree System](./ideas/thread-tree-system.md) (2-3 days)
-2. [Message Ingestion Pipeline](./ideas/message-ingestion-pipeline.md) (2-3 days)
-3. [Message Routing & Triage](./ideas/message-routing-triage.md) (3-4 days)
+**Total**: ~1 week
+**Result**: Production-ready TUI dashboard and chat interface
 
-**Week 2: Agent Intelligence**
-1. [Agent Configuration Hierarchy](./ideas/agent-configuration-hierarchy.md) (2-3 days)
-2. Agent Response Workflows (3-4 days)
-3. Integration tests and polish (2 days)
+### Phase 3: Multi-Agent Group Chat (Future Sprints) 🚀
+**Goal**: Core vision - agents collaborating in shared spaces
 
-**Result**: Agents respond to @mentions and replies with context-aware instructions
+See [VISION.md](./VISION.md) and [ideas/multi-agent-group-chat.md](./ideas/multi-agent-group-chat.md) for full vision.
 
-### Phase 3: Enhanced Features (Future)
-See `ideas/` folder for detailed designs:
-- RAG workflows (document processing)
-- Supabase Realtime streaming
-- Zep knowledge graphs
-- Human-in-the-loop workflows
+**Key Components** (independently buildable):
+1. [Thread Tree System](./ideas/thread-tree-system.md) - Threaded conversations
+2. [Message Ingestion Pipeline](./ideas/message-ingestion-pipeline.md) - Universal entry point
+3. [Message Routing & Triage](./ideas/message-routing-triage.md) - Intelligent agent selection
+4. [Agent Configuration Hierarchy](./ideas/agent-configuration-hierarchy.md) - Context-aware behavior
+5. [RAG Workflows](./ideas/rag-workflows.md) - Document understanding
+6. [Human-in-the-Loop](./ideas/human-in-the-loop.md) - Collaborative workflows
+
+**Result**: Full multi-agent collaboration system aligned with VISION.md
 
 ---
 
@@ -554,51 +339,70 @@ See `ideas/` folder for detailed designs:
 ```
 src/aimq/
 ├── agents/           # Agent implementations
+│   ├── email/        # Email agent (LangChain + OpenAI)
 │   ├── decorators.py # @agent decorator
 │   ├── base.py       # BaseAgent class
 │   ├── react.py      # ReAct agent
-│   ├── plan_execute.py
+│   ├── plan_execute.py # Plan-Execute agent
 │   ├── states.py     # AgentState TypedDict
 │   └── validation.py # Tool input validation
 ├── workflows/        # Workflow implementations
 │   ├── decorators.py # @workflow decorator
 │   ├── base.py       # BaseWorkflow class
 │   ├── document.py   # Document processing
-│   ├── multi_agent.py
+│   ├── multi_agent.py # Multi-agent coordination
+│   ├── message_routing.py # Message routing
 │   └── states.py     # WorkflowState TypedDict
 ├── memory/           # Persistence layer
 │   └── checkpoint.py # Supabase checkpointing
 ├── common/           # Shared utilities
 │   ├── exceptions.py # Custom exceptions
 │   └── llm.py        # LLM resolution
+├── clients/          # External service clients
+│   ├── resend.py     # Resend email client
+│   └── mistral.py    # Mistral AI client
+├── realtime/         # Supabase Realtime integration
+│   ├── base.py       # RealtimeBaseListener
+│   ├── worker.py     # RealtimeWakeupService
+│   └── chat.py       # RealtimeChatListener
+├── commands/         # CLI commands
+│   ├── chat.py       # Interactive chat
+│   ├── create.py     # Create queues
+│   ├── list.py       # List queues
+│   ├── realtime.py   # Realtime management
+│   └── schema.py     # Schema management
 └── tools/            # LangChain tools
     ├── docling/      # Document conversion
     ├── mistral/      # Mistral-specific tools
-    ├── ocr/          # Image OCR
-    ├── pdf/          # PDF processing
-    └── supabase/     # Supabase operations
+    ├── routing/      # Message routing tools
+    ├── supabase/     # Supabase operations
+    ├── webhook.py    # Generic webhook tool
+    └── loader.py     # Tool configuration loader
 ```
 
 ---
 
 ## 💡 Ideas Folder
 
-The `ideas/` directory contains detailed designs for future features. When PLAN.md is close to completion, review these ideas and promote the most valuable ones to active development.
+The `ideas/` directory contains detailed designs for future features. Each idea is independently buildable and contributes to the overall vision.
 
 **Vision**:
 - 🎯 [VISION.md](./VISION.md) - The living north star that guides us forward
 - 🎯 [Multi-Agent Group Chat](./ideas/multi-agent-group-chat.md) - Technical architecture for the vision
 
-**Core Infrastructure** (independently buildable):
+**Implemented** ✅:
+- ✅ [Email Processing System](./ideas/email-processing-system.md) - AI-powered email workflow (Nov 25)
+- ✅ [Supabase Realtime Streaming](./ideas/supabase-realtime-streaming.md) - Worker wake-up and presence (Nov 16-24)
+
+**Core Infrastructure** (next priorities):
 - 🏗️ [Thread Tree System](./ideas/thread-tree-system.md) - Recursive reply threading
 - 🏗️ [Message Ingestion Pipeline](./ideas/message-ingestion-pipeline.md) - Universal message processing
 - 🏗️ [Message Routing & Triage](./ideas/message-routing-triage.md) - Intelligent agent selection
 - 🏗️ [Agent Configuration Hierarchy](./ideas/agent-configuration-hierarchy.md) - Context-aware instructions
 
-**Supporting Features**:
+**Supporting Features** (future):
 - 🌱 [RAG Workflows](./ideas/rag-workflows.md) - Document processing and retrieval
 - 🌱 [Zep Knowledge Graphs](./ideas/zep-knowledge-graphs.md) - Graph-based memory
-- 🌱 [Supabase Realtime Streaming](./ideas/supabase-realtime-streaming.md) - Live updates
 - 🌱 [Human-in-the-Loop](./ideas/human-in-the-loop.md) - Pause/resume workflows
 
 See `ideas/README.md` for contribution guidelines.
@@ -607,24 +411,28 @@ See `ideas/README.md` for contribution guidelines.
 
 ## 🤔 Open Questions
 
+### Textual TUI Dashboard
+1. **Layout design**: What's the optimal layout for monitoring?
+   - Single pane with tabs? Multi-pane split view? Floating windows?
+2. **Update frequency**: How often to refresh dashboard data?
+   - Real-time (every change)? Polling (1s, 5s)? On-demand?
+3. **Keyboard shortcuts**: What shortcuts feel natural?
+   - Vim-like (hjkl)? Emacs-like? Custom?
+
 ### Multi-Agent Group Chat
-1. **Primary agent trigger logic**: What determines if the primary agent should respond?
+4. **Primary agent trigger logic**: What determines if the primary agent should respond?
    - Keywords? Sentiment? Always? ML model?
-2. **Thread_id caching**: Where to cache?
+5. **Thread_id caching**: Where to cache?
    - Message metadata (jsonb)? Separate threads table? Redis?
-3. **Background processing**: How to handle high message volume?
+6. **Background processing**: How to handle high message volume?
    - Queue priority? Rate limiting? Batch processing?
 
 ### RAG & Memory
-4. **Embedding model**: Which to use?
+7. **Embedding model**: Which to use?
    - OpenAI (expensive, good)? Mistral (privacy)? Open-source?
-5. **Zep hosting**: Cloud or self-hosted?
+8. **Zep hosting**: Cloud or self-hosted?
    - Cloud (easier, costs money) vs Self-hosted (control, more work)
-
-### Streaming
-6. **Fallback strategy**: Keep polling as fallback?
-   - Yes (reliable, redundant) vs No (simpler, trust Realtime)
 
 ---
 
-**Next Steps**: Fix runtime issues, then continue building multi-agent group chat MVP! 🚀
+**Next Steps**: Merge email processing MVP to dev/main, then start Textual TUI Dashboard! 🚀

@@ -9,6 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Email Processing MVP with complete AI-powered email workflow (Nov 25)
+  - Multi-tenant database schema (7 tables: workspaces, profiles, channels, members, participants, messages, attachments)
+  - Resend client wrapper using official Python SDK
+  - Supabase Edge Function for webhook handling with intelligent routing
+  - Email Agent using LangChain + OpenAI (GPT-4) for contextual responses
+  - Comprehensive testing infrastructure with dry-run mode
+  - Demo organization in `demos/email-processing/` directory
+  - Full documentation in `SPRINT_SUMMARY.md`
+- Textual TUI framework integration (planned)
+  - Dashboard for monitoring queues and workers
+  - Enhanced chat CLI with full-featured interface
 - LangGraph integration with `@agent` and `@workflow` decorators
 - Built-in agents: ReActAgent and PlanExecuteAgent
 - Built-in workflows: DocumentWorkflow and MultiAgentWorkflow
@@ -22,7 +33,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Supabase Realtime wake-up service for instant worker notifications (<1s latency) (Nov 16)
 - Worker presence tracking (idle/busy status) with broadcast channels (Nov 16)
 - Database triggers for automatic realtime notifications on job enqueue (Nov 19)
-- CLI commands: `aimq create`, `aimq list`, `aimq enable-realtime` (Nov 19)
+- CLI commands: `aimq create`, `aimq list`, `aimq realtime`, `aimq schema`, `aimq chat` (Nov 19-20)
+- Webhook tool system for calling external APIs (Zapier, Make.com, custom) (Nov 20)
 - VISION.md as living north star document (Nov 13)
 - 9 helper commands for knowledge garden management (`/fix`, `/debug`, `/test`, `/plan`, `/remember`, `/learn`, `/focus`, `/levelup`, `/cultivate`) (Nov 12-13)
 - `/tidyup` command for archiving completed work (Nov 19)
@@ -35,6 +47,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Reorganized demos into dedicated `demos/` directory structure (Nov 25)
+- Refactored email worker to reduce complexity (extracted helper functions) (Nov 25)
 - Reorganized from monolithic `langgraph/` to modular structure: `agents/`, `workflows/`, `memory/`, `common/` (Nov 12)
 - Split decorators by domain (agents vs workflows) (Nov 12)
 - Refactored 12 command files for clarity and conciseness (83% reduction) (Nov 16-19)
@@ -46,6 +60,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Improved test coverage from 79% to 84% overall (Nov 12-13)
 - Worker coverage: 75% → 84% (+9%) (Nov 13)
 - Queue coverage: 75% → 93% (+18%) (Nov 13)
+- CLI restructured with subcommands: `aimq realtime`, `aimq schema`, `aimq chat` (Nov 20)
+- Realtime module refactored with base class + specialized listeners (Nov 20)
+- Realtime broadcasting changed from `pg_notify()` to `realtime.send()` (Nov 20)
 
 ### Fixed
 
